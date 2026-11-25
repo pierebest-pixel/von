@@ -449,7 +449,13 @@ async function checkUpdates() {
   render();
 }
 
-window.addEventListener("hashchange", () => { closeOverlay(); window.scrollTo(0, 0); render(); });
+window.addEventListener("hashchange", () => {
+  closeOverlay(); window.scrollTo(0, 0); render();
+  // Le Catalogue se recharge à chaque ouverture, pour voir les nouveaux jeux
+  if (route().page === "catalog") loadCatalog().then(render);
+});
+// Au retour dans l'appli (iPhone la garde souvent en veille), on recharge la liste
+document.addEventListener("visibilitychange", () => { if (!document.hidden) loadCatalog().then(render); });
 
 // ---------------------------------------------------------------- démarrage
 async function start() {

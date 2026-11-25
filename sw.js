@@ -1,5 +1,5 @@
 // Service worker de Von : rend l'appli et les jeux installés disponibles hors connexion.
-const APP_CACHE = "von-app-v1";
+const APP_CACHE = "von-app-v2";
 const SHELL = [
   "./",
   "index.html",
