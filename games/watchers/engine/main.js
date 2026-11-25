@@ -62,8 +62,9 @@ function titleScreen() {
   const has = G.hasSave();
   t.insertAdjacentHTML("beforeend", `<div class="tsub" style="top:calc(env(safe-area-inset-top) + 190px)">LE SOLEIL-CŒUR S'ÉTEINT</div>
     <div class="tmenu">${has ? '<button class="tbtn p" data-c>Continuer</button>' : ""}<button class="tbtn ${has ? "" : "p"}" data-n>Nouvelle partie</button></div><div class="tver">Toucher pour commencer · v1.0</div>`);
-  const unlock = () => { MUSIC.unlock(); MUSIC.play("title"); removeEventListener("touchstart", unlock); removeEventListener("mousedown", unlock); };
-  addEventListener("touchstart", unlock); addEventListener("mousedown", unlock);
+  // iOS ne débloque le son qu'au relâchement du doigt (touchend / click)
+  const unlock = () => { MUSIC.unlock(); if (Game.mode === "title") MUSIC.play("title"); };
+  addEventListener("touchend", unlock, { passive: true }); addEventListener("click", unlock);
   MUSIC.play("title");
   t.querySelector("[data-c]")?.addEventListener("click", () => { MUSIC.unlock(); G.load(); t.remove(); startWorld(); });
   t.querySelector("[data-n]").addEventListener("click", async () => {

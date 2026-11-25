@@ -153,6 +153,7 @@ const MUSIC = (() => {
     ctx = ctx || new (window.AudioContext || window.webkitAudioContext)();
     if (ctx.state === "suspended") ctx.resume();
     current = name;
+    if (ctx.state !== "running") { timer = null; return; } // sera lancé par unlock()
     const out = ctx.createGain(); out.connect(ctx.destination); play.out = out;
     let next = ctx.currentTime + .1;
     const loop = () => { const d = schedule(ctx, out, name, next, 1); next += d; timer = setTimeout(loop, (next - ctx.currentTime - 2) * 1000); };
@@ -162,5 +163,14 @@ const MUSIC = (() => {
     clearTimeout(timer); timer = null; current = null;
     if (play.out) { const o = play.out; o.gain.setTargetAtTime(0, ctx.currentTime, .2); setTimeout(() => o.disconnect(), 800); play.out = null; }
   }
-  return { schedule, play, stop, SONGS, freq, tone, noise, get _ctx() { return ctx; }, unlock() { ctx = ctx || new (window.AudioContext || window.webkitAudioContext)(); if (ctx.state === "suspended") ctx.resume(); } };
+  return { schedule, play, stop, SONGS, freq, tone, noise, get _ctx() { return ctx; }, unlock() {
+    // iPhone : jouer comme une appli de musique (même en mode silencieux)
+    try { if (navigator.audioSession) navigator.audioSession.type = "playback"; } catch (e) { /* ignore */ }
+    ctx = ctx || new (window.AudioContext || window.webkitAudioContext)();
+    if (ctx.state !== "running") ctx.resume();
+    // Un son vide joué pendant le toucher déverrouille l'audio sur iOS
+    try { const b = ctx.createBuffer(1, 1, 22050), s = ctx.createBufferSource(); s.buffer = b; s.connect(ctx.destination); s.start(0); } catch (e) { /* ignore */ }
+    if (window.Von && Von.sound === false) return;
+    if (current && !timer) { const n = current; current = null; play(n); }
+  } };
 })();
