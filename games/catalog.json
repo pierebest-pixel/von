@@ -1,6 +1,30 @@
 {
   "games": [
     {
+      "id": "zoe",
+      "name": "Pour Zoé",
+      "category": "Surprise",
+      "players": "Un joueur",
+      "version": "1.0",
+      "addedAt": "2026-11-25",
+      "size": 450247,
+      "controls": "Flèches, A et B",
+      "description": "Une héroïne invincible avance tout droit sur un chemin fleuri jusqu'au repaire de Sixte le Corrompu, le boss le plus nul du monde.\nBats-le, puis va lui parler : il a un message très important à te dire.",
+      "icon": "icon.png",
+      "screenshots": [
+        "shot1.png",
+        "shot2.png",
+        "shot3.png"
+      ],
+      "files": [
+        "index.html",
+        "icon.png",
+        "shot1.png",
+        "shot2.png",
+        "shot3.png"
+      ]
+    },
+    {
       "id": "watchers",
       "name": "Watchers",
       "category": "Aventure",

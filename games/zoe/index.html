@@ -1,0 +1,1063 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<title>Zoé</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #1b1424; overflow: hidden; position: fixed; inset: 0;
+    touch-action: none; -webkit-user-select: none; user-select: none; -webkit-touch-callout: none;
+    -webkit-tap-highlight-color: transparent; -webkit-text-size-adjust: 100%; overscroll-behavior: none; }
+  #game { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+    image-rendering: pixelated; image-rendering: crisp-edges; }
+  .pad { position: absolute; bottom: calc(24px + env(safe-area-inset-bottom)); display: flex; gap: 12px; }
+  .pad.left { left: calc(16px + env(safe-area-inset-left)); }
+  .pad.right { right: calc(16px + env(safe-area-inset-right)); }
+  .btn { width: 72px; height: 72px; border-radius: 50%; border: 2px solid rgba(255,255,255,.4);
+    background: rgba(42,26,46,.35); color: #fff; font: 700 24px/68px -apple-system, system-ui, sans-serif;
+    text-align: center; backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);
+    touch-action: none; transition: transform .06s; }
+  .btn.on { transform: scale(.92); }
+  .pad.right { align-items: flex-end; }
+  .pad.right .btn:first-child { margin-bottom: 30px; }   /* B un peu plus haut que A, comme une manette */
+  /* téléphone en portrait : le jeu en haut, les boutons plus bas sous les pouces */
+  /* téléphone en paysage : boutons un peu plus petits pour ne pas cacher le jeu */
+  @media (orientation: landscape) and (max-height: 500px) {
+    .pad { bottom: calc(12px + env(safe-area-inset-bottom)); }
+    .btn { width: 62px; height: 62px; line-height: 58px; font-size: 21px; }
+    .pad.right .btn:first-child { margin-bottom: 24px; }
+  }
+  @media (orientation: portrait) {
+    .pad { bottom: calc(44px + env(safe-area-inset-bottom)); gap: 10px; }
+  }
+  .btn.on { background: rgba(255,140,190,.45); border-color: #ffb3d1; }
+  .btn small { display: block; font-size: 10px; line-height: 1; margin-top: -14px; opacity: .8; }
+  /* bouton « Parler » qui apparaît près de Sixte vaincu */
+  .talk { position: absolute; left: 50%; bottom: calc(24px + env(safe-area-inset-bottom));
+    transform: translateX(-50%); padding: 12px 22px; border-radius: 26px;
+    background: #ff6fa5; color: #fff; border: 2px solid #ffd1e3;
+    font: 700 18px -apple-system, system-ui, sans-serif; touch-action: none;
+    box-shadow: 0 4px 0 #b83a6c; animation: pop .9s ease-in-out infinite alternate; }
+  .talk[hidden] { display: none; }
+  @keyframes pop { to { transform: translateX(-50%) scale(1.07); } }
+  @media (orientation: portrait) { .talk { bottom: calc(150px + env(safe-area-inset-bottom)); } }
+
+  /* ---- le message final ---- */
+  .finale { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center;
+    justify-content: center; gap: 2vh; opacity: 0; pointer-events: none; overflow: hidden;
+    background: radial-gradient(ellipse at 50% 40%, rgba(255,170,205,.96), rgba(214,78,140,.97) 70%, rgba(120,30,90,.98));
+    transition: opacity 1.6s ease; padding: env(safe-area-inset-top) 0 env(safe-area-inset-bottom); }
+  .finale.on { opacity: 1; pointer-events: auto; }
+  .love { margin: 0; color: #fff; text-align: center; line-height: .95;
+    font: 400 clamp(64px, 21vw, 150px) "Snell Roundhand", "Brush Script MT", "Segoe Script", cursive; line-height: .95;
+    text-shadow: 0 0 18px rgba(255,255,255,.7), 0 0 42px #ff4f9a, 0 4px 0 #b02a68;
+    opacity: 0; transform: scale(.6); transition: opacity 1.2s ease, transform 1.4s cubic-bezier(.2,1.4,.4,1); }
+  .finale.text .love { opacity: 1; transform: scale(1); animation: beat 1.6s ease-in-out 1.6s infinite; }
+  @keyframes beat { 0%,100% { transform: scale(1); } 12% { transform: scale(1.06); } 24% { transform: scale(1); } 36% { transform: scale(1.04); } }
+  #bouquet { image-rendering: pixelated; image-rendering: crisp-edges;
+    width: min(74vw, 44vh); height: auto; filter: drop-shadow(0 6px 10px rgba(90,10,60,.35)); }
+  .heart { position: absolute; bottom: -40px; color: #fff; opacity: .8; pointer-events: none;
+    animation: rise linear forwards; }
+  @keyframes rise { to { transform: translate(var(--dx), -115vh) rotate(var(--rot)); opacity: 0; } }
+  .again { position: absolute; bottom: calc(18px + env(safe-area-inset-bottom)); right: calc(18px + env(safe-area-inset-right));
+    color: #fff; font: 600 15px -apple-system, system-ui, sans-serif; padding: 8px 14px; border-radius: 18px;
+    background: rgba(255,255,255,.2); border: 1px solid rgba(255,255,255,.5); opacity: 0; transition: opacity 1s; }
+  .finale.done .again { opacity: 1; }
+  @media (orientation: landscape) and (max-height: 500px) {
+    .finale { gap: 1vh; }    /* le bouquet reste sous le message */
+    .love br { display: none; }
+    #bouquet { width: auto; height: 64vh; }
+    .love { font-size: 21vh; }
+  }
+</style>
+</head>
+<body>
+<canvas id="game"></canvas>
+
+<div class="pad left">
+  <div class="btn" data-key="left">◀</div>
+  <div class="btn" data-key="right">▶</div>
+</div>
+<div class="pad right">
+  <div class="btn" data-key="hit">B<small>taper</small></div>
+  <div class="btn" data-key="jump">A<small>sauter</small></div>
+</div>
+<div class="talk" id="talk" hidden>💬 Parler</div>
+
+<div class="finale" id="finale">
+  <h1 class="love">Je t'aime <br>Zoé</h1>
+  <canvas id="bouquet" width="72" height="84"></canvas>
+  <div class="again" id="again">↺ Rejouer</div>
+</div>
+
+<script src="../von-sdk.js"></script>
+<script>
+"use strict";
+// ------------------------------------------------------------ écran
+const H = 180;                 // hauteur du monde en pixels
+let W = 320;
+const GROUND = 150;            // niveau du sol
+const LEVEL_END = 1600;        // longueur du chemin jusqu'au boss
+const cv = document.getElementById("game");
+const ctx = cv.getContext("2d");
+
+function resize() {
+  const vw = innerWidth, vh = innerHeight;
+  const portrait = vh > vw;
+  // en portrait on cadre plus serré pour que l'héroïne reste bien visible
+  W = portrait ? 200 : Math.round(Math.min(400, Math.max(240, H * vw / vh)));
+  cv.width = W; cv.height = H;
+  const scale = Math.min(vw / W, vh / H);
+  cv.style.width = W * scale + "px";
+  cv.style.height = H * scale + "px";
+  // en portrait le jeu remonte un peu pour laisser la place aux pouces
+  cv.style.top = portrait ? Math.max(H * scale / 2 + 20, vh * 0.38) + "px" : "50%";
+  ctx.imageSmoothingEnabled = false;
+}
+addEventListener("resize", resize);
+addEventListener("orientationchange", () => setTimeout(resize, 200));
+resize();
+
+// ------------------------------------------------------------ commandes
+const keys = { left: false, right: false, jump: false, hit: false };
+const pressed = { jump: false, hit: false, talk: false };   // appui « frais » (une seule fois)
+const kb = { left: false, right: false, jump: false, hit: false };  // tenu au clavier
+const fingers = new Map();                     // doigt → bouton sous le doigt
+
+function setKey(k, v) {
+  if (v && !keys[k] && (k === "jump" || k === "hit")) pressed[k] = true;
+  keys[k] = v;
+  document.querySelectorAll(`[data-key="${k}"]`).forEach((b) => b.classList.toggle("on", v));
+}
+function sync() {
+  const held = new Set(fingers.values());
+  for (const k in keys) { const v = kb[k] || held.has(k); if (v !== keys[k]) setKey(k, v); }
+}
+const KEYMAP = { ArrowLeft: "left", KeyA: "left", KeyQ: "left", ArrowRight: "right", KeyD: "right",
+  ArrowUp: "jump", Space: "jump", KeyW: "jump", KeyZ: "jump", KeyX: "hit", KeyJ: "hit", Enter: "hit" };
+addEventListener("keydown", (e) => { const k = KEYMAP[e.code]; if (k) { kb[k] = true; sync(); e.preventDefault(); } });
+addEventListener("keyup", (e) => { const k = KEYMAP[e.code]; if (k) { kb[k] = false; sync(); } });
+
+// tactile (iPhone) : plusieurs doigts en même temps, et on peut glisser
+// le pouce de ◀ à ▶ sans le lever
+function keyAt(x, y) {
+  const el = document.elementFromPoint(x, y);
+  const b = el && el.closest ? el.closest(".btn") : null;
+  return b ? b.dataset.key : null;
+}
+addEventListener("pointerdown", (e) => {
+  const k = keyAt(e.clientX, e.clientY);
+  // ailleurs que sur ◀ ▶ A B : un toucher sert à parler / faire avancer le dialogue
+  if (!k) { pressed.talk = true; return; }
+  e.preventDefault();
+  fingers.set(e.pointerId, k); sync();
+});
+addEventListener("pointermove", (e) => {
+  if (!fingers.has(e.pointerId)) return;
+  const k = keyAt(e.clientX, e.clientY);
+  if (k !== fingers.get(e.pointerId)) { fingers.set(e.pointerId, k); sync(); }
+});
+const lift = (e) => { if (fingers.delete(e.pointerId)) sync(); };
+addEventListener("pointerup", lift);
+addEventListener("pointercancel", lift);
+// si l'appli passe en arrière-plan, on lâche tout
+function releaseAll() { fingers.clear(); for (const k in kb) kb[k] = false; sync(); }
+addEventListener("blur", releaseAll);
+document.addEventListener("visibilitychange", () => { if (document.hidden) releaseAll(); });
+
+// iOS : pas de zoom au double-tap, pas de loupe, pas de menu, pas de rebond
+document.addEventListener("touchstart", (e) => e.preventDefault(), { passive: false });
+document.addEventListener("touchmove", (e) => e.preventDefault(), { passive: false });
+document.addEventListener("gesturestart", (e) => e.preventDefault());
+document.addEventListener("contextmenu", (e) => e.preventDefault());
+
+// ------------------------------------------------------------ l'héroïne
+const C = {
+  out: "#2a1a2e", hair: "#8a4a2f", hairL: "#b8673e", skin: "#ffd5b5", skinD: "#eaa98a",
+  dress: "#ff6fa5", dressD: "#d9487f", dressL: "#ffa3c6", white: "#fff6fb", shoe: "#6b2c4a",
+  bow: "#ffd166", blush: "#ff9db8", eye: "#2a1a2e",
+};
+
+const hero = {
+  x: 95, y: GROUND, vx: 0, vy: 0, face: 1, onGround: true,
+  walkT: 0, hitT: 0, t: 0,
+};
+const SPEED = 75, GRAV = 620, JUMP = 230, HIT_TIME = 0.28;
+
+// petit canvas pour dessiner le perso puis lui faire un contour
+const spr = document.createElement("canvas"); spr.width = 40; spr.height = 44;
+const sc = spr.getContext("2d");
+const sil = document.createElement("canvas"); sil.width = 40; sil.height = 44;
+const sl = sil.getContext("2d");
+const OX = 20, OY = 40;    // position des pieds dans le petit canvas
+
+function r(c, x, y, w, h) { sc.fillStyle = c; sc.fillRect(OX + x, OY + y, w, h); }
+
+function drawHeroSprite(h) {
+  sc.clearRect(0, 0, spr.width, spr.height);
+  const walking = h.onGround && Math.abs(h.vx) > 1;
+  const ph = h.walkT * 11;
+  const swing = walking ? Math.round(Math.sin(ph) * 2) : 0;
+  const bob = walking ? (Math.abs(Math.sin(ph)) > 0.7 ? -1 : 0) : (Math.sin(h.t * 2.5) > 0.6 ? -1 : 0);
+  const hitting = h.hitT > 0;
+  const air = !h.onGround;
+  // les cheveux flottent quand elle bouge
+  const flow = air ? (h.vy < 0 ? 1 : -1) : walking ? (Math.sin(ph * 0.5) > 0 ? 1 : 0) : 0;
+
+  // jambes
+  if (air) {
+    r(C.skinD, -3, -6, 2, 3); r(C.shoe, -4, -4, 3, 2);
+    r(C.skin, 1, -7, 2, 3); r(C.shoe, 1, -5, 3, 2);
+  } else {
+    r(C.skinD, -2 - swing, -5, 2, 4); r(C.shoe, -3 - swing, -2, 3, 2);
+    r(C.skin, 1 + swing, -5, 2, 4); r(C.shoe, 1 + swing, -2, 4, 2);
+  }
+  const y0 = bob;
+  // cheveux de derrière (longs)
+  r(C.hair, -6, -24 + y0, 4, 11 + flow);
+  r(C.hair, -7 - (flow > 0 ? 1 : 0), -18 + y0, 2, 6 + flow);
+  // bras de derrière
+  if (!hitting) r(C.skinD, -4 - swing, -13 + y0, 2, 5);
+  // robe
+  r(C.dress, -3, -14 + y0, 7, 4);
+  r(C.dress, -5, -10 + y0, 11, 5);
+  r(C.dressD, -5, -6 + y0, 11, 1);
+  r(C.dressL, -1, -13 + y0, 2, 2);
+  r(C.white, -5, -5 + y0, 11, 1);           // dentelle
+  // tête
+  r(C.skin, -3, -22 + y0, 8, 8);
+  r(C.skinD, -3, -15 + y0, 8, 1);
+  // cheveux dessus + frange
+  r(C.hair, -4, -25 + y0, 9, 4);
+  r(C.hair, -4, -21 + y0, 3, 6);
+  r(C.hair, 2, -22 + y0, 3, 2);
+  r(C.hairL, -1, -24 + y0, 4, 1);
+  // noeud
+  r(C.bow, -6, -26 + y0, 2, 3); r(C.bow, -3, -26 + y0, 2, 3); r("#e8a93a", -4, -25 + y0, 1, 1);
+  // visage
+  const blink = (h.t % 3.2) < 0.12;
+  if (blink) r(C.eye, 2, -18 + y0, 2, 1); else r(C.eye, 2, -19 + y0, 1, 2);
+  r(C.blush, 3, -16 + y0, 2, 1);
+  r(C.skinD, 4, -17 + y0, 1, 1);           // nez
+  // bras de devant
+  if (hitting) {
+    const k = 1 - h.hitT / HIT_TIME;     // 0 → 1
+    const ext = k < 0.5 ? Math.round(k * 2 * 6) : 6;
+    r(C.skin, 3, -12 + y0, 2 + ext, 2);
+    r(C.skin, 4 + ext, -13 + y0, 3, 3);  // poing
+  } else {
+    r(C.skin, 1 + swing, -13 + y0, 2, 5);
+  }
+
+  // contour : silhouette décalée d'1 pixel dans 4 directions
+  sl.clearRect(0, 0, sil.width, sil.height);
+  sl.globalCompositeOperation = "source-over";
+  for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) sl.drawImage(spr, dx, dy);
+  sl.globalCompositeOperation = "source-in";
+  sl.fillStyle = C.out; sl.fillRect(0, 0, sil.width, sil.height);
+  sl.globalCompositeOperation = "source-over";
+  sl.drawImage(spr, 0, 0);
+}
+
+function drawHero(h, camX) {
+  drawHeroSprite(h);
+  const px = Math.round(h.x - camX), py = Math.round(h.y);
+  // ombre
+  const lift = Math.min(1, (GROUND - h.y) / 60);
+  ctx.fillStyle = `rgba(40,20,50,${0.35 - lift * 0.2})`;
+  ctx.fillRect(px - 6 + Math.round(lift * 2), GROUND, 12 - Math.round(lift * 4), 2);
+  ctx.save();
+  ctx.translate(px, py);
+  if (h.face < 0) ctx.scale(-1, 1);
+  ctx.drawImage(sil, -OX, -OY);
+  ctx.restore();
+}
+
+// ------------------------------------------------------------ effets
+const fx = [];   // étincelles d'invincibilité + coups
+function spawnSparkle(h) {
+  fx.push({ kind: "spark", x: h.x + (Math.random() * 22 - 11), y: h.y - 4 - Math.random() * 26, life: 0.7, max: 0.7 });
+}
+function spawnHit(h) {
+  fx.push({ kind: "heart", x: h.x + h.face * 14, y: h.y - 12, vx: h.face * 40, life: 0.45, max: 0.45 });
+}
+const HEART = ["0110110", "1111111", "1111111", "0111110", "0011100", "0001000"];
+function drawFx(camX) {
+  for (const p of fx) {
+    const a = p.life / p.max;
+    const x = Math.round(p.x - camX), y = Math.round(p.y);
+    if (p.kind === "spark") {
+      ctx.fillStyle = `rgba(255,236,150,${a})`;
+      const s = a > 0.5 ? 2 : 1;
+      ctx.fillRect(x, y - s, 1, s * 2 + 1); ctx.fillRect(x - s, y, s * 2 + 1, 1);
+    } else if (p.kind === "aura") {
+      ctx.fillStyle = `rgba(200,80,255,${a * 0.8})`;
+      ctx.fillRect(x, y, 2, 2);
+    } else if (p.kind === "puff") {
+      const rr = Math.round(p.r + (1 - a) * 3);
+      ctx.fillStyle = `rgba(190,150,220,${a * 0.8})`;
+      ctx.fillRect(x - rr, y - rr + 1, rr * 2, rr * 2 - 2); ctx.fillRect(x - rr + 1, y - rr, rr * 2 - 2, rr * 2);
+    } else {
+      ctx.fillStyle = `rgba(255,111,165,${a})`;
+      HEART.forEach((row, j) => [...row].forEach((c, i) => { if (c === "1") ctx.fillRect(x - 3 + i, y - 3 + j, 1, 1); }));
+    }
+  }
+}
+
+// ------------------------------------------------------------ Sixte le Corrompu
+const boss = {
+  active: false, state: "wait", x: LEVEL_END - 50, y: -60, vx: 0, vy: 0, face: -1,
+  hp: 6, maxHp: 6, t: 0, stT: 0, flash: 0, nextAtk: 1.6, cor: 1, hurtLine: 0, tilt: 0,
+};
+const balls = [];     // ses boules de corruption (qui ratent)
+const texts = [];     // petits textes qui flottent
+let bubble = null;    // bulle de dialogue de Sixte
+let banner = null;    // grand titre au milieu de l'écran
+let shake = 0;
+
+const HURT_LINES = ["Aïe !", "Hé ! C'est pas du jeu !", "Attends, j'étais pas prêt !",
+  "Ouille ouille…", "Pas le visage !", "Je vais le dire à ma mère !"];
+function say(text, time = 1.8) { bubble = { text, life: time }; }
+function floatText(text, x, y, color) { texts.push({ text, x, y, life: 1.1, color }); }
+function puff(x, y, n = 6) {
+  for (let i = 0; i < n; i++) fx.push({ kind: "puff", x: x + Math.random() * 10 - 5, y: y - Math.random() * 6,
+    vx: Math.random() * 30 - 15, life: 0.6, max: 0.6, r: 2 + Math.random() * 2 });
+}
+function setState(s) { boss.state = s; boss.stT = 0; }
+
+function startBoss() {
+  boss.active = true; setState("drop"); boss.vy = 0;
+  boss.x = LEVEL_END - Math.round(W * 0.35);
+  bubble = null;
+}
+
+function updateBoss(dt, h) {
+  const b = boss;
+  b.t += dt; b.stT += dt;
+  if (b.flash > 0) b.flash -= dt;
+  const toHero = Math.sign(h.x - b.x) || -1;
+
+  switch (b.state) {
+    case "drop":       // il tombe du ciel… et atterrit pas très bien
+      b.vy += GRAV * dt; b.y += b.vy * dt;
+      if (b.y >= GROUND) { b.y = GROUND; b.vy = 0; shake = 0.35; puff(b.x, GROUND, 10); setState("intro");
+        banner = { title: "SIXTE LE CORROMPU", sub: "— boss —", life: 2.8, max: 2.8 }; }
+      break;
+    case "intro":
+      b.face = toHero;
+      if (b.stT > 1.2 && !bubble) say("Tremble devant moi !", 1.6);
+      if (b.stT > 3) { setState("idle"); b.nextAtk = 1.2; }
+      break;
+    case "idle": {
+      b.face = toHero;
+      const dist = Math.abs(h.x - b.x);
+      b.vx = dist > 45 ? toHero * 16 : dist < 22 ? -toHero * 14 : 0;
+      b.nextAtk -= dt;
+      if (b.nextAtk <= 0) {
+        const r = Math.random();
+        setState(r < 0.45 ? "throw" : r < 0.75 ? "charge" : "pose");
+        b.vx = 0;
+      }
+      break;
+    }
+    case "throw":
+      if (b.stT > 0.45 && !b.thrown) {
+        b.thrown = true;
+        const dist = Math.abs(h.x - b.x);
+        // la plupart du temps il vise n'importe comment
+        const good = Math.random() < 0.4;
+        const vx = good ? dist / 0.39 : 25 + Math.random() * 45;
+        balls.push({ x: b.x + b.face * 8, y: b.y - 26, vx: b.face * vx, vy: -120, bounced: false });
+        say(Math.random() < 0.5 ? "Boule de corruption !" : "Prends ça !", 1.2);
+      }
+      if (b.stT > 1) { b.thrown = false; setState("idle"); b.nextAtk = 1.8 + Math.random(); }
+      break;
+    case "charge":
+      if (b.stT < 0.35) { b.vx = 0; break; }       // il prend son élan
+      b.vx = b.face * 85;
+      if (Math.abs(h.x - b.x) < 16 || b.stT > 1) {   // et il se prend les pieds dans sa cape
+        setState("fallen"); b.vx = b.face * 40; shake = 0.15; puff(b.x, GROUND, 5);
+        say(Math.random() < 0.5 ? "Aïe… j'ai glissé." : "C'est ma cape !", 1.4);
+      }
+      break;
+    case "fallen":
+      b.vx *= 0.9;
+      b.tilt = Math.min(1, b.tilt + dt * 6);
+      if (b.stT > 1.5) { setState("getup"); }
+      break;
+    case "getup":
+      b.vx = 0; b.tilt = Math.max(0, b.tilt - dt * 4);
+      if (b.tilt <= 0) { setState("idle"); b.nextAtk = 1.4 + Math.random(); }
+      break;
+    case "pose":
+      b.vx = 0;
+      if (b.stT > 0.2 && !bubble) say("Mouhahaha !", 1.2);
+      if (b.stT > 1.4) { setState("idle"); b.nextAtk = 1.5 + Math.random(); }
+      break;
+    case "hurt":
+      b.vx *= 0.85;
+      b.tilt = Math.max(0, b.tilt - dt * 4);
+      if (b.stT > 0.4) { setState("idle"); b.nextAtk = Math.max(b.nextAtk, 0.9); }
+      break;
+    case "defeated":
+      b.vx *= 0.9;
+      b.tilt = Math.min(1, b.tilt + dt * 3);
+      b.cor = Math.max(0, b.cor - dt * 0.6);        // la corruption s'en va
+      if (b.cor > 0 && Math.random() < 0.3) puff(b.x + Math.random() * 20 - 10, b.y - 6, 1);
+      if (b.stT > 1.8 && !b.saidBye) { b.saidBye = true; say("D'accord… t'as gagné…", 2.4); }
+      if (b.stT > 4.4) { setState("calm"); b.cor = 0; }
+      break;
+    case "calm":       // libéré de la corruption, il se relève tout gentil
+    case "talk":
+      b.vx = 0;
+      b.tilt = Math.max(0, b.tilt - dt * 2.5);
+      b.face = toHero;
+      break;
+  }
+  b.x += b.vx * dt;
+  // il reste dans l'écran, à gauche des boutons A et B
+  b.x = Math.max(camX + 20, Math.min(LEVEL_END - Math.round(W * 0.25), b.x));
+
+  // aura violette tant qu'il est corrompu
+  if (b.cor > 0.5 && Math.random() < dt * 14) {
+    fx.push({ kind: "aura", x: b.x + Math.random() * 24 - 12, y: b.y - Math.random() * 30, life: 0.8, max: 0.8 });
+  }
+}
+
+function hitBoss(h) {
+  const b = boss;
+  if (!b.active || ["wait", "drop", "intro", "defeated", "calm", "talk"].includes(b.state)) return;
+  const reach = h.x + h.face * 11;
+  if (Math.abs(reach - b.x) > 13 || h.y < GROUND - 44) return;
+  b.hp--; b.flash = 0.15; shake = 0.12;
+  b.vx = h.face * 70; b.face = -h.face;
+  floatText("-1", b.x, b.y - 44, "#ffd166");
+  if (b.hp <= 0) {
+    setState("defeated"); b.vx = h.face * 50; shake = 0.4;
+    puff(b.x, b.y - 10, 14);
+    bubble = null; balls.length = 0;
+    banner = { title: "VICTOIRE !", sub: "Sixte est vaincu", life: 2.6, max: 2.6 };
+  } else {
+    if (b.state !== "fallen") setState("hurt");
+    say(HURT_LINES[b.hurtLine++ % HURT_LINES.length], 1.2);
+  }
+}
+
+function updateBalls(dt, h) {
+  for (const o of balls) {
+    o.vy += GRAV * 0.5 * dt; o.x += o.vx * dt; o.y += o.vy * dt;
+    if (!o.bounced && Math.abs(o.x - h.x) < 8 && o.y > h.y - 28 && o.y < h.y + 2) {
+      // elle rebondit sur l'héroïne : invincible !
+      o.bounced = true; o.vx = -o.vx * 0.5; o.vy = -110;
+      floatText("INVINCIBLE !", h.x, h.y - 34, "#ffd166");
+      for (let i = 0; i < 5; i++) spawnSparkle(h);
+    }
+    if (o.y >= GROUND - 2) {
+      o.dead = true; puff(o.x, GROUND, 4);
+      if (!o.bounced) floatText("pfff…", o.x, GROUND - 10, "#e7b6ff");
+    }
+  }
+  for (let i = balls.length - 1; i >= 0; i--) if (balls[i].dead) balls.splice(i, 1);
+  for (const t of texts) { t.life -= dt; t.y -= 14 * dt; }
+  for (let i = texts.length - 1; i >= 0; i--) if (texts[i].life <= 0) texts.splice(i, 1);
+  if (bubble) { bubble.life -= dt; if (bubble.life <= 0) bubble = null; }
+  if (banner) { banner.life -= dt; if (banner.life <= 0) banner = null; }
+  if (shake > 0) shake -= dt;
+}
+
+// --- dessin de Sixte
+const bspr = document.createElement("canvas"); bspr.width = 56; bspr.height = 56;
+const bsc = bspr.getContext("2d");
+const bsil = document.createElement("canvas"); bsil.width = 56; bsil.height = 56;
+const bsl = bsil.getContext("2d");
+const BOX = 28, BOY = 50;
+function br(c, x, y, w, h) { bsc.fillStyle = c; bsc.fillRect(BOX + x, BOY + y, w, h); }
+
+function drawBossSprite(b) {
+  bsc.clearRect(0, 0, bspr.width, bspr.height);
+  const k = b.cor;   // 1 = corrompu, 0 = redevenu gentil
+  const P = {
+    cape: mix("#3c8a6a", "#3a1d52", k), body: mix("#6fa8ff", "#5a2d82", k), bodyD: mix("#4a7fd0", "#40205e", k),
+    bodyL: mix("#a9cbff", "#7b3fb0", k), pants: mix("#3d4a6e", "#2b1d3a", k), shoe: "#1e1426",
+    skin: mix("#ffd5b5", "#c9b0d6", k), skinD: mix("#eaa98a", "#9f86b0", k), hair: "#2a1c30",
+    eye: mix("#2a1a2e", "#ff4df0", k), gold: mix("#ffd166", "#c9a640", k), glow: mix("#ffffff", "#ff4df0", k),
+  };
+  const walking = Math.abs(b.vx) > 3 && b.state !== "fallen" && b.state !== "defeated";
+  const sw = walking ? Math.round(Math.sin(b.t * 14) * 2) : 0;
+  const bob = walking ? (Math.sin(b.t * 14) > 0 ? -1 : 0) : Math.round(Math.sin(b.t * 3));
+  const flutter = Math.round(Math.sin(b.t * 6) * 1.5);
+  const y = bob;
+  const armsUp = b.state === "pose" || (b.state === "throw" && b.stT < 0.45);
+
+  // cape derrière
+  br(P.cape, -8, -24 + y, 5, 20 + flutter);
+  br(P.cape, -9, -12 + y, 2, 8 + flutter);
+  // jambes
+  br(P.pants, -4 + sw, -8, 3, 6); br(P.pants, 1 - sw, -8, 3, 6);
+  br(P.shoe, -5 + sw, -2, 4, 2); br(P.shoe, 1 - sw, -2, 5, 2);
+  // bras de derrière
+  if (b.state === "pose") br(P.bodyD, -7, -31 + y, 2, 9); else br(P.bodyD, -7, -19 + y, 2, 8);
+  // corps (sweat à capuche)
+  br(P.body, -5, -20 + y, 11, 13);
+  br(P.bodyL, -5, -20 + y, 11, 1);
+  br(P.bodyD, -5, -9 + y, 11, 2);
+  br(P.glow, 0, -16 + y, 2, 2);      // l'emblème qui brille
+  // tête
+  br(P.skin, -4, -30 + y, 9, 10);
+  br(P.skinD, -4, -21 + y, 9, 1);
+  // cheveux en bataille
+  br(P.hair, -5, -32 + y, 10, 3); br(P.hair, -5, -30 + y, 2, 5);
+  br(P.hair, -5, -34 + y, 2, 2); br(P.hair, -1, -35 + y, 2, 3); br(P.hair, 3, -34 + y, 2, 2);
+  // couronne de travers (évidemment)
+  br(P.gold, -1, -37 + y, 6, 2); br(P.gold, -1, -38 + y, 1, 1); br(P.gold, 2, -40 + y, 1, 3); br(P.gold, 4, -39 + y, 1, 2);
+  br("#ff6fa5", 2, -37 + y, 1, 1);
+  // visage
+  const hurt = b.state === "hurt" || b.state === "fallen" || b.state === "defeated";
+  if (b.state === "calm" || b.state === "talk") {
+    br(P.eye, 2, -27 + y, 1, 2);                                  // yeux doux
+    br("#ff9db8", 3, -24 + y, 2, 1);                              // il rougit
+    br("#2a1a2e", 1, -22 + y, 1, 1); br("#2a1a2e", 2, -21 + y, 2, 1); br("#2a1a2e", 4, -22 + y, 1, 1); // sourire
+  } else if (hurt) {
+    br(P.eye, 1, -27 + y, 1, 1); br(P.eye, 3, -26 + y, 1, 1); br(P.eye, 3, -28 + y, 1, 1);  // yeux en X
+    br("#2a1a2e", 2, -23 + y, 2, 2);   // bouche en « o »
+  } else {
+    br(P.hair, 1, -28 + y, 2, 1); br(P.hair, 3, -27 + y, 1, 1);    // sourcils méchants
+    br(P.eye, 2, -26 + y, 2, 1);
+    br("#2a1a2e", 1, -23 + y, 3, 1); br("#2a1a2e", 4, -24 + y, 1, 1);  // sourire narquois
+  }
+  if (b.state === "fallen") br("#7fd3ff", -3, -31 + y, 1, 2);   // goutte de sueur
+  // bras de devant
+  if (armsUp) { br(P.bodyL, 3, -31 + y, 2, 10); br(P.skin, 3, -33 + y, 2, 2);
+    if (b.state === "throw") br(P.glow, 2, -36 + y, 4, 3); }
+  else { br(P.bodyL, 2 - sw, -19 + y, 3, 8); br(P.skin, 2 - sw, -11 + y, 3, 2); }
+
+  bsl.clearRect(0, 0, bsil.width, bsil.height);
+  for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) bsl.drawImage(bspr, dx, dy);
+  bsl.globalCompositeOperation = "source-in";
+  bsl.fillStyle = "#1a1020"; bsl.fillRect(0, 0, bsil.width, bsil.height);
+  bsl.globalCompositeOperation = "source-over";
+  bsl.drawImage(bspr, 0, 0);
+  if (b.flash > 0) {      // flash blanc quand il prend un coup
+    bsl.globalCompositeOperation = "source-atop";
+    bsl.fillStyle = "rgba(255,255,255,.85)"; bsl.fillRect(0, 0, bsil.width, bsil.height);
+    bsl.globalCompositeOperation = "source-over";
+  }
+}
+
+function drawBoss(camX) {
+  const b = boss;
+  if (!b.active) return;
+  drawBossSprite(b);
+  const px = Math.round(b.x - camX), py = Math.round(b.y);
+  if (b.y >= GROUND - 1) { ctx.fillStyle = "rgba(30,15,40,.35)"; ctx.fillRect(px - 9, GROUND, 18, 2); }
+  ctx.save();
+  ctx.translate(px, py);
+  if (b.face < 0) ctx.scale(-1, 1);
+  if (b.tilt > 0) ctx.rotate(-b.tilt * Math.PI / 2);     // tombé à la renverse
+  ctx.drawImage(bsil, -BOX, -BOY);
+  ctx.restore();
+}
+
+function drawBalls(camX) {
+  for (const o of balls) {
+    const x = Math.round(o.x - camX), y = Math.round(o.y);
+    ctx.fillStyle = "#2a1030"; ctx.fillRect(x - 3, y - 2, 6, 4); ctx.fillRect(x - 2, y - 3, 4, 6);
+    ctx.fillStyle = "#b44dff"; ctx.fillRect(x - 2, y - 2, 4, 4);
+    ctx.fillStyle = "#ffb3ff"; ctx.fillRect(x - 1, y - 1, 1, 1);
+  }
+}
+
+function pixelText(text, x, y, color, size = 7, align = "center") {
+  ctx.font = `bold ${size}px monospace`; ctx.textBaseline = "middle"; ctx.textAlign = align;
+  ctx.fillStyle = "#1a1020";
+  for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) ctx.fillText(text, Math.round(x) + dx, Math.round(y) + dy);
+  ctx.fillStyle = color; ctx.fillText(text, Math.round(x), Math.round(y));
+  ctx.textAlign = "left";
+}
+
+function drawBossUI(camX) {
+  for (const t of texts) pixelText(t.text, t.x - camX, t.y, t.color);
+  const b = boss;
+  if (bubble && b.active) {
+    ctx.font = "bold 7px monospace";
+    const w = Math.ceil(ctx.measureText(bubble.text).width) + 10;
+    let bx = Math.round(b.x - camX - w / 2);
+    bx = Math.max(4, Math.min(W - w - 4, bx));
+    const by = Math.round(b.y - 62 + (b.tilt > 0.5 ? 26 : 0));
+    ctx.fillStyle = "#1a1020"; ctx.fillRect(bx - 1, by - 1, w + 2, 15);
+    ctx.fillStyle = "#ffffff"; ctx.fillRect(bx, by, w, 13);
+    const tx = Math.max(bx + 3, Math.min(bx + w - 6, Math.round(b.x - camX - 2)));
+    ctx.fillStyle = "#1a1020"; ctx.fillRect(tx - 1, by + 13, 5, 3);
+    ctx.fillStyle = "#ffffff"; ctx.fillRect(tx, by + 13, 3, 2); ctx.fillRect(tx + 1, by + 15, 1, 1);
+    ctx.fillStyle = "#2a1a2e"; ctx.textBaseline = "middle"; ctx.textAlign = "center";
+    ctx.fillText(bubble.text, bx + w / 2, by + 7); ctx.textAlign = "left";
+  }
+  // barre de vie
+  if (b.active && !["wait", "drop", "defeated", "calm", "talk"].includes(b.state)) {
+    const bw = Math.min(150, W - 40), bx = Math.round((W - bw) / 2), by = 34;
+    pixelText("SIXTE LE CORROMPU", W / 2, by - 6, "#e7b6ff", 7);
+    ctx.fillStyle = "#1a1020"; ctx.fillRect(bx - 1, by - 1, bw + 2, 7);
+    ctx.fillStyle = "#3a2450"; ctx.fillRect(bx, by, bw, 5);
+    ctx.fillStyle = "#b44dff"; ctx.fillRect(bx, by, Math.round(bw * b.hp / b.maxHp), 5);
+    ctx.fillStyle = "#e7b6ff"; ctx.fillRect(bx, by, Math.round(bw * b.hp / b.maxHp), 1);
+  }
+  // grand titre
+  if (banner) {
+    const a = Math.min(1, banner.life / 0.4, (banner.max - banner.life) / 0.25);
+    ctx.globalAlpha = Math.max(0, a);
+    ctx.fillStyle = "rgba(26,16,32,.75)"; ctx.fillRect(0, 62, W, 40);
+    const big = W < 260 ? 13 : 16;
+    pixelText(banner.title, W / 2, 78, banner.title === "VICTOIRE !" ? "#ffd166" : "#ff7ae8", big);
+    pixelText(banner.sub, W / 2, 94, "#ffffff", 7);
+    ctx.globalAlpha = 1;
+  }
+}
+
+// ------------------------------------------------------------ parler à Sixte
+const DIALOG = [
+  "Ah… merci. Tu m'as libéré de la corruption.",
+  "Bon… en vrai, j'étais un boss vraiment nul.",
+  "Mais j'avais un truc important à te dire depuis le début.",
+  "Zoé… approche. C'est pour toi.",
+];
+const talkBtn = document.getElementById("talk");
+let dialog = null;      // { i, chars }
+let finale = false;     // l'étape 5 (le grand message) démarre ici
+
+function startDialog(h) {
+  dialog = { i: 0, chars: 0 };
+  boss.state = "talk";
+  bubble = null;
+  h.face = Math.sign(boss.x - h.x) || 1;
+}
+function advanceDialog() {
+  const line = DIALOG[dialog.i];
+  if (dialog.chars < line.length) { dialog.chars = line.length; return; }   // affiche tout d'un coup
+  dialog.i++; dialog.chars = 0;
+  if (dialog.i >= DIALOG.length) { dialog = null; boss.state = "calm"; finale = true; startFinale(); }
+}
+// ------------------------------------------------------------ le message final
+const finaleEl = document.getElementById("finale");
+const bq = document.getElementById("bouquet");
+const bctx = bq.getContext("2d");
+let bloomT = -1;     // moment où le bouquet commence à éclore
+
+function startFinale() {
+  document.querySelectorAll(".pad").forEach((p) => (p.style.display = "none"));
+  talkBtn.hidden = true;
+  finaleEl.classList.add("on");
+  setTimeout(() => finaleEl.classList.add("text"), 900);
+  setTimeout(() => { bloomT = performance.now(); }, 1900);
+  setTimeout(() => finaleEl.classList.add("done"), 6500);
+  heartsLoop();
+}
+document.getElementById("again").addEventListener("pointerup", () => location.reload());
+
+function heartsLoop() {
+  let n = 0;
+  const spawn = () => {
+    if (n++ > 400) return;          // de quoi tenir longtemps
+    const s = document.createElement("span");
+    s.className = "heart";
+    s.textContent = "♥";
+    const size = 12 + Math.random() * 26;
+    s.style.left = Math.random() * 100 + "%";
+    s.style.fontSize = size + "px";
+    s.style.color = ["#ffffff", "#ffd1e3", "#ff8fbd", "#ffe08a"][Math.floor(Math.random() * 4)];
+    s.style.setProperty("--dx", (Math.random() * 80 - 40) + "px");
+    s.style.setProperty("--rot", (Math.random() * 60 - 30) + "deg");
+    s.style.animationDuration = 5 + Math.random() * 5 + "s";
+    finaleEl.insertBefore(s, finaleEl.firstChild);
+    setTimeout(() => s.remove(), 10500);
+    setTimeout(spawn, 260 + Math.random() * 260);
+  };
+  spawn();
+}
+
+// --- le bouquet, dessiné pixel par pixel
+function px(c, x, y, w = 1, h = 1) { bctx.fillStyle = c; bctx.fillRect(x, y, w, h); }
+function disc(cx, cy, r, c) {
+  for (let y = -r; y <= r; y++) for (let x = -r; x <= r; x++)
+    if (x * x + y * y <= r * r + r * 0.8) px(c, cx + x, cy + y);
+}
+function rose(cx, cy, s, dark, mid, light) {
+  const r = Math.round(5 * s); if (r < 1) return;
+  disc(cx, cy, r + 1, "#5a1030");
+  disc(cx, cy, r, mid);
+  disc(cx, cy, Math.max(1, r - 2), dark);
+  if (r >= 4) {     // spirale des pétales
+    px(light, cx - 1, cy - 2, 3, 1); px(light, cx + 1, cy - 1, 1, 2); px(light, cx - 2, cy, 1, 2);
+    px(light, cx - 1, cy + 2, 3, 1); px(mid, cx, cy, 1, 1);
+    px(light, cx - r + 1, cy - 1, 1, 2); px(light, cx + r - 1, cy + 1, 1, 2);
+  }
+}
+function daisy(cx, cy, s) {
+  const r = Math.round(3 * s); if (r < 1) return;
+  for (let i = 0; i < 8; i++) {
+    const a = i * Math.PI / 4;
+    disc(Math.round(cx + Math.cos(a) * r), Math.round(cy + Math.sin(a) * r), Math.max(1, Math.round(1.6 * s)), "#ffffff");
+  }
+  disc(cx, cy, Math.max(1, Math.round(2 * s)), "#ffc93c");
+  px("#e89a1c", cx, cy + 1);
+}
+function tulip(cx, cy, s, c, d) {
+  const h = Math.round(7 * s), w = Math.round(6 * s); if (h < 2) return;
+  px("#5a1030", cx - w / 2 - 1, cy - h / 2, w + 2, h + 1);
+  px(c, cx - w / 2, cy - h / 2 + 1, w, h - 1);
+  px(c, cx - w / 2, cy - h / 2 - 1, 2, 2); px(c, cx - 1, cy - h / 2 - 2, 2, 3); px(c, cx + w / 2 - 2, cy - h / 2 - 1, 2, 2);
+  px(d, cx - 1, cy - h / 2 + 1, 1, h - 2);
+}
+function sprig(cx, cy, s) {       // petites fleurs blanches (gypsophile)
+  if (s < 0.3) return;
+  for (const [dx, dy] of [[0, 0], [3, -2], [-3, -1], [1, -4], [-2, 3], [4, 2]]) px("#fff6fb", cx + dx, cy + dy, 2, 2);
+}
+function leaf(cx, cy, dir, s) {
+  const l = Math.round(7 * s); if (l < 2) return;
+  for (let i = 0; i < l; i++) {
+    const w = i < l / 2 ? 1 + Math.floor(i / 2) : 1 + Math.floor((l - i) / 2);
+    px(i % 2 ? "#3f9a58" : "#56b86c", cx + dir * i - (dir < 0 ? w - 1 : 0), cy - Math.round(i * 0.6), w, 2);
+  }
+}
+
+// ordre d'éclosion : [type, x, y, ...couleurs]
+const FLOWERS_BQ = [
+  ["leaf", 20, 40, -1], ["leaf", 52, 40, 1], ["leaf", 26, 30, -1], ["leaf", 46, 30, 1],
+  ["rose", 36, 26, "#c21d4a", "#ff3b6f", "#ff9ab3"],
+  ["rose", 25, 31, "#d9487f", "#ff7aa8", "#ffc2d6"],
+  ["rose", 47, 31, "#d9487f", "#ff7aa8", "#ffc2d6"],
+  ["tulip", 36, 13, "#ffb347", "#e98a1f"],
+  ["daisy", 28, 19], ["daisy", 45, 18],
+  ["rose", 31, 39, "#c21d4a", "#ff3b6f", "#ff9ab3"],
+  ["rose", 42, 39, "#a12a8c", "#d65bc0", "#f2b0e6"],
+  ["tulip", 18, 24, "#b58cff", "#8a5fe0"], ["tulip", 54, 24, "#b58cff", "#8a5fe0"],
+  ["daisy", 20, 36], ["daisy", 53, 35],
+  ["sprig", 33, 7], ["sprig", 14, 30], ["sprig", 58, 30], ["sprig", 23, 12], ["sprig", 50, 11],
+];
+
+function drawBouquet(t) {
+  bctx.clearRect(0, 0, bq.width, bq.height);
+  // tiges
+  for (const [x, y] of [[25, 31], [36, 26], [47, 31], [36, 13], [28, 19], [45, 18], [18, 24], [54, 24]])
+    for (let i = 0; i < 40; i++) {
+      const k = i / 40, sx = Math.round(x + (36 - x) * k), sy = Math.round(y + (62 - y) * k);
+      if (sy > 30) px("#3f8f56", sx, sy, 1, 1);
+    }
+  // papier derrière
+  for (let y = 40; y < 80; y++) {
+    const half = Math.round(24 * (1 - (y - 40) / 44));
+    px("#f4c9d8", 36 - half, y, half * 2, 1);
+  }
+  for (let x = 12; x < 61; x += 4) px("#f4c9d8", x, 38, 3, 2);   // bord dentelé
+  // fleurs, une par une
+  FLOWERS_BQ.forEach((f, i) => {
+    const s = Math.max(0, Math.min(1, (t - i * 0.14) / 0.35));
+    const ease = s < 1 ? s * (2.2 - 1.2 * s) : 1;     // petit rebond
+    if (ease <= 0) return;
+    const [kind, x, y, a, b, c] = f;
+    if (kind === "rose") rose(x, y, ease, a, b, c);
+    else if (kind === "daisy") daisy(x, y, ease);
+    else if (kind === "tulip") tulip(x, y, ease, a, b);
+    else if (kind === "sprig") sprig(x, y, ease);
+    else leaf(x, y, a, ease);
+  });
+  // papier devant
+  for (let y = 46; y < 82; y++) {
+    const half = Math.round(20 * (1 - (y - 46) / 38));
+    if (half <= 0) continue;
+    px("#7a2050", 36 - half - 1, y, half * 2 + 2, 1);
+    px("#fff0f5", 36 - half, y, half * 2, 1);
+    px("#ffd6e4", 36, y, half, 1);                       // ombre d'un côté
+  }
+  px("#7a2050", 15, 45, 42, 1);
+  // ruban et noeud
+  px("#7a2050", 26, 60, 21, 6); px("#ff3b6f", 27, 61, 19, 4); px("#ff9ab3", 27, 61, 19, 1);
+  disc(30, 59, 3, "#7a2050"); disc(42, 59, 3, "#7a2050");
+  disc(30, 59, 2, "#ff3b6f"); disc(42, 59, 2, "#ff3b6f");
+  px("#ff9ab3", 29, 58); px("#ff9ab3", 41, 58);
+  disc(36, 62, 2, "#7a2050"); disc(36, 62, 1, "#ff6f95");
+  px("#ff3b6f", 32, 66, 2, 6); px("#ff3b6f", 38, 66, 2, 7); px("#7a2050", 31, 72, 3, 1); px("#7a2050", 38, 73, 3, 1);
+  // scintillement
+  if (t > FLOWERS_BQ.length * 0.14 + 0.4) {
+    const k = Math.floor(t * 4) % 6;
+    const spots = [[12, 16], [60, 14], [36, 2], [8, 34], [64, 40], [20, 6]];
+    const [sx, sy] = spots[k];
+    px("#fffbe0", sx, sy - 2, 1, 5); px("#fffbe0", sx - 2, sy, 5, 1);
+  }
+}
+
+// coupe une phrase en lignes qui tiennent dans la boîte
+function wrap(text, maxW) {
+  const words = text.split(" "), lines = [];
+  let cur = "";
+  for (const w of words) {
+    const t = cur ? cur + " " + w : w;
+    if (ctx.measureText(t).width > maxW && cur) { lines.push(cur); cur = w; } else cur = t;
+  }
+  if (cur) lines.push(cur);
+  return lines;
+}
+
+function drawDialog(camX) {
+  // petite bulle « … » au-dessus de Sixte quand on peut lui parler
+  if (!talkBtn.hidden) {
+    const x = Math.round(boss.x - camX), y = Math.round(boss.y - 54 + Math.sin(boss.t * 5) * 2);
+    ctx.fillStyle = "#1a1020"; ctx.fillRect(x - 9, y - 1, 18, 11);
+    ctx.fillStyle = "#ffffff"; ctx.fillRect(x - 8, y, 16, 9); ctx.fillRect(x - 2, y + 9, 3, 2);
+    ctx.fillStyle = "#ff6fa5"; for (let i = 0; i < 3; i++) ctx.fillRect(x - 5 + i * 4, y + 4, 2, 2);
+  }
+  if (!dialog) return;
+  const line = DIALOG[dialog.i];
+  const shown = line.slice(0, Math.floor(dialog.chars));
+  const bw = W - 16, bx = 8, by = 8;
+  ctx.font = "bold 8px monospace";
+  const lines = wrap(line, bw - 16);
+  const bh = 22 + lines.length * 11;
+  ctx.fillStyle = "#1a1020"; ctx.fillRect(bx - 1, by - 1, bw + 2, bh + 2);
+  ctx.fillStyle = "#fff6fb"; ctx.fillRect(bx, by, bw, bh);
+  ctx.fillStyle = "#ffd1e3"; ctx.fillRect(bx, by + bh - 2, bw, 2);
+  // nom
+  ctx.fillStyle = "#6fa8ff"; ctx.fillRect(bx + 6, by - 4, 34, 10);
+  ctx.fillStyle = "#ffffff"; ctx.textBaseline = "middle"; ctx.textAlign = "left";
+  ctx.font = "bold 7px monospace"; ctx.fillText("SIXTE", bx + 10, by + 1);
+  // texte (lettre par lettre)
+  ctx.font = "bold 8px monospace"; ctx.fillStyle = "#2a1a2e";
+  let left = shown.length;
+  lines.forEach((l, j) => {
+    const part = l.slice(0, Math.max(0, left));
+    left -= l.length + 1;
+    ctx.fillText(part, bx + 8, by + 14 + j * 11);
+  });
+  // petite flèche qui clignote quand on peut continuer
+  if (dialog.chars >= line.length && Math.floor(boss.t * 3) % 2 === 0) {
+    ctx.fillStyle = "#ff6fa5";
+    ctx.fillRect(bx + bw - 12, by + bh - 9, 5, 1); ctx.fillRect(bx + bw - 11, by + bh - 8, 3, 1); ctx.fillRect(bx + bw - 10, by + bh - 7, 1, 1);
+  }
+}
+
+// ------------------------------------------------------------ boucle
+let camX = 0, paused = false, last = performance.now(), sparkT = 0;
+
+function update(dt) {
+  const h = hero;
+  h.t += dt;
+  // pendant l'entrée du boss, l'héroïne attend
+  // et pendant le dialogue aussi
+  const locked = boss.state === "drop" || boss.state === "intro" || !!dialog || finale;
+  const near = boss.state === "calm" && Math.abs(h.x - boss.x) < 36 && h.onGround;
+
+  if (dialog) {
+    dialog.chars += dt * 38;                       // le texte s'écrit lettre par lettre
+    if (pressed.talk || pressed.hit || pressed.jump) advanceDialog();
+  } else if (near && (pressed.talk || pressed.hit)) {
+    startDialog(h);
+    pressed.hit = false;
+  }
+  talkBtn.hidden = !(near && !dialog && !finale);
+
+  let dir = locked ? 0 : (keys.right ? 1 : 0) - (keys.left ? 1 : 0);
+  h.vx = dir * SPEED;
+  if (dir) h.face = dir;
+  if (pressed.jump && h.onGround && !locked) { h.vy = -JUMP; h.onGround = false; }
+  if (pressed.hit && h.hitT <= 0 && !locked) { h.hitT = HIT_TIME; h.hitDone = false; spawnHit(h); }
+  pressed.jump = pressed.hit = pressed.talk = false;
+  if (!keys.jump && h.vy < -80) h.vy = -80;     // saut plus court si on lâche vite
+
+  h.vy += GRAV * dt;
+  h.x += h.vx * dt;
+  h.y += h.vy * dt;
+  if (h.y >= GROUND) { h.y = GROUND; h.vy = 0; h.onGround = true; }
+  if (h.hitT > 0) h.hitT -= dt;
+  h.walkT += Math.abs(h.vx) > 1 ? dt : 0;
+
+  // la caméra n'avance que vers l'avant : on va tout droit
+  const target = h.x - W * 0.35;
+  if (target > camX) camX = Math.min(target, LEVEL_END - W);
+  if (h.x < camX + 8) h.x = camX + 8;
+  if (h.x > LEVEL_END - 12) h.x = LEVEL_END - 12;   // fin du chemin : l'arène du boss
+
+  // le boss arrive quand on atteint le bout du chemin
+  if (!boss.active && camX >= LEVEL_END - W - 0.5) startBoss();
+  if (boss.active) {
+    updateBoss(dt, h);
+    // le coup part au milieu du geste, une seule fois par coup
+    if (h.hitT > 0 && h.hitT < HIT_TIME * 0.7 && !h.hitDone) { h.hitDone = true; hitBoss(h); }
+    // on ne traverse pas Sixte (sauf en sautant par-dessus)
+    const dx = h.x - boss.x;
+    if (boss.state !== "drop" && Math.abs(dx) < 11 && h.y > GROUND - 30) h.x = boss.x + (dx >= 0 ? 11 : -11);
+    h.x = Math.max(camX + 8, Math.min(LEVEL_END - 12, h.x));
+  }
+  updateBalls(dt, h);
+
+  // invincible : des étincelles dorées l'entourent
+  sparkT += dt;
+  if (sparkT > 0.18) { sparkT = 0; spawnSparkle(h); }
+  for (const p of fx) {
+    p.life -= dt; if (p.vx) p.x += p.vx * dt;
+    if (p.kind === "spark") p.y -= 6 * dt;
+    if (p.kind === "aura") p.y -= 18 * dt;
+    if (p.kind === "puff") { p.y -= 10 * dt; p.vx *= 0.92; }
+  }
+  for (let i = fx.length - 1; i >= 0; i--) if (fx[i].life <= 0) fx.splice(i, 1);
+}
+
+// ------------------------------------------------------------ le chemin
+// mélange de deux couleurs "#rrggbb" (k = 0 → a, k = 1 → b)
+function mix(a, b, k) {
+  const pa = parseInt(a.slice(1), 16), pb = parseInt(b.slice(1), 16);
+  const c = (s) => Math.round(((pa >> s) & 255) * (1 - k) + ((pb >> s) & 255) * k);
+  return `rgb(${c(16)},${c(8)},${c(0)})`;
+}
+// hasard toujours identique, pour que le décor soit le même à chaque partie
+let seed = 7;
+const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+
+const DECO = [];      // arbres, buissons, fleurs, panneaux le long du chemin
+for (let x = 60; x < LEVEL_END - 60; x += 50 + rnd() * 60) {
+  DECO.push({ kind: rnd() < 0.55 ? "tree" : "bush", x: Math.round(x), s: 0.8 + rnd() * 0.5, v: rnd() });
+}
+const FLOWERS = [];
+for (let x = 10; x < LEVEL_END; x += 6 + rnd() * 14) {
+  FLOWERS.push({ x: Math.round(x), y: GROUND + 1 + Math.floor(rnd() * 3), c: Math.floor(rnd() * 4) });
+}
+const CLOUDS = [];
+for (let i = 0; i < 9; i++) CLOUDS.push({ x: Math.round(rnd() * 900), y: 14 + Math.round(rnd() * 50), w: 18 + Math.round(rnd() * 22) });
+
+// 0 = début du chemin tout joli, 1 = devant le repaire de Sixte
+function gloom(x) { return Math.max(0, Math.min(1, (x - LEVEL_END * 0.55) / (LEVEL_END * 0.35))); }
+
+function hillLayer(par, base, amp, f1, f2, color) {
+  ctx.fillStyle = color;
+  for (let sx = 0; sx < W; sx++) {
+    const wx = sx + camX * par;
+    const hgt = base + Math.sin(wx * f1) * amp + Math.sin(wx * f2 + 1.3) * amp * 0.5;
+    const y = Math.round(GROUND - hgt);
+    ctx.fillRect(sx, y, 1, GROUND - y);
+  }
+}
+
+function drawTree(x, s, k, v) {
+  const tx = Math.round(x), th = Math.round(22 * s), cr = Math.round(11 * s);
+  ctx.fillStyle = mix("#8a5a3c", "#3b2a3e", k);
+  ctx.fillRect(tx - 2, GROUND - th, 4, th);
+  if (k > 0.8) {          // arbre mort près du repaire : juste des branches
+    ctx.fillRect(tx - 7, GROUND - th + 2, 6, 2); ctx.fillRect(tx + 2, GROUND - th + 6, 6, 2);
+    ctx.fillRect(tx - 1, GROUND - th - 6, 2, 6);
+    return;
+  }
+  const leaf = mix(v > 0.5 ? "#5fbf6e" : "#7ccf8a", "#5b4a6e", k);
+  const leafL = mix("#a6e3a0", "#7a6890", k);
+  ctx.fillStyle = mix("#3f8f56", "#3a2c4c", k);
+  ctx.fillRect(tx - cr - 1, GROUND - th - cr + 2, cr * 2 + 2, cr + 2);
+  ctx.fillStyle = leaf;
+  ctx.fillRect(tx - cr, GROUND - th - cr, cr * 2, cr + 1);
+  ctx.fillRect(tx - cr + 3, GROUND - th - cr - 4, cr * 2 - 6, 5);
+  ctx.fillStyle = leafL;
+  ctx.fillRect(tx - cr + 3, GROUND - th - cr - 3, 4, 2);
+  if (k < 0.3 && v > 0.6) {   // quelques fruits roses
+    ctx.fillStyle = "#ff6fa5";
+    ctx.fillRect(tx - 4, GROUND - th - 4, 2, 2); ctx.fillRect(tx + 3, GROUND - th - 8, 2, 2);
+  }
+}
+
+function drawBush(x, s, k) {
+  const bx = Math.round(x), w = Math.round(14 * s);
+  ctx.fillStyle = mix("#3f8f56", "#3a2c4c", k);
+  ctx.fillRect(bx - w / 2 - 1, GROUND - 8, w + 2, 8);
+  ctx.fillStyle = mix("#6cc77c", "#5b4a6e", k);
+  ctx.fillRect(bx - w / 2, GROUND - 9, w, 8);
+  ctx.fillRect(bx - w / 2 + 3, GROUND - 12, w - 6, 4);
+  if (k > 0.6) {             // ronces violettes
+    ctx.fillStyle = "#a24bc2";
+    ctx.fillRect(bx - 3, GROUND - 13, 1, 2); ctx.fillRect(bx + 2, GROUND - 11, 1, 2);
+  }
+}
+
+function drawSign(x, text, dark) {
+  const sx = Math.round(x);
+  ctx.fillStyle = dark ? "#3b2a3e" : "#8a5a3c";
+  ctx.fillRect(sx - 1, GROUND - 22, 3, 22);
+  ctx.font = "7px monospace"; ctx.textBaseline = "top";
+  const w = Math.ceil(ctx.measureText(text).width) + 8;
+  ctx.fillStyle = dark ? "#2a1a2e" : "#6b4430"; ctx.fillRect(sx - w / 2 - 1, GROUND - 33, w + 2, 13);
+  ctx.fillStyle = dark ? "#4a2f5a" : "#d8a878"; ctx.fillRect(sx - w / 2, GROUND - 32, w, 11);
+  ctx.fillStyle = dark ? "#e7b6ff" : "#4a2a1e"; ctx.fillText(text, sx - w / 2 + 4, GROUND - 30);
+}
+
+function drawWorld() {
+  const k = gloom(camX + W / 2);
+  // ciel : rose tendre au début, violet orageux devant le repaire
+  const g = ctx.createLinearGradient(0, 0, 0, GROUND);
+  g.addColorStop(0, mix("#ffb8d4", "#3a2450", k));
+  g.addColorStop(1, mix("#fff0e6", "#8a4f8c", k));
+  ctx.fillStyle = g; ctx.fillRect(0, 0, W, GROUND);
+  // soleil
+  ctx.fillStyle = mix("#fff3b0", "#c98fd0", k);
+  const sunX = W - 60, sunY = 34 + Math.round(k * 20);
+  ctx.fillRect(sunX - 8, sunY - 12, 16, 24); ctx.fillRect(sunX - 12, sunY - 8, 24, 16); ctx.fillRect(sunX - 10, sunY - 10, 20, 20);
+  // nuages
+  ctx.fillStyle = mix("#ffffff", "#5a3e6e", k);
+  for (const c of CLOUDS) {
+    let x = ((c.x - camX * 0.15) % 900 + 900) % 900 - 60;
+    x = Math.round(x);
+    ctx.fillRect(x, c.y, c.w, 5); ctx.fillRect(x + 4, c.y - 3, c.w - 10, 4); ctx.fillRect(x + 8, c.y - 6, 8, 4);
+  }
+  // collines lointaines et proches
+  hillLayer(0.25, 34, 10, 0.012, 0.031, mix("#e3b5e8", "#4b3260", k));
+  hillLayer(0.5, 20, 7, 0.02, 0.047, mix("#a8dba0", "#4f3a5e", k));
+
+  // décor au bord du chemin
+  for (const d of DECO) {
+    const x = d.x - camX; if (x < -40 || x > W + 40) continue;
+    const kk = gloom(d.x);
+    if (d.kind === "tree") drawTree(x, d.s, kk, d.v); else drawBush(x, d.s, kk);
+  }
+  drawSign(165 - camX, "→ Tout droit !", false);
+  drawSign(LEVEL_END - 260 - camX, "Repaire de Sixte", true);
+
+  // sol
+  ctx.fillStyle = mix("#7ccf8a", "#5b4a6e", k); ctx.fillRect(0, GROUND, W, 4);
+  ctx.fillStyle = mix("#5fb36f", "#45355a", k); ctx.fillRect(0, GROUND + 3, W, 1);
+  ctx.fillStyle = mix("#d8a878", "#4a3446", k); ctx.fillRect(0, GROUND + 4, W, H - GROUND - 4);
+  ctx.fillStyle = mix("#c4936a", "#3c2a3a", k);
+  for (let x = -(camX % 22); x < W; x += 22) {
+    ctx.fillRect(Math.round(x), GROUND + 9, 7, 3);
+    ctx.fillRect(Math.round(x) + 11, GROUND + 17, 5, 2);
+  }
+  // fleurs dans l'herbe (elles fanent près du repaire)
+  const FC = ["#ff6fa5", "#ffd166", "#ffffff", "#b58cff"];
+  for (const f of FLOWERS) {
+    const x = Math.round(f.x - camX); if (x < -2 || x > W + 2) continue;
+    if (gloom(f.x) > 0.7) continue;
+    ctx.fillStyle = "#3f8f56"; ctx.fillRect(x, f.y - 3, 1, 2);
+    ctx.fillStyle = FC[f.c]; ctx.fillRect(x - 1, f.y - 4, 3, 1); ctx.fillRect(x, f.y - 5, 1, 3);
+  }
+  // badge invincible
+  ctx.fillStyle = "rgba(42,26,46,.55)"; ctx.fillRect(6, 6, 64, 13);
+  ctx.fillStyle = "#ffd166"; ctx.font = "8px monospace"; ctx.textBaseline = "top";
+  ctx.fillText("★ INVINCIBLE", 9, 9);
+}
+
+function frame(now) {
+  const dt = Math.min(0.05, (now - last) / 1000);
+  last = now;
+  if (!paused) update(dt);
+  ctx.save();
+  if (shake > 0) ctx.translate(Math.round(Math.random() * 4 - 2), Math.round(Math.random() * 4 - 2));
+  drawWorld();
+  drawBoss(camX);
+  drawFx(camX);
+  drawHero(hero, camX);
+  drawBalls(camX);
+  ctx.restore();
+  drawBossUI(camX);
+  drawDialog(camX);
+  if (bloomT >= 0) drawBouquet((now - bloomT) / 1000);   // en temps réel
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+
+Von.onPause(() => { paused = true; });
+Von.onResume(() => { paused = false; last = performance.now(); });
+</script>
+</body>
+</html>
