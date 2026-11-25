@@ -1,0 +1,59 @@
+rules_version = '2';
+
+// Règles de sécurité de Von (fonction Amis).
+// À coller dans la console Firebase : Firestore Database → Règles → Publier.
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() { return request.auth != null; }
+    function me() { return request.auth.uid; }
+    function validName(n) { return n is string && n.size() >= 1 && n.size() <= 20; }
+
+    // Profil public d'un joueur : son tag et son pseudo.
+    match /profiles/{uid} {
+      allow read: if signedIn();
+      allow create: if signedIn() && me() == uid
+        && request.resource.data.keys().hasOnly(['tag', 'name', 'createdAt'])
+        && validName(request.resource.data.name)
+        && request.resource.data.tag is string
+        && getAfter(/databases/$(database)/documents/tags/$(request.resource.data.tag)).data.uid == uid;
+      // Seul le pseudo peut changer, jamais le tag.
+      allow update: if signedIn() && me() == uid
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name'])
+        && validName(request.resource.data.name);
+    }
+
+    // Annuaire des tags (un tag = un joueur, définitif).
+    match /tags/{tag} {
+      allow read: if signedIn();
+      allow create: if signedIn()
+        && tag.matches('^[2-9A-HJ-NP-Z]{6}$')
+        && request.resource.data.keys().hasOnly(['uid'])
+        && request.resource.data.uid == me()
+        && !exists(/databases/$(database)/documents/profiles/$(request.auth.uid));
+    }
+
+    // Demande d'ami de « from » vers « to ».
+    match /requests/{rid} {
+      allow read: if signedIn() && (resource.data.from == me() || resource.data.to == me());
+      allow create: if signedIn()
+        && request.resource.data.keys().hasOnly(['from', 'to', 'createdAt'])
+        && request.resource.data.from == me()
+        && request.resource.data.to is string
+        && request.resource.data.to != me()
+        && rid == me() + '_' + request.resource.data.to
+        && exists(/databases/$(database)/documents/profiles/$(request.resource.data.to))
+        && !exists(/databases/$(database)/documents/friends/$(request.auth.uid)/list/$(request.resource.data.to));
+      allow delete: if signedIn() && (resource.data.from == me() || resource.data.to == me());
+    }
+
+    // Liste d'amis : une amitié n'est créée que si une demande existe entre les deux joueurs.
+    match /friends/{owner}/list/{friend} {
+      allow read: if signedIn() && me() == owner;
+      allow create: if signedIn()
+        && request.resource.data.keys().hasOnly(['since'])
+        && ((me() == owner && exists(/databases/$(database)/documents/requests/$(friend + '_' + owner)))
+          || (me() == friend && exists(/databases/$(database)/documents/requests/$(owner + '_' + friend))));
+      allow delete: if signedIn() && (me() == owner || me() == friend);
+    }
+  }
+}

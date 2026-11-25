@@ -1,10 +1,12 @@
 // Service worker de Von : rend l'appli et les jeux installés disponibles hors connexion.
-const APP_CACHE = "von-app-v2";
+const APP_CACHE = "von-app-v3";
 const SHELL = [
   "./",
   "index.html",
   "app.css",
   "app.js",
+  "friends.js",
+  "firebase-config.js",
   "manifest.webmanifest",
   "icons/icon-180.png",
   "icons/icon-192.png",

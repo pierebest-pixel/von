@@ -40,8 +40,16 @@ Pour publier une nouvelle version d'un jeu, augmente `version` : Réglages → �
 ## Mettre à jour l'appli Von
 Après une modification de l'appli, change `APP_CACHE` dans `sw.js` (ex. `von-app-v2`).
 
+## Amis
+Chaque joueur reçoit un tag unique (ex. `#K7P2QX`) visible dans Réglages → Profil et dans l'onglet Amis.
+On ajoute un ami en entrant son tag dans « Trouver un ami » ; il accepte ou refuse la demande.
+Les données sont dans Firebase (Firestore + connexion anonyme) :
+- `firebase-config.js` : la configuration du projet Firebase (tant qu'elle vaut `null`, les amis sont « bientôt disponibles ») ;
+- `firestore.rules` : les règles de sécurité, à copier dans la console Firebase (Firestore → Règles).
+
 ## Fichiers
 - `index.html`, `app.css`, `app.js` : l'appli
+- `friends.js`, `firebase-config.js`, `firestore.rules` : les amis
 - `sw.js` : fonctionnement hors connexion
 - `games/` : catalogue, SDK et jeux
 - `icons/` : icône et logo

@@ -120,9 +120,32 @@ main { padding: env(safe-area-inset-top) 0 calc(var(--tabbar-h) + 16px); min-hei
 .bar span { display: block; height: 100%; min-width: 2%; background: var(--accent); border-radius: 4px; }
 .foot { text-align: center; color: var(--muted); font-size: 13px; padding: 24px 0; }
 
+/* ---------- Amis ---------- */
+.avatar { width: 46px; height: 46px; border-radius: 50%; flex-shrink: 0; display: grid; place-items: center; font-size: 20px; font-weight: 700; color: #fff; }
+.row.person { gap: 12px; padding: 10px 0; }
+.row.person .btn { padding: 7px 14px; }
+.row .chev { color: #5a5a63; font-size: 22px; line-height: 1; }
+.round-btn { width: 32px; height: 32px; border-radius: 50%; background: var(--surface-2); color: var(--muted); font-size: 14px; flex-shrink: 0; }
+.tag-card { margin: 4px 20px 0; padding: 14px 16px; background: var(--surface); border-radius: 14px; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.tag-card .k { font-size: 13px; color: var(--muted); }
+.tag-card .v { font-size: 24px; font-weight: 700; letter-spacing: .06em; margin-top: 2px; -webkit-user-select: text; user-select: text; }
+.find { margin: 0 20px; display: flex; align-items: center; gap: 8px; background: var(--surface-2); border-radius: 11px; padding: 5px 5px 5px 12px; }
+.find .hash { color: var(--muted); font-size: 17px; font-weight: 600; }
+.find input { flex: 1; min-width: 0; background: none; border: none; outline: none; color: var(--text); font: inherit; font-size: 17px; letter-spacing: .06em; text-transform: uppercase; padding: 5px 0; -webkit-user-select: text; user-select: text; }
+.find input::placeholder { color: var(--muted); text-transform: none; letter-spacing: 0; }
+.find .btn:disabled, .btn:disabled { opacity: .45; }
+.cell.col { flex-direction: column; align-items: stretch; gap: 8px; padding-bottom: 12px; }
+.cell .find { margin: 0; }
+.cell-input { flex: 1; min-width: 0; text-align: right; background: none; border: none; outline: none; color: var(--muted); font: inherit; font-size: 17px; -webkit-user-select: text; user-select: text; }
+.cell-input:focus { color: var(--text); }
+.val.tag { font-weight: 600; letter-spacing: .05em; color: var(--accent); }
+.hint { padding: 4px 36px 0; color: var(--muted); font-size: 14px; line-height: 1.4; }
+.notice { margin: 10px 20px 0; padding: 10px 14px; border-radius: 12px; background: rgba(255, 159, 10, .14); color: #ffb340; font-size: 14px; line-height: 1.35; }
+
 /* ---------- Barre d'onglets ---------- */
 .tabbar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 10; height: var(--tabbar-h); padding: 7px 0 env(safe-area-inset-bottom); background: rgba(22, 22, 26, .86); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-top: .5px solid var(--sep); display: flex; justify-content: space-around; align-items: flex-start; }
-.tab { display: flex; flex-direction: column; align-items: center; gap: 3px; font-size: 10px; font-weight: 500; color: var(--muted); width: 90px; }
+.tab { position: relative; display: flex; flex-direction: column; align-items: center; gap: 3px; font-size: 10px; font-weight: 500; color: var(--muted); width: 80px; }
+.tab-badge { position: absolute; top: -3px; left: calc(50% + 6px); min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px; background: var(--danger); color: #fff; font-size: 11px; font-weight: 700; line-height: 18px; text-align: center; }
 .tab svg { width: 27px; height: 27px; }
 .tab.active { color: var(--accent); }
 
