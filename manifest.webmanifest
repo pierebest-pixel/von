@@ -1,0 +1,17 @@
+{
+  "name": "Von",
+  "short_name": "Von",
+  "description": "Tes jeux, installés sur ton téléphone.",
+  "lang": "fr",
+  "start_url": "./#/library",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#08070a",
+  "theme_color": "#0e0e11",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

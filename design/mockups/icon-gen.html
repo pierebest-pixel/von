@@ -1,0 +1,92 @@
+<!doctype html><html><head><meta charset="utf-8">
+<link href="https://fonts.googleapis.com/css2?family=Creepster&family=Griffy&family=Rubik:wght@900&family=Fredoka:wght@700&display=swap" rel="stylesheet">
+<style>body{margin:0;background:#1c1c22;display:flex;flex-wrap:wrap;gap:40px;padding:36px;font-family:-apple-system,system-ui,sans-serif;color:#fff}
+.o{display:flex;flex-direction:column;align-items:center;gap:12px;font-weight:600;font-size:17px}
+canvas{width:200px;height:200px;border-radius:44px;box-shadow:0 10px 30px rgba(0,0,0,.5)}</style></head><body>
+<script>
+const S = 1024;
+const P = new URLSearchParams(location.search);
+const variants = [{ label: 'Von', font: '400 470px Creepster', seed: 3 }];
+function rng(s){ return () => (s = (s * 16807) % 2147483647) / 2147483647; }
+
+function make(v) {
+  const r = rng(v.seed);
+  const c = document.createElement('canvas'); c.width = c.height = S;
+  const g = c.getContext('2d');
+  // 1) masque : texte + coulures en blanc
+  const m = document.createElement('canvas'); m.width = m.height = S;
+  const mg = m.getContext('2d');
+  mg.font = v.font; mg.textAlign = 'center'; mg.textBaseline = 'alphabetic';
+  const met = mg.measureText('Von');
+  const h = met.actualBoundingBoxAscent;
+  // bloc texte+coulures centré : coulures ~ 0.55h
+  const total = h + h * 0.62;
+  const base = (S - total) / 2 + h;
+  mg.fillStyle = '#fff';
+  mg.fillText('Von', S / 2, base);
+  // repère l'encre juste au-dessus de la ligne de base
+  const row = mg.getImageData(0, Math.round(base - 6), S, 1).data;
+  const runs = []; let start = -1;
+  for (let x = 0; x < S; x++) {
+    const on = row[x * 4 + 3] > 128;
+    if (on && start < 0) start = x;
+    if (!on && start >= 0) { runs.push([start, x]); start = -1; }
+  }
+  // coulures : une par zone de contact, plus quelques petites
+  for (const [a, b] of runs) {
+    const w = b - a; if (w < 10) continue;
+    const n = w > 90 ? 2 : 1;
+    for (let k = 0; k < n; k++) {
+      const cx = a + w * (n === 1 ? 0.5 : (k ? 0.72 : 0.28)) + (r() - .5) * w * .15;
+      const dw = Math.min(w * (n === 1 ? .55 : .32), 46) * (0.7 + r() * .4);
+      const len = h * (0.18 + r() * 0.45);
+      mg.beginPath();
+      mg.moveTo(cx - dw / 2 - 10, base - 14);
+      mg.lineTo(cx - dw / 2, base + len - dw);
+      mg.arc(cx, base + len - dw / 2 + 2, dw / 2 + 3, Math.PI, 0, true);
+      mg.lineTo(cx + dw / 2 + 10, base - 14);
+      mg.fill();
+      // goutte détachée
+      if (r() > .55) { mg.beginPath(); mg.arc(cx, base + len + dw * .9 + 12, dw * .32, 0, 7); mg.fill(); }
+    }
+  }
+  // 2) effet "goo" : flou + seuil pour fusionner l'encre
+  const b = document.createElement('canvas'); b.width = b.height = S;
+  const bg = b.getContext('2d'); bg.filter = 'blur(7px)'; bg.drawImage(m, 0, 0);
+  const id = bg.getImageData(0, 0, S, S), d = id.data;
+  for (let i = 3; i < d.length; i += 4) { const a = d[i]; d[i] = a < 110 ? 0 : a > 150 ? 255 : (a - 110) * 6.375; }
+  bg.putImageData(id, 0, 0);
+  bg.filter = 'none'; bg.font = v.font; bg.textAlign = 'center'; bg.fillStyle = '#fff'; bg.fillText('Von', S / 2, base);
+  // 3) fond + encre violette
+  if (P.has('clear')) { g.save(); g.globalAlpha = 0; }
+  g.fillStyle = '#08070a'; g.fillRect(0, 0, S, S);
+  const glow = g.createRadialGradient(S/2, S*.45, 30, S/2, S*.45, S*.62);
+  glow.addColorStop(0, 'rgba(124,58,237,.30)'); glow.addColorStop(.6, 'rgba(76,5,25,.18)'); glow.addColorStop(1, 'rgba(0,0,0,0)');
+  g.fillStyle = glow; g.fillRect(0, 0, S, S);
+  const nz = g.getImageData(0, 0, S, S), nd = nz.data;
+  for (let i = 0; i < nd.length; i += 4) { const n = (Math.random() - .5) * 18; nd[i] += n; nd[i+1] += n; nd[i+2] += n; }
+  g.putImageData(nz, 0, 0);
+  const vig = g.createRadialGradient(S/2, S/2, S*.35, S/2, S/2, S*.75);
+  vig.addColorStop(0, 'rgba(0,0,0,0)'); vig.addColorStop(1, 'rgba(0,0,0,.75)');
+  g.fillStyle = vig; g.fillRect(0, 0, S, S);
+  const ink = document.createElement('canvas'); ink.width = ink.height = S;
+  const ig = ink.getContext('2d');
+  ig.drawImage(b, 0, 0); ig.globalCompositeOperation = 'source-in';
+  const grad = ig.createLinearGradient(0, base - h, 0, base + h * .7);
+  grad.addColorStop(0, '#b59cff'); grad.addColorStop(.28, '#7c3aed'); grad.addColorStop(.5, '#7a1f6e'); grad.addColorStop(.68, '#a3123a'); grad.addColorStop(1, '#6e0a1c');
+  ig.fillStyle = grad; ig.fillRect(0, 0, S, S);
+  if (P.has('clear')) { g.restore(); g.clearRect(0, 0, S, S); }
+  g.save(); g.shadowColor = 'rgba(139,92,246,.55)'; g.shadowBlur = 40; g.drawImage(ink, 0, 0); g.restore(); g.drawImage(ink, 0, 0);
+  return c;
+}
+document.fonts.ready.then(async () => {
+  for (const v of variants) await document.fonts.load(v.font);
+  for (const v of variants) {
+    const d = document.createElement('div'); d.className = 'o';
+    const c = make(v); c.dataset.label = v.label; d.appendChild(c);
+    d.appendChild(Object.assign(document.createElement('div'), { textContent: v.label }));
+    document.body.appendChild(d);
+  }
+  window.done = true; window.png = document.querySelector('canvas').toDataURL('image/png');
+});
+</script></body></html>
