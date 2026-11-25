@@ -38,6 +38,46 @@ const MUSIC = (() => {
 
   // ---------------------------------------------------------------- morceaux
   const SONGS = {
+
+    // Vallée des Brumes : la mineur, lent et mélancolique
+    region1: { bpm: 84, dark: true, octave: 0,
+      chords: ["A2 C3 E3", "F2 A2 C3", "C3 E3 G3", "G2 B2 D3", "A2 C3 E3", "F2 A2 C3", "D3 F3 A3", "E2 G#2 B2"],
+      lead: ["E5:2 C5:1 D5:1  E5:1.5 F5:.5 E5:1 C5:1  G4:2 C5:1 E5:1  D5:3 -:1", "E5:2 A5:1 G5:1  F5:1.5 E5:.5 D5:1 C5:1  D5:1 F5:1 A5:1 G5:1  E5:4"],
+      harmony: [null, null] },
+    // Archipel des Marées : ré dorien, plus léger
+    region2: { bpm: 100, dark: true, energy: true, octave: 0,
+      chords: ["D3 F3 A3", "G2 B2 D3", "D3 F3 A3", "C3 E3 G3", "Bb2 D3 F3", "C3 E3 G3", "D3 F3 A3", "A2 C#3 E3"],
+      lead: ["A4:1 D5:1 F5:1 E5:1  D5:1.5 B4:.5 D5:2  A4:1 D5:1 F5:1 G5:1  E5:3 -:1", "F5:1 G5:1 A5:2  G5:1 F5:1 D5:2  E5:1 F5:1 G5:1 E5:1  D5:4"],
+      harmony: [null, null] },
+    // Pics de Givre : mi mineur, très espacé
+    region3: { bpm: 72, dark: true, octave: 0,
+      chords: ["E2 G2 B2", "C3 E3 G3", "G2 B2 D3", "D3 F#3 A3", "E2 G2 B2", "C3 E3 G3", "A2 C3 E3", "B2 D#3 F#3"],
+      lead: ["B4:3 G4:1  E5:2 D5:2  B4:3 A4:1  F#4:4", "G4:2 B4:2  E5:3 F#5:1  G5:2 F#5:1 E5:1  D#5:4"],
+      harmony: [null, null] },
+    // Couronne Éteinte : do mineur, oppressant
+    region4: { bpm: 66, dark: true, octave: -1,
+      chords: ["C3 Eb3 G3", "Ab2 C3 Eb3", "F2 Ab2 C3", "G2 B2 D3", "C3 Eb3 G3", "Db3 F3 Ab3", "F2 Ab2 C3", "G2 B2 D3"],
+      lead: ["G5:2 Eb5:2  C5:3 D5:1  Eb5:2 F5:1 Eb5:1  D5:4", "G5:2 Ab5:2  F5:3 Eb5:1  D5:2 Eb5:1 C5:1  B4:4"],
+      harmony: [null, null] },
+    // Combat : rapide
+    battle: { bpm: 148, octave: 0,
+      chords: ["E3 G3 B3", "C3 E3 G3", "D3 F#3 A3", "B2 D#3 F#3", "E3 G3 B3", "C3 E3 G3", "A2 C3 E3", "B2 D#3 F#3"],
+      lead: ["E5:.5 G5:.5 B5:1 A5:.5 G5:.5 F#5:1  E5:.5 G5:.5 C6:1 B5:1 G5:1  A5:.5 F#5:.5 D5:1 E5:.5 F#5:.5 A5:1  F#5:2 D#5:2",
+             "E5:.5 G5:.5 B5:1 E6:1 D6:1  C6:1.5 B5:.5 G5:1 E5:1  A5:1 C6:1 B5:1 A5:1  B5:4"],
+      harmony: [null, "B4:1 B4:1 G5:1 G5:1  E5:1.5 E5:.5 E5:1 C5:1  E5:1 E5:1 D5:1 C5:1  D#5:4"] },
+    // Boss : intense
+    boss: { bpm: 158, octave: 0,
+      chords: ["D3 F3 A3", "Bb2 D3 F3", "C3 E3 G3", "A2 C#3 E3", "D3 F3 A3", "Bb2 D3 F3", "G2 Bb2 D3", "A2 C#3 E3"],
+      lead: ["D5:.5 D5:.5 A5:1 G5:.5 F5:.5 E5:1  F5:.5 G5:.5 A5:1 Bb5:1 A5:1  G5:.5 F5:.5 E5:1 C5:1 E5:1  C#5:2 E5:2",
+             "D6:1 C6:.5 Bb5:.5 A5:1 F5:1  Bb5:1.5 A5:.5 G5:1 F5:1  G5:1 A5:1 Bb5:1 C6:1  C#6:2 A5:2",
+             "F5:1 A5:1 D6:2  D6:1 F6:1 E6:1 D6:1  C6:1 Bb5:1 A5:1 G5:1  A5:4",
+             "D6:.5 C6:.5 Bb5:.5 A5:.5 G5:.5 F5:.5 E5:.5 D5:.5  Bb4:1 D5:1 F5:1 Bb5:1  C6:1 E5:1 G5:1 C6:1  C#6:2 E6:2"],
+      harmony: [null, null, "A4:1 D5:1 F5:2  F5:1 A5:1 G5:1 F5:1  E5:1 D5:1 C5:1 Bb4:1  C#5:4", null] },
+    // Fin : berceuse triste, sans batterie
+    ending: { bpm: 60, dark: true, calm: true, octave: 0,
+      chords: ["D3 F3 A3", "Bb2 D3 F3", "F2 A2 C3", "C3 E3 G3", "D3 F3 A3", "Bb2 D3 F3", "G2 Bb2 D3", "A2 C#3 E3"],
+      lead: ["A4:2 D5:1 E5:1  F5:3 E5:1  C5:2 A4:2  G4:4", "A4:2 F5:1 E5:1  D5:3 C5:1  Bb4:1 D5:1 G5:2  E5:2 C#5:2"],
+      harmony: [null, null] },
     // Thème de l'écran titre : épique, ré mineur, i–VI–III–VII
     title: {
       bpm: 104, dark: true, energy: true, octave: -1,
@@ -81,8 +121,8 @@ const MUSIC = (() => {
               for (let i = 0; i < 8; i++) tone(ctx, master, bt + i * beat / 2, freq(ch[0]) / (i % 2 ? 1 : 2), beat / 2 * .8, { type: "triangle", vol: .14 });
               for (let i = 0; i < 4; i++) { const tt = bt + i * beat; if (i % 2 === 0) kick(ctx, master, tt, .5); else snare(ctx, master, tt, intense ? .17 : .12); hat(ctx, master, tt + beat / 2, .035); }
               if (intense) kick(ctx, master, bt + 2.5 * beat, .35);
-            } else {
-              kick(ctx, master, bt, .5); snare(ctx, master, bt + 2 * beat, intense ? .16 : .1);
+            } else if (!S.calm) {
+              if (!S.calm) { kick(ctx, master, bt, .5); snare(ctx, master, bt + 2 * beat, intense ? .16 : .1); }
               if (intense) { kick(ctx, master, bt + 2.5 * beat, .35); hat(ctx, master, bt + 1 * beat, .03); hat(ctx, master, bt + 3 * beat, .03); }
             }
             continue;
@@ -107,6 +147,7 @@ const MUSIC = (() => {
   // Lecture en boucle dans le jeu
   let ctx = null, timer = null, current = null;
   function play(name) {
+    if (window.Von && Von.sound === false) return;
     if (current === name) return;
     stop();
     ctx = ctx || new (window.AudioContext || window.webkitAudioContext)();
@@ -121,5 +162,5 @@ const MUSIC = (() => {
     clearTimeout(timer); timer = null; current = null;
     if (play.out) { const o = play.out; o.gain.setTargetAtTime(0, ctx.currentTime, .2); setTimeout(() => o.disconnect(), 800); play.out = null; }
   }
-  return { schedule, play, stop, SONGS, freq, tone, noise };
+  return { schedule, play, stop, SONGS, freq, tone, noise, get _ctx() { return ctx; }, unlock() { ctx = ctx || new (window.AudioContext || window.webkitAudioContext)(); if (ctx.state === "suspended") ctx.resume(); } };
 })();

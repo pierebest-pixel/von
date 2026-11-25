@@ -1,3 +1,50 @@
 {
-  "games": []
+  "games": [
+    {
+      "id": "watchers",
+      "name": "Watchers",
+      "category": "Aventure",
+      "players": "Un joueur",
+      "version": "1.0",
+      "addedAt": "2026-11-25",
+      "size": 396962,
+      "controls": "Joystick, A et B",
+      "description": "Le Soleil-Cœur s'éteint. Ta sœur Lys est partie le sauver et n'est jamais revenue.\nCapture des Watchers avec ta Lanterne, entraîne-les jusqu'au niveau 100 et traverse quatre régions — Vallée des Brumes, Archipel des Marées, Pics de Givre, Couronne Éteinte — pour découvrir ce qu'elle est devenue.\n77 Watchers (1 chance sur 20 d'en croiser un chromatique), 6 légendaires, 14 boss, un boss secret et des quêtes qui ne finissent pas toujours bien.",
+      "icon": "icon.png",
+      "screenshots": [
+        "shot1.png",
+        "shot2.png",
+        "shot3.png"
+      ],
+      "files": [
+        "index.html",
+        "art.js",
+        "backgrounds.js",
+        "creatures-art.js",
+        "data/core.js",
+        "data/maps.js",
+        "data/story.js",
+        "engine/battle.js",
+        "engine/main.js",
+        "engine/rules.js",
+        "engine/state.js",
+        "engine/ui.js",
+        "engine/world.js",
+        "fonts/silk-400-ext.woff2",
+        "fonts/silk-400.woff2",
+        "fonts/silk-700-ext.woff2",
+        "fonts/silk-700.woff2",
+        "icon.png",
+        "items-art.js",
+        "logo.js",
+        "music.js",
+        "shot1.png",
+        "shot2.png",
+        "shot3.png",
+        "style.css",
+        "trainers-art.js",
+        "worldmap.js"
+      ]
+    }
+  ]
 }
