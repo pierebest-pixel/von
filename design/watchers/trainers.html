@@ -1,0 +1,44 @@
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<link href="https://fonts.googleapis.com/css2?family=Silkscreen:wght@400;700&display=swap" rel="stylesheet">
+<style>*{margin:0;box-sizing:border-box}body{background:#0e0d13;font-family:Silkscreen,monospace;color:#f0ecf5;padding:16px}
+h2{font-size:12px;color:#8e8e97;margin:14px 4px 8px;font-weight:400}
+.row{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
+.t{background:rgba(255,255,255,.05);border-radius:12px;padding:6px 2px 8px;text-align:center}
+.t canvas{width:64px;height:96px;image-rendering:pixelated}
+.t b{display:block;font-size:8px}.t small{font-size:6px;color:#8e8e97}
+.t.boss{background:linear-gradient(rgba(163,18,58,.25),rgba(255,255,255,.04))}</style></head><body>
+<script src="../../games/watchers/trainers-art.js"></script>
+<script>
+const S=TRAINER_ART.SKIN;
+const groups=[
+ ['DRESSEURS',[
+  ['Gamin','Dresseur',{skin:S[0],hair:'#a0522d',hairStyle:'spiky',outfit:'coat',main:'#3a6a8a',accent:'#e8c830'}],
+  ['Pêcheuse','Dresseuse',{skin:S[2],hair:'#1a1418',hairStyle:'braid',outfit:'coat',main:'#2a7a6a',accent:'#f5d58a'}],
+  ['Montagnard','Dresseur',{skin:S[1],hair:'#c9c9c9',hairStyle:'short',outfit:'armor',main:'#5a6a7a',accent:'#a8c4e8'}],
+  ['Disciple','Ordre du Crépuscule',{skin:S[0],hairStyle:'hood',outfit:'robe',main:'#3a1a4a',accent:'#a3123a',mask:'#1a1418',eyes:'#ff5a3a'}],
+  ['Érudite','Dresseuse',{skin:S[3],hair:'#3a2a20',hairStyle:'bun',outfit:'robe',main:'#6a4a2a',accent:'#c9a84a'}]]],
+ ['BOSS · VALLÉE DES BRUMES',[
+  ['Sylve','Gardienne de la forêt',{skin:S[1],hair:'#4e9a4a',hairStyle:'long',outfit:'robe',main:'#2f5a3a',accent:'#c4e06a',hat:'circlet',prop:'staff',aura:'#5ee0c6'}],
+  ['Varn','Commandant de l\'Ordre',{skin:S[0],hairStyle:'hood',outfit:'cloak',main:'#2a1030',accent:'#a3123a',mask:'#120a10',prop:'sword'}],
+  ['Ysolde','Gardienne de la Brume',{skin:S[4],hair:'#e8e3f0',hairStyle:'long',outfit:'robe',main:'#8a8aa8',accent:'#c46fb0',hat:'circlet',aura:'#c46fb0'}]]],
+ ['BOSS · ARCHIPEL DES MARÉES',[
+  ['Maréa','Capitaine',{skin:S[2],hair:'#1a1418',hairStyle:'long',outfit:'captain',main:'#1c3f7a',accent:'#f2b134',hat:'tricorne',prop:'sword'}],
+  ['Brann','Corsaire de l\'Ordre',{skin:S[1],hair:'#8a2a1a',hairStyle:'spiky',outfit:'coat',main:'#3a1a2a',accent:'#a3123a',cape:'#2a0a1a'}],
+  ['Oren','Gardien du Phare',{skin:S[3],hair:'#e8e8e8',hairStyle:'short',outfit:'coat',main:'#c9a84a',accent:'#fff3a0',prop:'lantern',aura:'#ffd36b'}]]],
+ ['BOSS · PICS DE GIVRE',[
+  ['Givrel','Ermite des cimes',{skin:S[4],hair:'#ffffff',hairStyle:'long',outfit:'cloak',main:'#5a78b8',accent:'#e8f4ff',prop:'staff',aura:'#8fd0e8'}],
+  ['Nivéa','Commandante de l\'Ordre',{skin:S[0],hair:'#c9def5',hairStyle:'bun',outfit:'armor',main:'#2a3a5a',accent:'#a3123a',cape:'#1a1a3a'}],
+  ['Bor','Gardien du Glacier',{skin:S[1],hair:'#5a3a22',hairStyle:'bald',outfit:'armor',main:'#8aa6d8',accent:'#e8f4ff',hat:'horns'}]]],
+ ['BOSS · COURONNE ÉTEINTE',[
+  ['Cendre','Gardien éteint',{skin:S[5],hairStyle:'hood',outfit:'robe',main:'#3a1a1a',accent:'#ff5a3a',mask:'#1a0a0a',aura:'#ff5a3a'}],
+  ['Écume','Gardienne éteinte',{skin:S[5],hair:'#3a5a7a',hairStyle:'long',outfit:'robe',main:'#1a2a3a',accent:'#5fa0b8',mask:'#0a1a2a',eyes:'#5ee0c6',aura:'#3b7dd8'}],
+  ['Silence','Gardien éteint',{skin:S[5],hairStyle:'hood',outfit:'cloak',main:'#1a1420',accent:'#6b4a96',mask:'#0a0810',eyes:'#a36bd6',aura:'#6b4a96'}],
+  ['Lys','Ce qu\'il reste d\'elle',{skin:S[4],hair:'#2a1a3a',hairStyle:'long',outfit:'cloak',main:'#2a2433',accent:'#5ee0c6',prop:'lantern',aura:'#5ee0c6',eyes:'#5ee0c6'}],
+  ['Maël','Maître du Crépuscule',{skin:S[0],hair:'#e8e3f0',hairStyle:'long',outfit:'cloak',main:'#12061e',accent:'#ff9a4a',hat:'crown',prop:'staff',aura:'#a3123a',cape:'#4a0f3a'}]]],
+];
+for(const [title,list] of groups){
+ document.body.insertAdjacentHTML('beforeend',`<h2>${title}</h2><div class="row"></div>`);
+ const row=document.body.lastElementChild;
+ for(const [n,role,spec] of list){const d=document.createElement('div');d.className='t'+(title.startsWith('BOSS')?' boss':'');d.append(TRAINER_ART.draw(spec));d.insertAdjacentHTML('beforeend',`<b>${n}</b><small>${role}</small>`);row.append(d);}
+}
+</script></body></html>

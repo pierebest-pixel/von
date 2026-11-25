@@ -1,0 +1,36 @@
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<link href="https://fonts.googleapis.com/css2?family=Silkscreen:wght@400;700&display=swap" rel="stylesheet">
+<style>*{margin:0;box-sizing:border-box}body{background:#0e0d13;font-family:Silkscreen,monospace;color:#f0ecf5;padding:14px}
+.fr{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.f{position:relative;height:250px;border-radius:14px;overflow:hidden}
+.f>canvas.bg{position:absolute;inset:0;width:100%;height:100%;image-rendering:pixelated}
+.f canvas.s{position:absolute;image-rendering:pixelated}
+.cap{position:absolute;left:0;right:0;bottom:0;background:rgba(15,12,22,.85);font-size:9px;padding:6px 8px}
+.num{position:absolute;top:6px;left:8px;font-size:10px;background:#5ee0c6;color:#0b2a24;padding:1px 6px;border-radius:6px}
+.secret{display:flex;gap:14px;align-items:center;margin-top:14px;background:linear-gradient(90deg,rgba(255,122,58,.18),rgba(255,255,255,.03));border-radius:16px;padding:12px}
+.secret canvas{width:96px;height:144px;image-rendering:pixelated}
+.secret b{font-size:14px}.secret p{font-size:9px;color:#b9b2c8;line-height:1.6;margin-top:6px}
+</style></head><body>
+<script src="../../games/watchers/backgrounds.js"></script><script src="../../games/watchers/creatures-art.js"></script><script src="../../games/watchers/items-art.js"></script><script src="../../games/watchers/trainers-art.js"></script>
+<div class="fr" id="fr"></div><div class="secret" id="sec"></div>
+<script>
+const L=()=>ITEM_ART.lantern(ITEM_ART.LANTERNS.lanterne);
+const C=()=>CREATURE_ART.draw({seed:41,type:'Esprit',type2:'Vent',shape:'spirit',stage:1});
+const frames=[
+ ['Lancer : la Lanterne décrit un arc', (f)=>{add(f,C(),120,40,90);add(f,L(),70,110,30);trail(f,[[30,200],[50,150],[70,120]]);}],
+ ['Elle s\'ouvre : le Watcher devient lumière', (f)=>{const c=C();c.style.opacity=.35;c.style.filter='brightness(3) sepia(1) hue-rotate(120deg)';add(f,c,120,40,90);add(f,L(),140,128,30);beams(f);}],
+ ['Elle tombe et tremble (×1 à ×3)', (f)=>{const l=L();l.style.transform='rotate(-18deg)';add(f,l,140,150,30);shake(f);}],
+ ['Capturé ! Éclats de lumière', (f)=>{add(f,L(),140,150,30);spark(f);f.insertAdjacentHTML('beforeend','<div class="cap" style="font-size:10px;color:#5ee0c6">BRUMELIN EST CAPTURÉ !</div>');}],
+];
+function add(f,c,x,y,s){c.className='s';Object.assign(c.style,{left:x+'px',top:y+'px',width:s+'px',height:s+'px'});f.append(c);}
+function dot(f,x,y,s,col,op=1){const d=document.createElement('div');Object.assign(d.style,{position:'absolute',left:x+'px',top:y+'px',width:s+'px',height:s+'px',background:col,opacity:op});f.append(d);}
+function trail(f,p){p.forEach(([x,y],i)=>dot(f,x,y,4+i,'#5ee0c6',.3+i*.25));}
+function beams(f){for(let i=0;i<7;i++){const t=i/6;dot(f,165-t*10+(i%2?6:-6),85+t*45,4,i%2?'#d9fff6':'#5ee0c6',.9);}}
+function shake(f){[['#d9fff6',128,150],['#d9fff6',178,150]].forEach(([c,x,y])=>{for(let i=0;i<3;i++)dot(f,x+(x<150?-i*4:i*4),y+i*5,3,c,.8-i*.2)});}
+function spark(f){for(let i=0;i<10;i++){const a=i/10*Math.PI*2;dot(f,155+Math.cos(a)*30,165+Math.sin(a)*24,i%2?4:3,i%3?'#ffd36b':'#5ee0c6');}}
+frames.forEach(([t,fn],i)=>{const f=document.createElement('div');f.className='f';const bg=BATTLE_BG.draw(1,80,96);bg.className='bg';f.append(bg);fn(f);
+ if(i<3)f.insertAdjacentHTML('beforeend',`<div class="cap">${t}</div>`);f.insertAdjacentHTML('afterbegin',`<span class="num" style="z-index:2">${i+1}</span>`);document.getElementById('fr').append(f);});
+const s=TRAINER_ART.draw({skin:'#050203',hairStyle:'hood',outfit:'cloak',main:'#050203',accent:'#ff7a3a',mask:'#050203',eyes:'#ffd36b',aura:'#ff7a3a',hat:'crown',cape:'#120608'});
+document.getElementById('sec').append(s);
+document.getElementById('sec').insertAdjacentHTML('beforeend',`<div><b>L'ÉCLIPSE</b><div style="font-size:9px;color:#ff9a4a;margin-top:3px">BOSS SECRET · APRÈS LA FIN</div><p>Au cœur du soleil éteint attend celui qui a dévoré sa lumière. Ses 6 Watchers sont au niveau 100. On ne le trouve qu'après avoir capturé les 6 légendaires.</p></div>`);
+</script></body></html>

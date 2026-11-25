@@ -1,0 +1,33 @@
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<link href="https://fonts.googleapis.com/css2?family=Silkscreen:wght@400;700&display=swap" rel="stylesheet"><link rel="stylesheet" href="ui.css"></head><body>
+<script src="../../games/watchers/creatures-art.js"></script>
+<script>
+const TC={Flamme:'#d9572b',Onde:'#3b7dd8',Sève:'#4e9a4a',Roc:'#8a7356',Givre:'#5fa8c8',Foudre:'#c9a820',Vent:'#6fa58c',Ombre:'#6b4a96',Lumière:'#c9a84a',Esprit:'#b05a9c'};
+const team=[
+ {n:'Braisillon',lv:9,t:['Flamme'],hp:[27,33],seed:3,shape:'beast',stage:2},
+ {n:'Brumelin',lv:8,t:['Esprit','Vent'],hp:[22,24],seed:41,shape:'spirit',stage:1,shiny:1},
+ {n:'Ondelle',lv:7,t:['Onde'],hp:[9,26],seed:17,shape:'fish',stage:1,st:['EMP','#a35bd6']},
+ {n:'Galet',lv:6,t:['Roc'],hp:[0,28],seed:22,shape:'biped',stage:1,ko:1},
+];
+const pill=t=>`<span class="pill" style="background:${TC[t]}">${t}</span>`;
+const hpc=(a,b)=>a/b>.5?'#4ec26a':a/b>.2?'#e8c830':'#ff453a';
+const card=(c,i)=>`<div class="card ${i===0?'lead':''} ${c.ko?'ko':''}"><div class="av" data-i="${i}">${c.shiny?'<span class="star">★</span>':''}</div><div class="inf">
+<div class="nm">${c.n}<small>Nv ${c.lv}</small></div><div class="tp">${c.t.map(pill).join('')}${c.st?`<span class="st" style="background:${c.st[1]}">${c.st[0]}</span>`:''}${c.ko?'<span class="st" style="background:#555">K.O.</span>':''}</div>
+<div class="hpb"><span style="width:${c.hp[0]/c.hp[1]*100}%;background:${hpc(...c.hp)}"></span></div><div class="hpn"><span>PV</span><span>${c.hp[0]} / ${c.hp[1]}</span></div></div></div>`;
+const m=new URLSearchParams(location.search).get('m');
+if(m==='detail'){
+ const c=team[1];
+ document.body.innerHTML=`<div class="top"><span class="back">‹ Équipe</span><h1></h1></div>
+ <div style="text-align:center;margin:-6px 0 8px"><div class="av" id="big" style="width:150px;height:150px;margin:0 auto;border-radius:30px;background:radial-gradient(circle,rgba(196,111,176,.25),rgba(255,255,255,.03))"><span class="star" style="font-size:20px;top:4px;right:8px">★</span></div>
+ <div style="font-size:20px;font-weight:700;margin-top:10px">${c.n}</div><div style="font-size:10px;color:#f7d77a;margin:3px 0">CHROMATIQUE</div><div class="tp" style="justify-content:center">${c.t.map(pill).join('')}</div></div>
+ <div class="grp"><div class="row"><span>Niveau</span><span>8</span></div><div class="row"><span>Expérience</span><span>412 / 512</span></div><div class="row"><span>Capturé</span><span>Vallée des Brumes</span></div></div>
+ <div class="lbl">STATISTIQUES</div><div class="grp" style="padding:6px 0">${[['PV',24,'#4ec26a'],['Attaque',14,'#ff9f0a'],['Défense',11,'#0a84ff'],['Att. Spé',19,'#bf5af2'],['Déf. Spé',16,'#64d2ff'],['Vitesse',21,'#ff375f']].map(([a,v,col])=>`<div class="stat"><b>${a}</b><i>${v}</i><div class="sb"><span style="width:${v/30*100}%;background:${col}"></span></div></div>`).join('')}</div>
+ <div class="lbl">ATTAQUES</div><div class="grp">${[['Voile de brume','Esprit','15/15'],['Bourrasque','Vent','20/25'],['Murmure','Esprit','10/10'],['Écho','Lumière','8/10']].map(([n,t,pp])=>`<div class="mv"><span class="dot" style="background:${TC[t]}"></span><span class="n">${n}</span><span class="pp">PP ${pp}</span></div>`).join('')}</div>`;
+ const cv=CREATURE_ART.draw({seed:41,type:'Esprit',type2:'Vent',shape:'spirit',stage:1,shiny:1});cv.style.cssText='width:130px;height:130px;image-rendering:pixelated';document.getElementById('big').append(cv);
+}else{
+ document.body.innerHTML=`<div class="top"><span class="back">‹ Menu</span><h1>Équipe</h1></div><div class="sub">4 / 6 · Le premier combat en tête</div>${team.map(card).join('')}
+ <div style="margin:14px 14px 0;border:2px dashed rgba(255,255,255,.12);border-radius:16px;padding:18px;text-align:center;font-size:10px;color:#6b6575">Emplacement libre ×2</div>
+ <div class="sub" style="margin-top:14px">Maintiens et glisse pour réorganiser</div>`;
+ team.forEach((c,i)=>{const cv=CREATURE_ART.draw({seed:c.seed,type:c.t[0],type2:c.t[1],shape:c.shape,stage:c.stage,shiny:c.shiny});document.querySelector(`.av[data-i="${i}"]`).prepend(cv);});
+}
+</script></body></html>

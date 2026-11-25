@@ -1,0 +1,44 @@
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<link href="https://fonts.googleapis.com/css2?family=Silkscreen:wght@400;700&display=swap" rel="stylesheet"><link rel="stylesheet" href="ui.css">
+<style>
+.seg{display:flex;margin:0 14px 12px;background:rgba(255,255,255,.07);border-radius:11px;padding:3px}
+.seg span{flex:1;text-align:center;font-size:10px;padding:8px 0;border-radius:9px;color:#b9b2c8}
+.seg span.on{background:#3a3546;color:#fff}
+.it{display:flex;align-items:center;gap:12px;padding:10px 14px}
+.it+.it{border-top:1px solid rgba(255,255,255,.07)}
+.it canvas{width:36px;height:36px;image-rendering:pixelated;background:rgba(255,255,255,.05);border-radius:9px;padding:3px}
+.it .t{flex:1}.it .t b{display:block;font-size:11px}.it .t small{font-size:8px;color:#8e8e97}
+.it .q{font-size:11px;color:#b9b2c8}
+.price{display:flex;align-items:center;gap:4px;font-size:11px;color:#f7d77a}
+.price canvas{width:16px;height:16px;padding:0;background:none}
+.buy{background:#5ee0c6;color:#0b2a24;font-size:10px;font-weight:700;border-radius:999px;padding:6px 12px}
+.wallet{display:flex;justify-content:center;align-items:center;gap:6px;font-size:13px;color:#f7d77a;margin:-4px 0 12px}
+.wallet canvas{width:20px;height:20px;image-rendering:pixelated}
+.merchant{display:flex;gap:12px;align-items:center;margin:0 14px 12px;background:rgba(255,255,255,.04);border-radius:16px;padding:10px 12px;font-size:10px;line-height:1.5;color:#d6d0e0}
+.merchant canvas{width:48px;height:48px;image-rendering:pixelated;flex-shrink:0}
+.swap{display:flex;align-items:center;gap:6px;font-size:10px}
+.swap canvas{width:22px;height:22px;padding:2px}
+</style></head><body>
+<script src="../../games/watchers/items-art.js"></script><script src="../../games/watchers/art.js"></script>
+<script>
+const I=ITEM_ART.icon, m=new URLSearchParams(location.search).get('m');
+const row=(id,n,desc,right)=>`<div class="it"><span data-ic="${id}"></span><div class="t"><b>${n}</b><small>${desc}</small></div>${right}</div>`;
+if(m==='shop'){
+ document.body.innerHTML=`<div class="top"><span class="back">‹ Quitter</span><h1>Boutique</h1></div><div class="wallet"><span data-ic="eclat"></span> 1 240 Éclats</div>
+ <div class="merchant"><span id="npc"></span>« Les lanternes se font rares depuis que le soleil faiblit… Choisis bien, voyageur. »</div>
+ <div class="seg"><span class="on">Acheter</span><span>Vendre</span><span>Échanger</span></div>
+ <div class="grp">${[['lanterne','Lanterne','Capture standard',200],['grande','Grande Lanterne','Meilleure chance',600],['soin','Fiole de soin','+20 PV',150],['supersoin','Super fiole','+60 PV',400],['revive','Plume d\'éveil','Ranime à 50 %',900],['antidote','Herbe violette','Soigne le poison',100],['totalsoin','Herbe d\'or','Soigne tout état',450]].map(([id,n,d,p])=>row(id,n,d,`<span class="price"><span data-ic="eclat"></span>${p}</span><span class="buy">+</span>`)).join('')}</div>`;
+ const npc=ART.npc('#7a5a3a','#5a2a4a');npc.style.cssText='width:48px;height:48px;image-rendering:pixelated';document.getElementById('npc').append(npc);
+}else if(m==='trade'){
+ document.body.innerHTML=`<div class="top"><span class="back">‹ Quitter</span><h1>Boutique</h1></div><div class="wallet"><span data-ic="eclat"></span> 1 240 Éclats</div>
+ <div class="seg"><span>Acheter</span><span>Vendre</span><span class="on">Échanger</span></div>
+ <div class="grp">${[['baie',3,'aube',1],['baiebleue',5,'revive',1],['cristal',1,'eternelle',1],['baie',2,'supersoin',1]].map(([a,qa,b,qb])=>`<div class="it"><div class="swap"><span data-ic="${a}"></span>×${qa}</div><span style="flex:1;text-align:center;color:#5ee0c6">→</span><div class="swap"><span data-ic="${b}"></span>×${qb}</div><span class="buy">Échanger</span></div>`).join('')}</div>
+ <div class="sub" style="margin-top:6px">Les baies se trouvent en explorant</div>`;
+}else{
+ document.body.innerHTML=`<div class="top"><span class="back">‹ Menu</span><h1>Sac</h1></div><div class="wallet"><span data-ic="eclat"></span> 1 240 Éclats</div>
+ <div class="seg"><span class="on">Soins</span><span>Lanternes</span><span>Divers</span><span>Quête</span></div>
+ <div class="grp">${[['soin','Fiole de soin','+20 PV','×6'],['supersoin','Super fiole','+60 PV','×2'],['soinmax','Fiole d\'aurore','Tous les PV','×1'],['revive','Plume d\'éveil','Ranime à 50 %','×1'],['antidote','Herbe violette','Soigne le poison','×3'],['antibrule','Herbe bleue','Soigne la brûlure','×1'],['antigel','Herbe rouge','Dégèle','×2'],['totalsoin','Herbe d\'or','Soigne tout état','×1']].map(([id,n,d,q])=>row(id,n,d,`<span class="q">${q}</span>`)).join('')}</div>
+ <div class="lbl">LANTERNES</div><div class="grp" style="display:flex;justify-content:space-around;padding:12px 6px">${[['lanterne','×12'],['grande','×4'],['aube','×1'],['eternelle','×0']].map(([id,q])=>`<div style="text-align:center;font-size:9px"><span data-ic="${id}" data-big="1"></span><div style="margin-top:4px">${q}</div></div>`).join('')}</div>`;
+}
+document.querySelectorAll('[data-ic]').forEach(s=>{const c=I(s.dataset.ic).cloneNode();c.getContext('2d').drawImage(I(s.dataset.ic),0,0);if(s.dataset.big)c.style.cssText='width:52px;height:52px;image-rendering:pixelated';s.replaceWith(c);});
+</script></body></html>

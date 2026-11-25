@@ -1,0 +1,53 @@
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<link href="https://fonts.googleapis.com/css2?family=Silkscreen:wght@400;700&display=swap" rel="stylesheet"><link rel="stylesheet" href="ui.css">
+<style>
+.seg{display:flex;margin:0 14px 12px;background:rgba(255,255,255,.07);border-radius:11px;padding:3px}
+.seg span{flex:1;text-align:center;font-size:9px;padding:8px 0;border-radius:9px;color:#b9b2c8}.seg span.on{background:#3a3546;color:#fff}
+.dex{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:0 14px}
+.dc{background:rgba(255,255,255,.06);border-radius:12px;aspect-ratio:1;position:relative;display:grid;place-items:center}
+.dc canvas{width:78%;height:78%;image-rendering:pixelated}
+.dc .no{position:absolute;top:4px;left:6px;font-size:7px;color:#8e8e97}
+.dc .cap{position:absolute;bottom:4px;right:5px;width:9px;height:9px;border-radius:50%;background:#5ee0c6}
+.dc .q{font-size:16px;color:#3a3546}
+.cnt{display:flex;justify-content:center;gap:18px;font-size:10px;color:#b9b2c8;margin:-4px 0 12px}.cnt b{color:#fff}
+.qt{padding:12px 14px}.qt+.qt{border-top:1px solid rgba(255,255,255,.07)}
+.qt .h{display:flex;justify-content:space-between;align-items:center;font-size:11px;font-weight:700}
+.qt .tag{font-size:7px;padding:2px 6px;border-radius:5px;font-weight:400}
+.qt p{font-size:9px;color:#b9b2c8;line-height:1.6;margin-top:5px}
+.qt .pg{height:5px;border-radius:3px;background:#2a2433;margin-top:8px;overflow:hidden}.qt .pg span{display:block;height:100%;background:#5ee0c6}
+.qt.done{opacity:.5}
+.mapw{margin:0 14px;border-radius:18px;overflow:hidden;position:relative;background:#2a2119}
+.mapw canvas{width:100%;display:block;image-rendering:pixelated}
+.pin{position:absolute;font-size:7px;color:#2a2119;background:rgba(217,196,154,.9);padding:3px 6px;border-radius:6px;white-space:nowrap;transform:translate(-50%,-130%)}
+.you{position:absolute;width:12px;height:12px;border-radius:50%;background:#5ee0c6;box-shadow:0 0 0 3px rgba(94,224,198,.35),0 0 12px #5ee0c6;transform:translate(-50%,-50%)}
+</style></head><body>
+<script src="../../games/watchers/creatures-art.js"></script><script src="../../games/watchers/worldmap.js"></script><script src="../../games/watchers/art.js"></script>
+<script>
+const m=new URLSearchParams(location.search).get('m');
+if(m==='quests'){
+ const Q=(t,tag,col,p,pg,done,face)=>`<div class="qt ${done?'done':''}" style="display:flex;gap:12px"><span class="face" data-f="${face||''}"></span><div style="flex:1"><div class="h">${t}<span class="tag" style="background:${col}">${tag}</span></div><p>${p}</p>${pg!=null?`<div class="pg"><span style="width:${pg}%"></span></div>`:''}</div></div>`;
+ document.body.innerHTML=`<div class="top"><span class="back">‹ Menu</span><h1>Quêtes</h1></div>
+ <div class="lbl">QUÊTE PRINCIPALE</div><div class="grp">${Q('Le Soleil-Cœur s\'éteint','Chapitre 1','#7c3aed','Retrouver la trace de Lys dans la Vallée des Brumes. La vieille Maëlle dit l\'avoir vue partir vers la forêt.',35,0,'#9a9aa0|#3a2a4a')}</div>
+ <div class="lbl">QUÊTES SECONDAIRES</div><div class="grp">
+ ${Q('Le dernier hiver de Pépin','En cours','#0a84ff','Le Watcher du vieil Ernest est très malade. Trouver une herbe d\'or avant la nuit.',50,0,'#c9c9c9|#4a3a2a')}
+ ${Q('Les lanternes perdues','En cours','#0a84ff','Rapporter 3 lanternes éteintes à la fabricante de Brindille.',66,0,'#8a3a1a|#2a5a5a')}
+ ${Q('La berceuse du lac','Nouvelle','#ff9f0a','Une petite fille entend chanter sous l\'eau du lac.',null,0,'#e0b040|#c46fb0')}
+ ${Q('Le facteur égaré','Terminée','#30d158','Lettre remise à la veuve du phare.',100,1,'#2a2a2a|#2a3a5a')}</div>`;
+ document.querySelectorAll('.face').forEach(f=>{const [h,d]=f.dataset.f.split('|');const n=ART.npc(h,d);const c=document.createElement('canvas');c.width=c.height=10;c.getContext('2d').drawImage(n,-3,-1);c.style.cssText='width:44px;height:44px;image-rendering:pixelated;background:rgba(255,255,255,.06);border-radius:12px;flex-shrink:0';f.replaceWith(c);});
+}else if(m==='map'){
+ document.body.innerHTML=`<div class="top"><span class="back">‹ Menu</span><h1>Carte</h1></div><div class="sub">Région actuelle : Vallée des Brumes</div><div class="mapw" id="mw"></div>
+ <div class="grp" style="margin-top:12px">${[['Vallée des Brumes','#4e9a4a','1 / 3 boss'],['Archipel des Marées','#3b7dd8','Verrouillée'],['Pics de Givre','#8fd0e8','Verrouillée'],['Couronne Éteinte','#a3123a','???']].map(([n,c,s],i)=>`<div class="row"><span style="display:flex;align-items:center;gap:8px;color:${i?'#6b6575':'#fff'}"><i style="width:10px;height:10px;border-radius:3px;background:${i?'#3a3546':c}"></i>${n}</span><span>${s}</span></div>`).join('')}</div>`;
+ const c=WORLD_MAP.draw([1]);const W=WORLD_MAP.W,H=WORLD_MAP.H;document.getElementById('mw').append(c);
+ const mw=document.getElementById('mw');
+ mw.insertAdjacentHTML('beforeend',WORLD_MAP.PLACES.map(p=>`<span class="pin" style="left:${p.x/W*100}%;top:${p.y/H*100}%;${p.region>1?'opacity:.45':''}">${p.region===4?'???':p.name}</span>`).join('')+`<span class="you" style="left:${58/W*100}%;top:${140/H*100}%"></span>`);
+}else{
+ const types=Object.keys(CREATURE_ART.TYPE_COLORS), shapes=['beast','biped','bird','serpent','fish','spirit'];
+ let html='';for(let i=0;i<24;i++){const st=i<5?'cap':i<12?'seen':'none';html+=`<div class="dc" data-i="${i}" data-s="${st}"><span class="no">#${String(i+1).padStart(3,'0')}</span>${st==='cap'?'<span class="cap"></span>':''}${st==='none'?'<span class="q">?</span>':''}</div>`;}
+ document.body.innerHTML=`<div class="top"><span class="back">‹ Menu</span><h1>Carnet</h1></div><div class="cnt"><span>Vus <b>12</b></span><span>Capturés <b>5</b></span><span>Total <b>66</b></span></div>
+ <div class="seg"><span class="on">Brumes</span><span>Marées</span><span>Givre</span><span>Couronne</span><span>★</span></div><div class="dex">${html}</div>`;
+ document.querySelectorAll('.dc').forEach(d=>{const i=+d.dataset.i;if(d.dataset.s==='none')return;
+  const cv=CREATURE_ART.draw({seed:i*13+5,type:types[i%10],shape:shapes[i%6],stage:1+(i%3)});
+  if(d.dataset.s==='seen'){const g=cv.getContext('2d');g.globalCompositeOperation='source-in';g.fillStyle='#2a2636';g.fillRect(0,0,40,40);}
+  d.append(cv);});
+}
+</script></body></html>

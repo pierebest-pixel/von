@@ -1,0 +1,57 @@
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<link href="https://fonts.googleapis.com/css2?family=Silkscreen:wght@400;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;box-sizing:border-box}body{background:#000;overflow:hidden;font-family:"Silkscreen",monospace;color:#fff}
+canvas{position:fixed;inset:0;width:100vw;height:100vh;image-rendering:pixelated}
+.banner{position:fixed;top:58px;left:50%;transform:translateX(-50%);background:rgba(15,12,22,.82);border:3px solid #5ee0c6;padding:6px 14px;font-size:13px;font-weight:700;white-space:nowrap;box-shadow:0 0 0 3px #15111c}
+.menu{position:fixed;top:54px;right:14px;width:44px;height:44px;background:rgba(15,12,22,.75);border:3px solid #8a8496;display:grid;place-items:center}
+.menu i{display:block;width:20px;height:3px;background:#e8e3f0;margin:2px 0}
+.joy{position:fixed;left:26px;bottom:44px;width:128px;height:128px;border-radius:50%;background:rgba(255,255,255,.10);border:3px solid rgba(255,255,255,.28)}
+.joy b{position:absolute;left:50%;top:50%;width:54px;height:54px;margin:-27px 0 0 -27px;border-radius:50%;background:rgba(255,255,255,.35);border:3px solid rgba(255,255,255,.6)}
+.btnA{position:fixed;right:22px;bottom:96px;width:74px;height:74px;border-radius:50%;background:rgba(94,224,198,.35);border:3px solid #5ee0c6;display:grid;place-items:center;font-size:26px;font-weight:700;color:#d9fff6}
+.btnB{position:fixed;right:104px;bottom:44px;width:58px;height:58px;border-radius:50%;background:rgba(139,92,246,.30);border:3px solid #8b5cf6;display:grid;place-items:center;font-size:20px;font-weight:700;color:#e9e0ff}
+.gauge{position:fixed;left:14px;top:112px;display:flex;align-items:center;gap:8px;font-size:11px;background:rgba(15,12,22,.78);border:3px solid #15111c;padding:5px 8px}
+.gauge .bar{width:90px;height:10px;border:2px solid #07050a;background:#2a2433}.gauge .bar span{display:block;height:100%}
+</style></head><body><canvas id="c"></canvas>
+<div class="menu"><div><i></i><i></i><i></i></div></div>
+<div class="joy"><b></b></div><div class="btnA">A</div><div class="btnB">B</div>
+<script src="../../games/watchers/art.js"></script>
+<script>
+const R=+(new URLSearchParams(location.search).get('r')||2), A=ART, T=16, S=3, W=Math.ceil(innerWidth/S), H=Math.ceil(innerHeight/S);
+const c=document.getElementById('c'); c.width=W; c.height=H; const g=c.getContext('2d');
+const D={
+ 2:{name:'Archipel des Marées',gauge:['MARÉE','#4f86a8',65,'↑ montante'],fill:'#1f5a8a',big:A.palm(),
+   tiles:{'.':A.sand(1),',':A.sand(2),'p':A.planks(),'~':A.shallow(0),'w':A.deep(0),'"':A.tallGrass(A.P2),'s':A.shell(),'r':A.rock(A.P2)},
+   map:["wwwwwwwwwwwwww","wwwwwwwwwwwwww","ww~~~~~~~~~~ww","w~~..,..T.~~ww","w~.T.\"\"\"..~~ww","w~..\"\"\"\".s.~ww","w~,.\"\"\"\"...~ww","w~~...pp..,~ww","ww~~~~pp~~~~ww","wwwwwwppwwwwww","wwwwwwppwwwwww","ww~~~~pp~~~~ww","w~~.,.pp..~~ww","w~..s.pp.T.~ww","w~.T..pp...~ww","w~~...pp.r~~ww","ww~~~.pp~~~~ww","wwww~~pp~~wwww","wwwwwwwwwwwwww"],
+   fx(px,py){ /* reflets de lune sur l'eau */ }},
+ 3:{name:'Pics de Givre',gauge:['FROID','#8fd0e8',38,''],fill:'#0a1018',big:A.snowPine(),
+   tiles:{'.':A.snow(1),',':A.snow(2),'p':A.path(5,A.P3),'i':A.ice(),'"':A.tallGrass(A.P3),'f':A.campfire(0),'r':A.iceRock()},
+   map:["TTTTTTTTTTTTTT","TTTTTTTTTTTTTT","TT..,..r..,.TT","TT.iiiiiiii.TT","TT.iiiiiiii.TT","TT.iirriiii.TT","TT.iiiiiiri.TT","TT.iiiiiiii.TT","TT...pp.,...TT","TT.,.pp..\"\"\"TT","TT...ppf.\"\"\"TT","TT.,.pp..\"\"\"TT","TT...pp...,.TT","TTr..pp..T..TT","TT...pp.....TT","TT.,.pp.,.r.TT","TTTTTppTTTTTTT","TTTTTppTTTTTTT","TTTTTTTTTTTTTT"]},
+ 4:{name:'Couronne Éteinte',gauge:['LUMIÈRE','#5ee0c6',44,''],fill:'#060306',big:A.deadTree(),
+   tiles:{'.':A.ash(1),',':A.ash(2),'p':A.flagstone(1),'#':A.ruinWall(),'l':A.lava(0),'"':A.tallGrass(A.P4),'b':A.brazier(0),'k':A.crystal()},
+   map:["TTTTTTTTTTTTTT","TT##########TT","TT#b.pppp.b#TT","TT#..pppp..#TT","TT##.pppp.##TT","TT.,.pppp.,.TT","TTll.pppp.llTT","TTll..pp..llTT","TT\"\"..pp.k..TT","TT\"\"\".pp..,.TT","TT\"\"..pp.ll.TT","TT.,..pp.lll.T","TT#b..pp..b#TT","TT#...pp...#TT","TT##..pp..##TT","TT.,..pp.,..TT","TTTTT.ppTTTTTT","TTTTTTppTTTTTT","TTTTTTTTTTTTTT"]},
+}[R];
+document.body.insertAdjacentHTML('beforeend',`<div class="banner">${D.name}</div><div class="gauge">${D.gauge[0]}<div class="bar"><span style="width:${D.gauge[2]}%;background:${D.gauge[1]}"></span></div>${D.gauge[3]}</div>`);
+const ox=Math.floor(W/2-(6*T+8)), oy=Math.floor(H/2-(12*T+8));
+g.fillStyle=D.fill;g.fillRect(0,0,W,H);
+const base=D.tiles['.'];
+for(let y=-4;y<24;y++)for(let x=-4;x<18;x++){const ch=(D.map[y]||'')[x]; const t=D.tiles[ch]; g.drawImage(t||(ch===undefined&&R===2?D.tiles.w:base),ox+x*T,oy+y*T);}
+for(let y=-4;y<24;y+=2)for(let x=-4;x<18;x+=2){const ch=(D.map[y]||'')[x]; if(ch==='T'||(ch===undefined&&R!==2)) g.drawImage(D.big,ox+x*T,oy+y*T-4);}
+if(R===2) for(const [x,y] of [[8,3],[3,4],[9,13],[3,14]]) g.drawImage(D.big,ox+x*T-8,oy+y*T-16);
+if(R===3) for(const [x,y] of [[9,13]]) g.drawImage(D.big,ox+x*T-8,oy+y*T-16);
+g.drawImage(A.npc(R===2?'#2a1a12':R===3?'#c9d9e8':'#5a1a2a',R===2?'#5a3a5a':R===3?'#3a5a7a':'#2a1a2a'),ox+9*T,oy+(R===4?3:7)*T);
+const px=ox+6*T, py=oy+12*T; g.drawImage(A.hero(),px,py);
+// obscurité / ambiance
+const dark=R===4?.72:R===3?.6:.45, rad=R===4?100:130;
+const fog=g.createRadialGradient(px+8,py+8,R===4?22:36,px+8,py+8,rad);
+const tint=R===2?'90,30,80':R===3?'10,20,40':'8,2,8';
+fog.addColorStop(0,`rgba(${tint},0)`);fog.addColorStop(.5,`rgba(${tint},${dark*.45})`);fog.addColorStop(1,`rgba(${tint},${dark})`);
+g.fillStyle=fog;g.fillRect(0,0,W,H);
+const halo=(x,y,r,col)=>{const h=g.createRadialGradient(x,y,2,x,y,r);h.addColorStop(0,col);h.addColorStop(1,'rgba(0,0,0,0)');g.fillStyle=h;g.fillRect(0,0,W,H);};
+if(R===3){halo(ox+7*T+8,oy+10*T+8,40,'rgba(255,150,60,.55)');g.drawImage(D.tiles.f,ox+7*T,oy+10*T);}
+if(R===4){for(const [x,y] of [[3,2],[10,2],[3,12],[10,12]]){halo(ox+x*T+8,oy+y*T+6,34,'rgba(163,107,214,.5)');}
+  for(const [x,y] of [[2,6],[3,6],[2,7],[3,7],[10,6],[11,6],[10,7],[11,7],[9,10],[10,10],[9,11],[10,11],[11,11]]){halo(ox+x*T+8,oy+y*T+8,18,'rgba(255,90,58,.28)');}
+  halo(ox+9*T+8,oy+8*T+8,24,'rgba(94,224,198,.45)');}
+if(R===2){g.fillStyle='rgba(200,230,255,.5)';for(let i=0;i<24;i++){g.fillRect((i*37)%W,(i*53)%H,2,1);}}
+if(R===3){g.fillStyle='rgba(255,255,255,.85)';for(let i=0;i<70;i++){g.fillRect((i*41+7)%W,(i*67+11)%H,1,1);}}
+</script></body></html>
