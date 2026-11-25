@@ -1,0 +1,5 @@
+<!doctype html><html><head><meta charset="utf-8"><style>body{margin:0;background:#22202a;display:grid;grid-template-columns:repeat(6,120px);gap:6px;padding:10px}canvas{width:120px;height:120px;image-rendering:pixelated;background:#2f3a33}</style></head><body>
+<script src="../../games/watchers/creatures-art.js"></script><script>
+const types=Object.keys(CREATURE_ART.TYPE_COLORS), shapes=['beast','biped','bird','serpent','fish','spirit'];
+for(let i=0;i<36;i++){document.body.append(CREATURE_ART.draw({seed:i*7+3,type:types[i%10],shape:shapes[Math.floor(i/6)%6],stage:1+(i%3),shiny:i===5}));}
+</script></body></html>

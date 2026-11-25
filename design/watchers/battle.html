@@ -1,0 +1,49 @@
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<link href="https://fonts.googleapis.com/css2?family=Silkscreen:wght@400;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;box-sizing:border-box}body{background:#0d0b12;font-family:"Silkscreen",monospace;color:#f0ecf5;height:100vh;overflow:hidden}
+.scene{position:relative;height:500px;overflow:hidden}.scene>canvas.bg{position:absolute;inset:0;width:100%;height:100%}
+.pl{position:absolute;border-radius:50%;background:#1f3328;box-shadow:inset 0 -6px 0 #172820,0 0 0 3px #3a5a48}
+canvas{position:absolute;image-rendering:pixelated}
+.box{position:absolute;background:#15111c;border:3px solid #e8e3f0;box-shadow:0 0 0 3px #15111c,inset 0 0 0 2px #3a3348;padding:8px 10px;width:200px;z-index:2}
+.box .n{display:flex;justify-content:space-between;font-size:14px;font-weight:700}
+.box .n small{font-size:12px;color:#b9b2c8}
+.hp{display:flex;align-items:center;gap:6px;margin-top:6px;font-size:12px;font-weight:700;color:#f2b134}
+.hp .bar{flex:1;height:9px;background:#3a3348;border:2px solid #07050a}
+.hp .bar span{display:block;height:100%}
+.xp{height:5px;background:#3a3348;margin-top:5px}.xp span{display:block;height:100%;width:62%;background:#5ee0c6}
+.num{text-align:right;font-size:12px;margin-top:3px}
+.shiny{color:#f7d77a;font-size:14px}
+.panel{position:absolute;top:500px;left:0;right:0;bottom:0;background:#15111c;border-top:4px solid #e8e3f0;padding:14px}
+.txt{border:3px solid #5ee0c6;padding:12px 14px;font-size:15px;line-height:1.45;min-height:76px;background:#0d0b12}
+.cmds{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}
+.ib{border-radius:18px;padding:14px 0 12px;display:flex;flex-direction:column;align-items:center;gap:7px;font-size:15px;color:#fff;background:rgba(255,255,255,.07)}
+.ib .ic{width:46px;height:46px;border-radius:13px;display:grid;place-items:center}
+.ib svg{width:26px;height:26px}
+.cmd{border:3px solid #e8e3f0;background:#231d2e;padding:16px 0;text-align:center;font-size:19px;font-weight:700;box-shadow:inset 0 -4px 0 rgba(0,0,0,.35)}
+.cmd.p{border-color:#d9572b;background:#4a1f17}.cmd.s{border-color:#e8c830;background:#4a3d10}.cmd.e{border-color:#4e9a4a;background:#1f3d1d}.cmd.f{border-color:#8a8496;background:#2a2633}
+.mv{border:3px solid;padding:9px 12px;text-align:left;font-size:13px;font-weight:700;box-shadow:inset 0 -4px 0 rgba(0,0,0,.35)}
+.mv small{display:flex;justify-content:space-between;font-size:10px;font-weight:500;opacity:.85;margin-top:3px}
+</style></head><body>
+<div class="scene">
+  <div class="box" style="left:14px;top:70px"><div class="n">Brumelin <small>Nv 7</small></div><div class="hp">PV<div class="bar"><span style="width:55%;background:#e8c830"></span></div></div></div>
+  <div class="box" style="right:14px;top:300px"><div class="n">Braisillon <small>Nv 9</small></div><div class="hp">PV<div class="bar"><span style="width:82%;background:#4ec26a"></span></div></div><div class="num">27 / 33</div><div class="xp"><span></span></div></div>
+</div>
+<div class="panel" id="panel"></div>
+<script src="../../games/watchers/creatures-art.js"></script><script src="../../games/watchers/backgrounds.js"></script>
+<script>
+const sc=document.querySelector('.scene');const Q=new URLSearchParams(location.search);const bg=BATTLE_BG.draw(+(Q.get('r')||1),130,167);bg.className='bg';sc.prepend(bg);
+const e=CREATURE_ART.draw({seed:41,type:'Esprit',shape:'spirit',stage:1});
+Object.assign(e.style,{left:'225px',top:'60px',width:'150px',height:'150px'}); sc.append(e);
+const p=CREATURE_ART.draw({seed:3,type:'Flamme',shape:'beast',stage:2});
+const big=document.createElement('canvas');big.width=big.height=40;const g=big.getContext('2d');g.translate(40,0);g.scale(-1,1);g.drawImage(p,0,0);
+Object.assign(big.style,{left:'0px',top:'270px',width:'200px',height:'200px'}); sc.append(big);
+const mode=new URLSearchParams(location.search).get('m');
+const panel=document.getElementById('panel');
+if(mode==='moves'){
+ const mv=[['Flammèche','#d9572b','#4a1f17','Flamme','PP 22/25'],['Morsure','#8a7356','#3a2e22','Roc','PP 18/20'],['Rugissement','#9ec9b4','#24382f','Vent','PP 30/30'],['Braise-Cœur','#d9572b','#4a1f17','Flamme','PP 4/10']];
+ panel.innerHTML='<div class="txt" style="min-height:0;font-size:16px">Choisis une attaque <span style="float:right;color:#8a8496">B : retour</span></div><div class="cmds">'+mv.map(m=>`<div class="mv" style="border-color:${m[1]};background:${m[2]}">${m[0]}<small><span>${m[3]}</span><span>${m[4]}</span></small></div>`).join('')+'</div>';
+}else{
+ panel.innerHTML='<div class="txt">Un Brumelin sauvage surgit de la brume !<br>Que doit faire Braisillon ?</div><div class="cmds"><div class="ib"><span class="ic" style="background:#ff453a"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 17.5 3 6V3h3l11.5 11.5"/><path d="m13 19 6-6M16 16l4 4M19 21l2-2"/></svg></span>Attaque</div><div class="ib"><span class="ic" style="background:#ff9f0a"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8h12l-1 12H7z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></svg></span>Sac</div><div class="ib"><span class="ic" style="background:#30d158"><svg viewBox="0 0 24 24" fill="#fff"><circle cx="6" cy="9" r="2.2"/><circle cx="10" cy="5.5" r="2.2"/><circle cx="14" cy="5.5" r="2.2"/><circle cx="18" cy="9" r="2.2"/><path d="M12 11c-3.2 0-6 3.6-6 6.2 0 1.8 1.6 2.3 3 1.8 1.2-.4 2-.7 3-.7s1.8.3 3 .7c1.4.5 3 0 3-1.8 0-2.6-2.8-6.2-6-6.2z"/></svg></span>Équipe</div><div class="ib"><span class="ic" style="background:#8e8e93"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="14" cy="4.5" r="1.8" fill="#fff"/><path d="m7 21 3-6 3 2v5M10 15l1.5-6 4 3 3 1M8.5 10.5l3-1.5"/></svg></span>Fuite</div></div>';
+}
+</script></body></html>

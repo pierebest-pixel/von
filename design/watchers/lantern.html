@@ -1,0 +1,54 @@
+<!doctype html><html><head><meta charset="utf-8"><style>
+body{margin:0;background:#1c1c22;color:#fff;font-family:-apple-system,system-ui,sans-serif;display:flex;gap:44px;padding:30px 36px}
+.o{display:flex;flex-direction:column;align-items:center;gap:10px;font-weight:600;font-size:17px;text-align:center}
+small{color:#9a9aa5;font-weight:500;font-size:13px;max-width:200px}
+canvas{width:192px;height:192px;image-rendering:pixelated;background:#2a3a2a;border-radius:12px}
+</style></head><body><script>
+const N=32;
+function draw(fn){const c=document.createElement('canvas');c.width=c.height=N;const g=c.getContext('2d');
+ const px=[];for(let y=0;y<N;y++){px[y]=[];for(let x=0;x<N;x++)px[y][x]=fn(x+.5,y+.5);}
+ // contour automatique
+ const out=px.map(r=>r.slice());
+ for(let y=0;y<N;y++)for(let x=0;x<N;x++){if(px[y][x])continue;
+  if([[1,0],[-1,0],[0,1],[0,-1]].some(([dx,dy])=>px[y+dy]?.[x+dx]))out[y][x]='#14101c';}
+ for(let y=0;y<N;y++)for(let x=0;x<N;x++)if(out[y][x]){g.fillStyle=out[y][x];g.fillRect(x,y,1,1);}
+ return c;}
+const cx=16,cy=18,R=10.5;
+const d=(x,y,a=cx,b=cy)=>Math.hypot(x-a,y-b);
+// A : orbe de verre ambré, capuchon de laiton + anneau, deux montants
+const A=(x,y)=>{
+ if(Math.abs(d(x,y,16,5.2)-2.3)<.8) return '#c99a3a';               // anneau
+ if(y>=6.5&&y<=9&&Math.abs(x-16)<=4.5) return y<7.6?'#f0c86a':'#b07d2a'; // capuchon
+ const r=d(x,y); if(r>R) return null;
+ if(Math.abs(x-16)>=7.6&&Math.abs(x-16)<=9.2) return '#b07d2a';       // montants
+ if(r<3.2) return '#fff6c8';
+ if(r<5.5) return '#ffd36b';
+ if(x<12&&y<14&&r>6&&r<8.5) return '#fff1c0';                          // reflet
+ return r<8?'#f0a63a':'#c46a1e';
+};
+// B : sphère de fer ajourée, lumière violette au travers
+const B=(x,y)=>{
+ if(Math.abs(d(x,y,16,5.2)-2.3)<.8) return '#8a8496';
+ if(y>=6.5&&y<=8.8&&Math.abs(x-16)<=3.5) return '#5b5566';
+ const r=d(x,y); if(r>R) return null;
+ const holes=[[16,18],[11,14],[21,14],[11,22],[21,22],[16,12],[16,24]];
+ for(const [a,b] of holes){const k=d(x,y,a,b); if(k<(a===16&&b===18?3.4:1.9)) return k<1.2?'#f3e8ff':'#a78bfa';}
+ if(x<13&&y<15&&r>7&&r<9) return '#6f6880';
+ return r<8.5?'#3d3848':'#2a2632';
+};
+// C : pétales de métal entrouverts sur un cœur de lumière
+const C=(x,y)=>{
+ if(Math.abs(d(x,y,16,5.2)-2.3)<.8) return '#7fd3c3';
+ if(y>=6.5&&y<=8.8&&Math.abs(x-16)<=2.5) return '#3c8c7c';
+ const r=d(x,y); if(r>R) return null;
+ const ang=Math.atan2(y-cy,x-cx); const gap=Math.abs(Math.sin(ang*2));
+ if(r<4.2) return r<2.2?'#ffffff':'#9ff5e2';
+ if(gap<.28&&r<9) return r<7?'#5ee0c6':'#2fae95';                     // lumière entre pétales
+ return (Math.cos(ang*2)>0)?(r<8?'#2f6f63':'#1f4d45'):(r<8?'#3c8c7c':'#2a675b');
+};
+[['A · Orbe de laiton','Verre ambré lumineux, capuchon et anneau de laiton, deux montants dorés.',A],
+ ['B · Sphère ajourée','Fer sombre percé de trous ; la lumière violette passe au travers.',B],
+ ['C · Fleur de métal','Pétales de métal entrouverts sur un cœur de lumière turquoise.',C]].forEach(([t,s,f])=>{
+ const o=document.createElement('div');o.className='o';o.append(draw(f));
+ o.insertAdjacentHTML('beforeend',`<div>${t}</div><small>${s}</small>`);document.body.append(o);});
+</script></body></html>
