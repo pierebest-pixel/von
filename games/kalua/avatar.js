@@ -555,6 +555,8 @@ const Avatar = (() => {
         const low = ["court", "petard", "meche", "frange", "boucle", "afro", "chignon", "macarons", "queue"].includes(a.hair) ? 1.6 : 3.4;
         c.beginPath(); c.arc(0, -1.6, 5.5, Math.PI, 0); c.lineTo(5.5, low); c.quadraticCurveTo(0, low + 1.4, -5.5, low); c.closePath(); c.fill();
         if (a.hair === "boucle" || a.hair === "afro") for (let i = -2; i <= 2; i++) circle(c, i * 2.2, low, 1.5);
+        c.fillStyle = "rgba(255,255,255,.22)"; ell(c, -1.8, -4.6, 2.6, 1.3, -.4);
+        const dk = shade(a.hairColor, -.25); for (const dx of [-2.6, 0, 2.6]) line(c, [[dx * .6, -3.5], [dx, low - .4]], .35, dk);
       }
       else if (a.hair !== "chauve") { c.fillStyle = a.hairColor; c.globalAlpha = .5; headPath(c, a); c.fill(); c.globalAlpha = 1; }
       if (a.hair === "iroquoise") { c.fillStyle = a.hairColor; rr(c, -1.4, -10, 2.8, 9, 1.4); }

@@ -11,7 +11,7 @@
 const Net = (() => {
   const SDK = "https://www.gstatic.com/firebasejs/13.2.0/";
   const config = window.VON_FIREBASE || null;
-  let fb = null, db = null, me = null;
+  let fb = null, db = null, me = null, offset = 0;
 
   const ls = (k, f) => { try { const v = localStorage.getItem(k); return v === null ? f : JSON.parse(v); } catch { return f; } };
 
@@ -32,6 +32,7 @@ const Net = (() => {
     await auth.setPersistence(a, auth.indexedDBLocalPersistence).catch(() => {});
     let user = await new Promise((r) => { const u = auth.onAuthStateChanged(a, (x) => { u(); r(x); }); });
     if (!user) { try { user = (await auth.signInAnonymously(a)).user; } catch { throw Object.assign(new Error("offline"), { code: "offline" }); } }
+    rtdb.onValue(rtdb.ref(db, ".info/serverTimeOffset"), (snap) => { offset = Number(snap.val()) || 0; });
     const vonMe = ls("von:me", null);
     me = { uid: user.uid, name: vonMe && vonMe.uid === user.uid ? vonMe.name : ls("von:name", "") || "Joueur" };
     return me;
@@ -105,5 +106,5 @@ const Net = (() => {
     };
   }
 
-  return { init, friends, watchMyIslands, watchOnline, createIsland, leaveIsland, enter, get me() { return me; } };
+  return { now: () => (Date.now() + offset) / 1000, init, friends, watchMyIslands, watchOnline, createIsland, leaveIsland, enter, get me() { return me; } };
 })();

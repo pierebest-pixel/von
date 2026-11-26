@@ -39,7 +39,7 @@ function avatarCanvas(canvas, av, o) {
   c.save(); c.translate(w / 2, h * o.cy); c.scale(o.k, o.k); Avatar.draw(c, av, o); c.restore();
 }
 
-function showCreator(first) {
+function showCreator(first, back = showIslands) {
   clearScreen(); hud.hidden = true;
   let av = Avatar.normalize(store.get("avatar", null) || Avatar.DEFAULT);
   let tab = "corps", view = 0, alive = true;
@@ -95,8 +95,8 @@ function showCreator(first) {
     if (t.dataset.tab) { tab = t.dataset.tab; renderOpts(); opts.scrollTop = 0; return; }
     if (t.dataset.x === "dice") { av = Avatar.random(); renderOpts(); return; }
     if (t.dataset.x === "turn") { view = (view + 1) % 4; return; }
-    if (t.dataset.x === "cancel") { alive = false; return showIslands(); }
-    if (t.dataset.x === "save") { store.set("avatar", av); avatar = av; alive = false; return showIslands(); }
+    if (t.dataset.x === "cancel") { alive = false; return back(); }
+    if (t.dataset.x === "save") { store.set("avatar", av); avatar = av; alive = false; return back(); }
     if (t.dataset.val !== undefined && t.tagName !== "CANVAS") { av = { ...av, [t.dataset.key]: t.dataset.val }; refresh(); }
   });
   opts.addEventListener("input", (e) => {
@@ -122,7 +122,7 @@ const hue = (s) => { let h = 0; for (const ch of String(s)) h = (h * 31 + ch.cha
 function showIslands() {
   clearScreen(); hud.hidden = true;
   ui.innerHTML = `<div class="screen islands">
-    <h1>Mes îles</h1><div class="sub">Les Échoués de Kalua</div>
+    <div class="top"><button class="round" data-x="title" aria-label="Menu titre">‹</button><h1>Mes îles</h1><span class="round" style="visibility:hidden"></span></div><div class="sub">Les Échoués de Kalua</div>
     <div class="list" id="ilist"><div class="spinner"></div></div>
     <div class="me-row"><canvas id="mecv"></canvas><div class="info">${esc(me.name)}<small>Ton personnage</small></div><button class="go pink" data-x="edit">Modifier</button></div>
   </div>`;
@@ -143,7 +143,7 @@ function showIslands() {
       + `<button class="ghost" data-x="new">+ Nouvelle île</button>`;
     list.querySelectorAll("canvas[data-seed]").forEach((c) => {
       c.width = 62 * DPR; c.height = 62 * DPR; const g = c.getContext("2d"); g.scale(DPR, DPR);
-      makeWorld(Number(c.dataset.seed)).preview(g, 62);
+      islandPreview(g, 62);
     });
   }
   const unsub = Net.watchMyIslands((l) => {
@@ -157,6 +157,7 @@ function showIslands() {
     const t = e.target.closest("[data-x],[data-play],[data-more],[data-invite],[data-leave],.dim");
     if (!t) return;
     if (t.dataset.x === "edit") return showCreator(false);
+    if (t.dataset.x === "title") return showTitle();
     if (t.dataset.play) return play(t.dataset.play);
     if (t.dataset.x === "new") return friendSheet();
     if (t.dataset.more) {
@@ -187,6 +188,14 @@ function showIslands() {
   function toastScreen(msg) { const s = $(".sheet h3"); if (s) s.textContent = msg; }
 }
 
+// ================================================================ l'archipel
+let WORLD = null;
+function world() { if (!WORLD) { WORLD = makeWorld(); Creatures.init(WORLD); } return WORLD; }
+function islandPreview(g, size) {
+  const ov = KALUA.getOverview(); g.fillStyle = "#4a9ac8"; g.fillRect(0, 0, size, size);
+  const k = size / 250 * 1.55; g.drawImage(ov, 0, 0, 400, 250, size / 2 - 200 * k * .95, size / 2 - 125 * k, 400 * k, 250 * k);
+}
+
 // ================================================================ en jeu
 const G = {
   on: false, session: null, world: null, t: 0, last: 0,
@@ -210,10 +219,10 @@ async function play(id) {
   let s;
   try { s = await Net.enter(id, avatar); } catch (err) { console.warn(err); return showError(err.code === "gone" ? "gone" : "offline"); }
   clearScreen();
-  G.session = s; G.world = makeWorld(Number(s.island.seed) || 1);
+  G.session = s; G.world = world();
   const sp = s.savedPos && G.world.walkable(s.savedPos.x, s.savedPos.y) ? s.savedPos : { x: G.world.spawn.x + (s.island.owner === me.uid ? -26 : 26), y: G.world.spawn.y };
   G.p = { x: sp.x, y: sp.y, dir: sp.d || "down", moving: false, walk: 0, swing: 0, roll: 0, rollV: [0, 0], cool: 0, a: "", at: 0, dust: 0 };
-  G.cam.x = G.p.x; G.cam.y = G.p.y;
+  G.cam.x = G.p.x; G.cam.y = G.p.y; G.place = G.world.placeName(G.p.x, G.p.y); G.lastSave = Date.now();
   G.others.clear(); G.parts = [];
   for (const uid of s.others) {
     const o = { uid, name: s.island.members[uid]?.name || "?", avatar: null, online: false, x: 0, y: 0, tx: 0, ty: 0, dir: "down", moving: false, walk: 0, swing: 0, roll: 0, seenAt: 0, has: false };
@@ -227,19 +236,20 @@ async function play(id) {
     });
   }
   updateBadge();
-  hud.hidden = false;
+  hud.hidden = false; applySettings();
   G.on = true; G.last = performance.now();
+  setTimeout(() => toast("📍 " + G.place), 600);
   sendPos(true);
   requestAnimationFrame(frame);
 }
 
-async function leaveGame() {
-  G.on = false; hud.hidden = true;
+async function leaveGame(next = showIslands) {
+  closeMenu(); G.on = false; hud.hidden = true;
   const s = G.session; G.session = null;
   if (s) { sendPos(true, s); await s.leave(); }
-  showIslands();
+  next();
 }
-$("#back").addEventListener("click", leaveGame);
+$("#menu-btn").addEventListener("click", () => openMenu());
 
 function updateBadge() {
   const o = [...G.others.values()][0];
@@ -257,12 +267,14 @@ function sendPos(force, s = G.session) {
   if (!s || !G.p) return;
   const p = G.p, k = `${Math.round(p.x)},${Math.round(p.y)},${p.dir},${p.moving},${p.at}`;
   if (!force && k === G.lastKey && performance.now() - (G.lastSentT || 0) < 3000) return;
-  G.lastKey = k; G.lastSentT = performance.now();
+  G.lastKey = k; G.lastSentT = performance.now(); G.lastSave = Date.now();
   s.sendPos({ x: Math.round(p.x * 10) / 10, y: Math.round(p.y * 10) / 10, d: p.dir, m: p.moving, a: p.a, at: p.at });
 }
 
 // ---------------------------------------------------------------- actions
 const FACING = { up: [0, -1], down: [0, 1], left: [-1, 0], right: [1, 0] };
+const HIT_KINDS = ["palm", "jtree", "rock", "bush", "mangrove", "lavarock", "deadtree"];
+const GRAB_KINDS = ["shell", "mushroom", "flower"];
 
 function burst(x, y, kind, n) {
   for (let i = 0; i < n; i++) {
@@ -274,12 +286,15 @@ function burst(x, y, kind, n) {
 }
 
 function hitTarget(x, y, dir) {
-  const o = G.world.nearest(x, y, dir, ["palm", "rock", "bush"]);
+  const an = Creatures.nearest(x + (FACING[dir] || [0, 1])[0] * 20, y + (FACING[dir] || [0, 1])[1] * 16, Net.now(), G.world, 48);
+  if (an) { an.a.hop = 1; burst(an.p.x, an.p.y - 20, "spark", 6); return { kind: "animal", a: an.a }; }
+  const o = G.world.nearest(x, y, dir, HIT_KINDS);
   if (!o) return null;
   o.shake = .5;
-  if (o.kind === "palm") burst(o.x + (x < o.x ? -6 : 6), o.y - 30, "wood", 9);
-  if (o.kind === "rock") burst(o.x, o.y - 6, "stone", 8);
-  if (o.kind === "bush") burst(o.x, o.y - 10, "leaf", 10);
+  if (o.kind === "palm" || o.kind === "jtree" || o.kind === "deadtree") burst(o.x + (x < o.x ? -6 : 6), o.y - 30, "wood", 9);
+  if (o.kind === "rock" || o.kind === "lavarock") burst(o.x, o.y - 6, "stone", 8);
+  if (o.kind === "bush" || o.kind === "mangrove") burst(o.x, o.y - 10, "leaf", 10);
+  if (o.kind === "jtree" || o.kind === "mangrove") burst(o.x, o.y - 50, "leaf", 6);
   return o;
 }
 
@@ -288,10 +303,11 @@ function doAction(a) {
   if (a === "hit" && p.swing <= 0 && p.roll <= 0) {
     p.swing = .32; p.a = "hit"; p.at = Date.now();
     const o = hitTarget(p.x, p.y, p.dir);
-    if (o) toast("La récolte (bois, pierres…) arrive à l'étape 2 !", "harvest");
+    if (o && o.kind === "animal") toast(`${Creatures.NAMES[o.a.kind]} : ${Creatures.DOMESTIC.includes(o.a.kind) ? "l'adoption et la chasse arrivent" : "la chasse arrive"} à l'étape 2 !`, "animal");
+    else if (o) toast("La récolte (bois, pierres…) arrive à l'étape 2 !", "harvest");
     sendPos(true);
   } else if (a === "grab" && p.roll <= 0) {
-    const o = G.world.nearest(p.x, p.y, p.dir, ["shell"], 46);
+    const o = G.world.nearest(p.x, p.y, p.dir, GRAB_KINDS, 46);
     p.a = "grab"; p.at = Date.now(); p.swing = .2;
     if (o) { o.bob = 1; burst(o.x, o.y - 4, "spark", 8); toast("L'inventaire arrive à l'étape 2 !", "inv"); }
     sendPos(true);
@@ -305,7 +321,7 @@ function doAction(a) {
 
 function remoteAction(o, a) {
   if (a === "hit") { o.swing = .32; hitTarget(o.tx, o.ty, o.dir); }
-  if (a === "grab") { o.swing = .2; const s = G.world.nearest(o.tx, o.ty, o.dir, ["shell"], 46); if (s) { s.bob = 1; burst(s.x, s.y - 4, "spark", 6); } }
+  if (a === "grab") { o.swing = .2; const s = G.world.nearest(o.tx, o.ty, o.dir, GRAB_KINDS, 46); if (s) { s.bob = 1; burst(s.x, s.y - 4, "spark", 6); } }
   if (a === "roll") o.roll = .34;
 }
 
@@ -374,7 +390,7 @@ function update(dt) {
   let vx = 0, vy = 0;
   if (p.roll > 0) { p.roll = Math.max(0, p.roll - dt); vx = p.rollV[0] * 380; vy = p.rollV[1] * 380; }
   else {
-    const sp = G.input.run ? 260 : 150;
+    const sp = G.menuOpen ? 0 : G.input.run ? 260 : 150;
     vx = v.x * sp; vy = v.y * sp;
     if (v.x || v.y) p.dir = Math.abs(v.x) > Math.abs(v.y) + .01 ? (v.x < 0 ? "left" : "right") : (v.y < 0 ? "up" : "down");
   }
@@ -393,8 +409,13 @@ function update(dt) {
     o.swing = Math.max(0, o.swing - dt); o.roll = Math.max(0, o.roll - dt);
     if (o.moving || d > 2) o.walk = (o.walk + dt * 2.2) % 1;
   }
-  for (const s of W.solids) if (s.shake > 0) s.shake = Math.max(0, s.shake - dt);
-  for (const g of W.ground) if (g.bob > 0) g.bob = Math.max(0, g.bob - dt * 2.2);
+  W.update(dt, G.view || { x0: p.x - 400, x1: p.x + 400, y0: p.y - 400, y1: p.y + 400 });
+  for (const a of Creatures.list) if (a.hop > 0) a.hop = Math.max(0, a.hop - dt * 2.5);
+  KALUA.work(9);
+  // changement de lieu
+  G.placeT = (G.placeT || 0) - dt;
+  if (G.placeT <= 0) { G.placeT = .5; const pl = W.placeName(p.x, p.y); if (pl !== G.place) { G.place = pl; toast("📍 " + pl); } }
+  if (Date.now() - G.lastSave > 5000) G.lastSave = Date.now();
   G.parts = G.parts.filter((q) => { q.life += dt; q.x += q.vx * dt; q.y += q.vy * dt; q.vy += q.g * dt; q.vx *= .96; return q.life < q.max; });
   // caméra
   const k = Math.min(1, dt * 6);
@@ -425,36 +446,41 @@ function nameTag(c, x, y, txt) {
 }
 
 function hintFor(o) {
-  return { palm: "Taper pour couper", rock: "Taper pour casser", bush: "Taper pour secouer", shell: "Ramasser" }[o.kind];
+  if (o.kind === "cave") return `🔒 ${o.cave.name} · bientôt`;
+  return { palm: "Taper pour couper", jtree: "Taper pour couper", deadtree: "Taper pour couper", rock: "Taper pour casser", lavarock: "Taper pour casser", bush: "Taper pour secouer",
+    mangrove: "Taper pour couper", shell: "Ramasser", mushroom: "Ramasser", flower: "Cueillir" }[o.kind];
 }
 
 function render() {
-  const W = G.world, z = G.cam.z, vw = innerWidth, vh = innerHeight;
+  const W = G.world, z = G.cam.z * (SET.zoom || 1), vw = innerWidth, vh = innerHeight;
   ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
   W.drawWater(ctx, vw, vh, G.t);
-  const view = { x0: G.cam.x - vw / 2 / z, x1: G.cam.x + vw / 2 / z, y0: G.cam.y - vh / 2 / z, y1: G.cam.y + vh / 2 / z };
+  const view = { x0: G.cam.x - vw / 2 / z, x1: G.cam.x + vw / 2 / z, y0: G.cam.y - vh / 2 / z, y1: G.cam.y + vh / 2 / z }; G.view = view;
   ctx.save(); ctx.translate(vw / 2, vh / 2); ctx.scale(z, z); ctx.translate(-G.cam.x, -G.cam.y);
   W.drawGround(ctx, view, G.t);
   // objets et personnages triés par profondeur
-  const items = [];
-  for (const s of W.solids) if (s.x > view.x0 - 120 && s.x < view.x1 + 120 && s.y > view.y0 - 20 && s.y < view.y1 + 160) items.push({ y: s.y, s });
+  const items = W.visibleSolids(view, []).map((s) => ({ y: s.y, s }));
+  Creatures.visible(view, Net.now(), W, items);
   items.push({ y: G.p.y, me: true });
   for (const o of G.others.values()) if (o.has && o.avatar) items.push({ y: o.y, o });
   items.sort((a, b) => a.y - b.y);
   for (const it of items) {
     if (it.s) W.drawSolid(ctx, it.s, G.t);
+    else if (it.animal) Creatures.draw(ctx, it.animal, it.p, G.t);
     else if (it.me) drawCharacter(ctx, G.p, avatar, true);
     else drawCharacter(ctx, it.o, it.o.avatar, false);
   }
   for (const q of G.parts) { ctx.globalAlpha = 1 - q.life / q.max; ctx.fillStyle = q.c; ctx.beginPath(); ctx.arc(q.x, q.y, q.s * (q.kind === "dust" ? .5 + q.life / q.max : 1), 0, Math.PI * 2); ctx.fill(); }
   ctx.globalAlpha = 1;
   // pseudos
-  nameTag(ctx, G.p.x, G.p.y - 72, me.name);
-  for (const o of G.others.values()) if (o.has && o.avatar) nameTag(ctx, o.x, o.y - 72, o.name);
+  if (SET.names) {
+    nameTag(ctx, G.p.x, G.p.y - 72, me.name);
+    for (const o of G.others.values()) if (o.has && o.avatar) nameTag(ctx, o.x, o.y - 72, o.name);
+  }
   // bulle d'aide sur l'objet devant soi
-  const near = G.p.roll <= 0 && (W.nearest(G.p.x, G.p.y, G.p.dir, ["shell"], 46) || W.nearest(G.p.x, G.p.y, G.p.dir, ["palm", "rock", "bush"]));
+  const near = G.p.roll <= 0 && (W.nearest(G.p.x, G.p.y, G.p.dir, ["cave"], 150) || W.nearest(G.p.x, G.p.y, G.p.dir, GRAB_KINDS, 46) || W.nearest(G.p.x, G.p.y, G.p.dir, HIT_KINDS));
   if (near) {
-    const hy = near.kind === "palm" ? near.y - near.s * 22 : near.kind === "shell" ? near.y - 18 : near.y - (near.r || 10) - 14;
+    const hy = near.kind === "cave" ? near.y - 120 : near.kind === "palm" ? near.y - near.s * 22 : near.kind === "jtree" ? near.y - near.s * 26 : GRAB_KINDS.includes(near.kind) ? near.y - 18 : near.y - (near.r || 10) - 14;
     ctx.font = "800 12px ui-rounded, -apple-system, system-ui"; ctx.textAlign = "center";
     const txt = hintFor(near), w = ctx.measureText(txt).width + 16;
     ctx.fillStyle = "rgba(255,255,255,.93)"; ctx.beginPath(); ctx.roundRect(near.x - w / 2, hy - 11, w, 22, 11); ctx.fill();
@@ -485,5 +511,6 @@ function render() {
   try { me = await Net.init(); }
   catch (err) { console.warn(err); return showError(err.code); }
   avatar = store.get("avatar", null);
-  if (!avatar) showCreator(true); else { avatar = Avatar.normalize(avatar); showIslands(); }
+  if (avatar) avatar = Avatar.normalize(avatar);
+  showTitle();
 })();
