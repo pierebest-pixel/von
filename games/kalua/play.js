@@ -40,10 +40,10 @@ const Game = {
   leaveCutscene() { G.mode = G.prevMode || "world"; hud.hidden = false; G.p.kx = G.p.ky = 0; ambience(true); },
   enterBattle() { G.prevBattleMode = G.mode; G.mode = "battle"; hud.hidden = true; resetInput(); },
   leaveBattle(res) { G.mode = G.prevBattleMode || "world"; hud.hidden = false; ambience(true); if (res === "lose" && G.mode === "world") worldDeath(); },
-  async exitCave(n) { G.boss = null; Game.fade(() => { G.mode = "world"; Act.clear(); Act.setEnv(worldEnv()); const cvx = KALUA.CAVES.find((c) => c.n === n); G.p.x = cvx.x * KALUA.K; G.p.y = cvx.y * KALUA.K + 110; G.p.dir = "down"; Game.camSnap(); G.zone = "w"; ambience(true); Prog.P.pos = { x: G.p.x, y: G.p.y }; Prog.save(); toast("📍 " + G.world.placeName(G.p.x, G.p.y)); }); },
+  async exitCave(n) { G.boss = null; Game.fade(() => { G.mode = "world"; Act.clear(); Act.setEnv(worldEnv()); const cvx = KALUA.CAVES.find((c) => c.n === n); const q = G.world.snap(cvx.x * KALUA.K, cvx.y * KALUA.K + 110); G.p.x = q.x; G.p.y = q.y; G.p.dir = "down"; Game.camSnap(); G.zone = "w"; ambience(true); Prog.P.pos = { x: G.p.x, y: G.p.y }; Prog.save(); toast("📍 " + G.world.placeName(G.p.x, G.p.y)); }); },
   caveDeath() { if (G.dying) return; G.dying = true; resetInput(); setTimeout(() => { G.dying = false; Prog.P.hp = Prog.P.maxHp; Prog.changed(); Game.fade(() => { Dungeon.respawn(); toast("Tu t'évanouis… et tu te réveilles à l'entrée de la grotte."); }); }, 500); },
   enterCave(n, room) { if (!Dungeon.CAVES[n]) { toast("Cette grotte ne s'ouvre pas encore."); return; } Prog.P.pos = { x: G.p.x, y: G.p.y }; Game.fade(() => { G.mode = "cave"; G.zone = "c" + n; if (!Dungeon.enter(n, room)) { G.mode = "world"; Act.setEnv(worldEnv()); } }); },
-  teleport(x, y) { G.p.x = x; G.p.y = y; Game.camSnap(); },
+  teleport(x, y) { const q = G.world ? G.world.snap(x, y) : { x, y }; G.p.x = q.x; G.p.y = q.y; Game.camSnap(); },
   objective(txt) { G.objective = txt || ""; },
 };
 

@@ -74,8 +74,7 @@ const Story = (() => {
       await S.fade(1, 1.2);
     }, { noSkip: false });
     Prog.set("intro_done"); Prog.set("escort");
-    const sp0 = NPC.W("plage"); Game.teleport(sp0.x - 30, sp0.y + 10);
-    ESC.i = 0; ESC.wait = 0; ESC.tip = 0; NPC.setOverride("nalia", { x: sp0.x + 60, y: sp0.y - 20, act: "idle", dir: "up" });
+    startEscort(true);
     Game.objective("Suis Nalia jusqu'au village");
   }
   // escorte : Nalia marche devant et donne des conseils
@@ -87,19 +86,36 @@ const Story = (() => {
       "Vous voyez les petits points au-dessus des têtes ? Rouge : quelqu'un a besoin de vous. Noir : quelqu'un peut vous apprendre un chant.",
       "La mini-carte, en haut à droite, montre toute l'île. Le losange jaune, c'est votre prochain objectif.",
     ] };
+  // (re)lance l'escorte : le joueur et Nalia sont posés sur la terre ferme, et le chemin aussi
+  function startEscort(teleport) {
+    const W = Game.world, sp0 = NPC.W("plage");
+    ESC.pts = ESC.path.map(([x, y]) => W.snap(x * K, y * K));
+    if (teleport) Game.teleport(sp0.x - 30, sp0.y + 10);
+    const p = Game.player;
+    // on reprend au point du chemin le plus proche du joueur (utile après un rechargement)
+    let best = 0; ESC.pts.forEach((q, i) => { if (Math.hypot(q.x - p.x, q.y - p.y) < Math.hypot(ESC.pts[best].x - p.x, ESC.pts[best].y - p.y)) best = i; });
+    ESC.i = teleport ? 0 : best; ESC.wait = 0; ESC.tip = teleport ? 0 : ESC.tips.length;
+    const n0 = W.snap(p.x + 70, p.y - 30);
+    NPC.setOverride("nalia", { x: n0.x, y: n0.y, act: "idle", dir: "up" });
+  }
   function updateEscort(dt) {
     if (!Prog.flag("escort")) return;
+    if (!ESC.pts) startEscort(false);
     const p = Game.player, n = NPC.pos("nalia", Net.now());
-    const tgt = ESC.path[Math.min(ESC.i, ESC.path.length - 1)], tx = tgt[0] * K, ty = tgt[1] * K;
+    const tgt = ESC.pts[Math.min(ESC.i, ESC.pts.length - 1)], tx = tgt.x, ty = tgt.y;
     const dP = Math.hypot(p.x - n.x, p.y - n.y);
     let x = n.x, y = n.y, moving = false, dir = n.dir;
-    if (dP < 260) { const d = Math.hypot(tx - x, ty - y); if (d > 6) { const s = Math.min(d, 125 * dt); x += (tx - x) / d * s; y += (ty - y) / d * s; moving = true; dir = Math.abs(tx - x) > Math.abs(ty - y) ? (tx < x ? "left" : "right") : (ty < y ? "up" : "down"); } else if (ESC.i < ESC.path.length) { ESC.i++; if (ESC.tip < ESC.tips.length && !Dialog.open) { const t = ESC.tips[ESC.tip++]; Dialog.say(sp("nalia"), t); } } }
-    else { dir = p.x < x ? "left" : "right"; ESC.wait += dt; if (ESC.wait > 6) { ESC.wait = 0; Game.toast("Nalia t'attend. Suis-la !", 1500); } }
+    if (dP < 320) { const d = Math.hypot(tx - x, ty - y); if (d > 6) { const s = Math.min(d, 125 * dt); x += (tx - x) / d * s; y += (ty - y) / d * s; moving = true; dir = Math.abs(tx - x) > Math.abs(ty - y) ? (tx < x ? "left" : "right") : (ty < y ? "up" : "down"); } else if (ESC.i < ESC.pts.length) { ESC.i++; if (ESC.tip < ESC.tips.length && !Dialog.open) { const t = ESC.tips[ESC.tip++]; Dialog.say(sp("nalia"), t); } } }
+    else { dir = p.x < x ? "left" : "right"; ESC.wait += dt; if (ESC.wait > 6) { ESC.wait = 0; Game.toast("Nalia t'attend. Suis-la !", 1500); }
+      // si le joueur s'est perdu très loin, Nalia revient vers lui
+      if (dP > 900) { const q = Game.world.snap(p.x + 80, p.y - 40); x = q.x; y = q.y; } }
     NPC.setOverride("nalia", { x, y, act: moving ? "walk" : "idle", moving, dir });
-    if (ESC.i >= ESC.path.length && Math.hypot(p.x - x, p.y - y) < 160 && !Dialog.open && !Game.busy()) arriveVillage();
+    const v = NPC.W("village"), nearVillage = Math.hypot(p.x - v.x, p.y - v.y) < 420;
+    if (((ESC.i >= ESC.pts.length && Math.hypot(p.x - x, p.y - y) < 220) || nearVillage) && !Dialog.open && !Game.busy()) arriveVillage();
   }
   async function arriveVillage() {
-    Prog.set("escort", false);
+    if (!Prog.flag("escort")) return;
+    Prog.set("escort", false); ESC.pts = null;
     await cut(async (S) => {
       S.bg("village", {}); S.music("village"); S.camNow(500, 300, 820);
       const n = S.add("nalia", { npc: "nalia", x: 560, y: 410, dir: "left" }); const m = S.add("me", { me: true, x: 380, y: 420, dir: "right" }); const pa = S.add("pa", { partner: true, x: 320, y: 425, dir: "right" });
@@ -253,9 +269,10 @@ const Story = (() => {
   }
   function worldObjects() {
     const out = Quests.objects().map((o) => Object.assign({ kind: "quest" }, o));
-    for (const l of LAIRS) if (lairOpen(l)) out.push({ kind: "lair", l, x: l.x, y: l.y, hint: `👑 ${l.name} · Ramasser pour l'affronter` });
+    const land = (x, y) => Game.world.snap(x, y);
+    for (const l of LAIRS) if (lairOpen(l)) { const q = land(l.x, l.y); out.push({ kind: "lair", l, x: q.x, y: q.y, hint: `👑 ${l.name} · Ramasser pour l'affronter` }); }
     out.push({ kind: "bench", x: (KALUA.VILLAGE.x + 30) * K, y: (KALUA.VILLAGE.y + 2) * K, hint: "🔨 Établi · Ramasser pour fabriquer" });
-    if (Prog.flag("bateau_ok")) out.push({ kind: "pier", x: 958 * K, y: 878 * K, hint: "⛵ Ponton · Ramasser pour naviguer" });
+    if (Prog.flag("bateau_ok")) { const q = land(958 * K, 878 * K); out.push({ kind: "pier", x: q.x, y: q.y, hint: "⛵ Ponton · Ramasser pour naviguer" }); }
     for (const [id, spot] of [["keo", "temple"], ["bastien", "ponton"], ["oro", "pierre1"], ["nalia", "dune"]]) if (Prog.isDead(id)) { const w = NPC.W(spot); out.push({ kind: "grave", who: id, x: w.x + 40, y: w.y + 50, hint: `🕯️ ${NPC.get(id).name}` }); }
     if (Prog.flag("coeur_ouvert") && !Prog.flag("final_done")) out.push({ kind: "glow", x: KALUA.CAVES[4].x * K, y: KALUA.CAVES[4].y * K - 40 });
     return out;
@@ -516,10 +533,10 @@ const Story = (() => {
   function update(dt) {
     updateEscort(dt);
     tickT -= dt; if (tickT > 0) return; tickT = .5;
-    const o = Quests.objective(); Game.objective(o ? o.text : Prog.flag("village_found") && !Prog.flag("final_done") ? goalText() : "");
+    const o = Quests.objective(); Game.objective(o ? o.text : Prog.flag("escort") ? "Suis Nalia jusqu'au village" : Prog.flag("village_found") && !Prog.flag("final_done") ? goalText() : "");
     // Fennek : la nuit, les lanternes ; Arnaud ; etc. → gérés par les quêtes
   }
-  function resume() { if (Prog.flag("escort")) { const w = NPC.W("plage"); NPC.setOverride("nalia", { x: w.x + 60, y: w.y - 20, act: "idle" }); } }
+  function resume() { if (Prog.flag("escort")) { startEscort(false); Game.objective("Suis Nalia jusqu'au village"); } }
   function music() { return null; }
   function event(kind, data) { /* réservé : succès, statistiques */ }
   function lore(id) { const L = LORE[id]; if (!L) return; Prog.note("Lore : " + L.title); Dialog.say({ name: "📖 " + L.title, icon: "sceauFragment", color: "#7a6a9a" }, L.text); }

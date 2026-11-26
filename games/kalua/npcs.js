@@ -18,10 +18,11 @@ const NPC = (() => {
     champ: [700, 712], champ2: [842, 705], prairie: [720, 590],
     cabanes: [420, 470], cabane1: [400, 448], cabane2: [440, 468], cabane3: [420, 496], temple: [486, 558], totemSud: [362, 708], totemTemple: [470, 572], ruineJ: [420, 650], vieilArbre: [300, 562], cimetiere: [330, 655],
     pilotis: [470, 262], pilotis1: [452, 245], pilotis2: [488, 258], pilotis3: [470, 284], pontonM: [440, 270], lanterne1: [430, 232], lanterne2: [500, 246], lanterne3: [455, 296], roseaux: [520, 200], herbes: [560, 160],
-    pierres: [1185, 528], pierre1: [1162, 534], moulin1: [1120, 442], moulin2: [1150, 420], moulin3: [1290, 480], tour: [1300, 344], paturage: [1240, 590], champF: [1120, 608], ruinesF: [1108, 704],
+    pierres: [1185, 528], pierre1: [1162, 534], moulin1: [1120, 442], moulin2: [1150, 420], moulin3: [1290, 480], tour: [1300, 454], paturage: [1240, 590], champF: [1120, 608], ruinesF: [1108, 704],
     sanctuaire: [720, 348], cristaux: [700, 262], campV: [962, 314], forge: [975, 322], geyser: [1020, 222], soufriere: [935, 175],
   };
-  const W = (s) => ({ x: SPOT[s][0] * K, y: SPOT[s][1] * K });
+  // les lieux sont toujours ramenés sur la terre ferme (sinon un habitant ou un objectif peut se retrouver dans l'eau, hors d'atteinte)
+  const W = (s) => { const x = SPOT[s][0] * K, y = SPOT[s][1] * K, w = typeof Game !== "undefined" && Game.world; return w && w.snap ? w.snap(x, y) : { x, y }; };
 
   // ---------------------------------------------------------------- les habitants
   // sched : [heure de début, lieu, activité] ; act : walk, idle, fish, sleep, cook, pray, guard, read, sweep, dance, look, dig, sing, light, tend, star, forge, swim, play, haunt

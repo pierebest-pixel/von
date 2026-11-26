@@ -20,7 +20,7 @@ const Quests = (() => {
   function finish(id) { Prog.finishQuest(id); Music.jingle("victory"); Game.toast(`✅ Quête terminée : ${Q[id].title}`, 3200); Prog.note(`Quête terminée : ${Q[id].title}`); if (Prog.P.track === id) Prog.P.track = null; Prog.changed(); }
   const data = (id) => (st(id) || { d: {} }).d;
   const at = (spot, dx = 0, dy = 0) => () => { const w = NPC.W(spot); return { x: w.x + dx * K, y: w.y + dy * K }; };
-  const mapAt = (x, y) => () => ({ x: x * K, y: y * K });
+  const mapAt = (x, y) => () => (Game.world ? Game.world.snap(x * K, y * K) : { x: x * K, y: y * K });
   const hour = () => NPC.hourAt(Net.now());
   const isNight = () => { const h = hour(); return h >= 20 || h < 5; };
   const sp = (id) => NPC.speaker(id);
@@ -759,7 +759,7 @@ const Quests = (() => {
   // objets de quête dans le monde
   function objects() {
     const out = [];
-    for (const id of order) for (const o of Q[id].objects) { if (!o.show()) continue; o.list.forEach((p, i) => { if (o.only && o.only() !== i) return; out.push({ q: id, o, i, x: p[0] * K, y: p[1] * K }); }); }
+    for (const id of order) for (const o of Q[id].objects) { if (!o.show()) continue; o.list.forEach((p, i) => { if (o.only && o.only() !== i) return; const g = Game.world ? Game.world.snap(p[0] * K, p[1] * K) : { x: p[0] * K, y: p[1] * K }; out.push({ q: id, o, i, x: g.x, y: g.y }); }); }
     return out;
   }
   return { Q, order, def, st, stage, start, to, next, finish, data, talk, marker, objective, objects, tracked, at, mapAt, fight, say, lines, choose, cut, NARR, isNight, hour, have, costTxt };

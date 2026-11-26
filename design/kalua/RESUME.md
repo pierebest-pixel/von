@@ -1,7 +1,7 @@
 # Les Échoués de Kalua — résumé du projet (à lire en début de conversation)
 
 Jeu d'aventure à deux, en ligne, dans l'appli **Von** (dépôt `pierebest-pixel/von`, dossier `games/kalua/`), pensé pour jouer avec sa copine.
-**Version publiée : 0.4** (26/11/2026). Les branches `main` et `kalua` sont identiques.
+**Version publiée : 0.4.1** (26/11/2026). Les branches `main` et `kalua` sont identiques.
 
 Documents à lire selon le besoin :
 - **`design/kalua/LOG.md`** : le rapport détaillé du développement autonome (fichiers, systèmes, salles, boss, quêtes, tests, bugs).
@@ -20,7 +20,7 @@ Documents à lire selon le besoin :
 - On valide chaque étape ensemble : **maquettes en images d'abord**, captures du vrai jeu avant de publier.
 - Publier sur `main` **seulement quand l'utilisateur dit « publie »**.
 - À chaque publication :
-  - augmenter `APP_CACHE` dans `sw.js` (actuellement `von-app-v8`) ;
+  - augmenter `APP_CACHE` dans `sw.js` (actuellement `von-app-v9`) ;
   - augmenter la version dans `games/kalua/menus.js` (écran titre) et dans `games/catalog.json`.
 - L'utilisateur veut concevoir **lui-même les boss finaux des 3 grottes des îles** (6 Tortues, 7 Phare, 8 Étoiles). Ne pas les créer sans lui.
 - Crédits de fin : **Sixte Maron** et **Claude**.
@@ -81,6 +81,11 @@ Documents à lire selon le besoin :
 - **40 musiques** générées en direct (par région, par boss, par émotion) avec des fondus, plus 30 bruitages.
 - Menu en jeu : Appeler Nalia, Quêtes (avec la quête suivie), Carte, Sac (on peut manger), Chants et vie, Journal et lore, Sauvegarde, Réglages.
 - **Sauvegarde** de toute la progression dans le téléphone et en ligne (`islands/{id}/progress/{uid}`).
+
+### Kalua 0.4.1 (correctifs, publié le 26/11/2026)
+- **Bug de l'intro corrigé** : après la cinématique, le joueur était posé dans l'eau et ne pouvait plus bouger, donc Nalia l'attendait sans fin. Maintenant, chaque téléportation pose le joueur sur la terre ferme (`world.snap`), et le joueur peut toujours sortir d'une case interdite.
+- Escorte de Nalia plus solide : elle reprend au bon endroit après un rechargement, revient chercher le joueur s'il s'est perdu, et l'arrivée se déclenche aussi en entrant dans le village. L'objectif « Suis Nalia jusqu'au village » reste affiché.
+- **Objets et lieux hors d'atteinte corrigés** : la tour de Lili était dans la mer (déplacée en 1300, 440) ; l'indice du journal, le gouvernail, l'harmonica de Tim, les perles d'Ondine, une étoile tombée, le ponton et les habitants placés dans l'eau sont maintenant ramenés au bord.
 
 ### Architecture du code (`games/kalua/`)
 | Fichier | Rôle |

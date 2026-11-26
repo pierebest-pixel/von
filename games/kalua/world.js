@@ -92,7 +92,23 @@ function makeWorld() {
   }
 
   // ---------------------------------------------------------------- déplacements
+  // le point franchissable le plus proche (pour ne jamais poser un joueur dans l'eau ou la lave)
+  const snapCache = new Map();
+  function snap(x, y, max = 900) {
+    if (walkable(x, y)) return { x, y };
+    const key = Math.round(x) + "," + Math.round(y), c = snapCache.get(key); if (c) return { x: c.x, y: c.y };
+    const q = snapFar(x, y, max); snapCache.set(key, q); return { x: q.x, y: q.y };
+  }
+  function snapFar(x, y, max) {
+    for (let r = 12; r <= max; r += 12) {
+      const n = Math.max(8, Math.round(r / 6));
+      for (let a = 0; a < n; a++) { const px = x + Math.cos(a / n * TAU) * r, py = y + Math.sin(a / n * TAU) * r; if (walkable(px, py)) return { x: px, y: py }; }
+    }
+    return { x: spawn.x, y: spawn.y };
+  }
   function move(x, y, nx, ny, r = 10) {
+    // si le joueur se retrouve sur une case interdite (eau, lave…), on le laisse en sortir au lieu de le bloquer
+    if (!walkable(x, y)) return { x: nx, y: ny };
     let tx = nx, ty = ny;
     if (!walkable(tx, ty)) { if (walkable(nx, y)) ty = y; else if (walkable(x, ny)) tx = x; else { tx = x; ty = y; } }
     around(tx - 200, ty - 200, tx + 200, ty + 200, (ch) => {
@@ -276,5 +292,5 @@ function makeWorld() {
   }
   function preview(c, size) { const ov = M.getOverview(); c.fillStyle = "#4a9ac8"; c.fillRect(0, 0, size, size); const k = size / ov.height * 1.6; c.drawImage(ov, (size - ov.width * k) / 2 + 10, (size - ov.height * k) / 2, ov.width * k, ov.height * k); }
 
-  return { WW, WH, spawn, walkable, move, nearest, drawWater, drawGround, visibleSolids, drawSolid, update, placeName, preview, chunk, around };
+  return { WW, WH, spawn, walkable, snap, move, nearest, drawWater, drawGround, visibleSolids, drawSolid, update, placeName, preview, chunk, around };
 }
