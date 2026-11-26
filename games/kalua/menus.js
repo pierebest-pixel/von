@@ -10,6 +10,13 @@ function applySettings() {
   document.body.classList.toggle("lefty", Boolean(SET.lefty));
 }
 applySettings();
+function startMusic() {
+  if (!SET.music || (window.Von && Von.sound === false) || (typeof G !== "undefined" && G.on) || document.hidden) return;
+  Music.setEnabled(true); Music.start();
+}
+// iPhone : le son ne peut démarrer qu'après un toucher
+document.addEventListener("pointerdown", () => { if (!(typeof G !== "undefined" && G.on)) startMusic(); }, { capture: true });
+document.addEventListener("visibilitychange", () => { if (document.hidden) Music.stop(.2); else startMusic(); });
 const buzz = (ms = 15) => { if (SET.vibe) try { navigator.vibrate?.(ms); } catch { /* ignore */ } };
 
 // ================================================================ titre « KALUA » dessiné
@@ -89,9 +96,10 @@ function showTitle() {
       <button class="tbtn main" data-x="play">▶&nbsp; JOUER</button>
       <button class="tbtn" data-x="perso">👤&nbsp; Mon personnage</button>
       <button class="tbtn" data-x="settings">⚙️&nbsp; Réglages</button>
-      <div class="ver">version 0.2 · Von</div>
+      <div class="ver">version 0.3 · Von</div>
     </div></div>`;
   const cvs = $("#tcv"); let alive = true; const t0 = performance.now();
+  startMusic();
   (function anim() {
     if (!alive || !cvs.isConnected) return;
     const w = innerWidth, h = innerHeight;
@@ -158,12 +166,12 @@ function openSettings(back) {
     ${row("✋ Boutons d'action", seg("lefty", [[true, "Gauche"], [false, "Droite"]]))}
     ${row("🏷️ Pseudos au-dessus", tg("names"))}
     ${row("🔍 Zoom", seg("zoom", [[.8, "−"], [1, "Normal"], [1.25, "+"]]))}
-    <p class="pnote">Les sons et la musique arriveront avec une prochaine étape : tes choix sont déjà gardés.</p>
+    <p class="pnote">La musique joue dans les menus. Les bruitages arriveront avec une prochaine étape.</p>
     <button class="item main center" data-done>Fermer</button>`, "settings");
   d.querySelector(".panel").addEventListener("click", (e) => {
     const t = e.target.closest("[data-t],[data-s],[data-done]"); if (!t) return; buzz();
     if (t.dataset.done !== undefined) { closePanel(); if (back) back(); else if (G.on) G.menuOpen = false; return; }
-    if (t.dataset.t) { SET[t.dataset.t] = !SET[t.dataset.t]; t.classList.toggle("on", SET[t.dataset.t]); }
+    if (t.dataset.t) { SET[t.dataset.t] = !SET[t.dataset.t]; t.classList.toggle("on", SET[t.dataset.t]); if (t.dataset.t === "music") { if (SET.music) { saveSettings(); startMusic(); } else Music.setEnabled(false); } }
     if (t.dataset.s) { const v = JSON.parse(t.dataset.v); SET[t.dataset.s] = v; t.parentNode.querySelectorAll("button").forEach((b) => b.classList.toggle("on", b === t)); }
     saveSettings(); applySettings();
   });

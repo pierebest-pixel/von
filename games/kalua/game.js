@@ -120,7 +120,7 @@ function showCreator(first, back = showIslands) {
 const hue = (s) => { let h = 0; for (const ch of String(s)) h = (h * 31 + ch.charCodeAt(0)) % 360; return h; };
 
 function showIslands() {
-  clearScreen(); hud.hidden = true;
+  clearScreen(); hud.hidden = true; startMusic();
   ui.innerHTML = `<div class="screen islands">
     <div class="top"><button class="round" data-x="title" aria-label="Menu titre">‹</button><h1>Mes îles</h1><span class="round" style="visibility:hidden"></span></div><div class="sub">Les Échoués de Kalua</div>
     <div class="list" id="ilist"><div class="spinner"></div></div>
@@ -215,6 +215,7 @@ addEventListener("resize", resize);
 resize();
 
 async function play(id) {
+  Music.stop(1.2);
   clearScreen(); showLoading();
   let s;
   try { s = await Net.enter(id, avatar); } catch (err) { console.warn(err); return showError(err.code === "gone" ? "gone" : "offline"); }
