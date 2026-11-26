@@ -38,6 +38,8 @@ const Game = {
   caveEnv: (o) => Object.assign({ player: G.p, light: false, shake: (a, t) => Game.shake(a, t), hint: (t) => toast(t, "hint:" + t, 3200), onDeath: () => Game.caveDeath() }, o),
   enterCutscene() { G.prevMode = G.mode === "cut" ? G.prevMode : G.mode; G.mode = "cut"; hud.hidden = true; resetInput(); },
   leaveCutscene() { G.mode = G.prevMode || "world"; hud.hidden = false; G.p.kx = G.p.ky = 0; ambience(true); },
+  enterArena() { G.prevArenaMode = G.mode; G.mode = "arena"; hud.hidden = false; resetInput(); },
+  leaveArena() { G.mode = G.prevArenaMode || "cave"; resetInput(); ambience(true); },
   enterBattle() { G.prevBattleMode = G.mode; G.mode = "battle"; hud.hidden = true; resetInput(); },
   leaveBattle(res) { G.mode = G.prevBattleMode || "world"; hud.hidden = false; ambience(true); if (res === "lose" && G.mode === "world") worldDeath(); },
   async exitCave(n) { G.boss = null; Game.fade(() => { G.mode = "world"; Act.clear(); Act.setEnv(worldEnv()); const cvx = KALUA.CAVES.find((c) => c.n === n); const q = G.world.snap(cvx.x * KALUA.K, cvx.y * KALUA.K + 110); G.p.x = q.x; G.p.y = q.y; G.p.dir = "down"; Game.camSnap(); G.zone = "w"; ambience(true); Prog.P.pos = { x: G.p.x, y: G.p.y }; Prog.save(); toast("📍 " + G.world.placeName(G.p.x, G.p.y)); }); },
@@ -110,7 +112,7 @@ function addBot(b) {
 }
 function updateBot(dt) {
   const B = G.bot; if (!B || !G.p) return;
-  if (G.mode === "battle" || G.mode === "cut") return;
+  if (G.mode === "battle" || G.mode === "cut" || G.mode === "arena") return;
   const o = B.o, p = G.p, z = G.mode === "cave" ? `c${Dungeon.n}:${Dungeon.room ? Dungeon.room.id : ""}` : G.mode === "house" ? G.zone : "w";
   const last = B.trail[B.trail.length - 1];
   // changement de lieu (grotte, salle, téléportation) : le compagnon arrive juste derrière toi
@@ -158,7 +160,7 @@ function pickupToast(id, txt) {
 
 function sendPos(force, s = G.session) {
   if (!s || !G.p) return;
-  const p = G.p, z = G.mode === "cave" ? `c${Dungeon.n}:${Dungeon.room ? Dungeon.room.id : ""}` : G.mode === "house" ? G.zone : "w";
+  const p = G.p, z = G.mode === "cave" ? `c${Dungeon.n}:${Dungeon.room ? Dungeon.room.id : ""}` : G.mode === "arena" ? "a:" + Arena.kind : G.mode === "house" ? G.zone : "w";
   const k = `${Math.round(p.x)},${Math.round(p.y)},${p.dir},${p.moving},${p.at},${z}`;
   if (!force && k === G.lastKey && performance.now() - (G.lastSentT || 0) < 3000) return;
   G.lastKey = k; G.lastSentT = performance.now(); G.lastSave = Date.now();
@@ -232,6 +234,13 @@ function huntAnimal(a, p) {
 function doAction(a) {
   const p = G.p; if (!p || !G.on || Game.busy()) return;
   if (G.mode === "battle" || G.mode === "cut") return;
+  if (G.mode === "arena") {
+    if (a === "hit" && p.swing <= 0 && p.roll <= 0) { p.swing = .32; p.a = "hit"; p.at = Date.now(); Music.sfx("swing", .5); Arena.action("hit"); }
+    else if (a === "grab" && p.roll <= 0) { p.swing = .2; p.a = "grab"; p.at = Date.now(); Arena.action("grab"); }
+    else if (a === "dodge" && p.roll <= 0 && p.cool <= 0) { const v = inputVector(); p.roll = .34; p.cool = .5; p.rollV = v.x || v.y ? [v.x, v.y] : FACING[p.dir]; p.a = "roll"; p.at = Date.now(); Arena.action("dodge"); }
+    else if (a === "magic") toast("Ici, pas de chant : c'est un jeu !", "arenamagic");
+    sendPos(true); return;
+  }
   if (a === "hit" && p.swing <= 0 && p.roll <= 0) {
     p.swing = .32; p.a = "hit"; p.at = Date.now(); Music.sfx("swing", .5);
     if (Act.playerHit(p, weaponDmg())) { sendPos(true); return; }
@@ -407,10 +416,11 @@ function frame(now) {
     if (G.mode === "world") { updateWorld(dt); renderWorld(); }
     else if (G.mode === "cave") { updateCave(dt); renderCave(); }
     else if (G.mode === "house") { movePlayer(dt, House.move); House.update(dt); sendPos(false); updateOthers(dt); House.render(ctx, innerWidth, innerHeight); }
+    else if (G.mode === "arena") { movePlayer(dt, Arena.move); Arena.update(dt); sendPos(false); updateOthers(dt); Arena.render(ctx, innerWidth, innerHeight); }
     else if (G.mode === "battle") { ctx.setTransform(DPR, 0, 0, DPR, 0, 0); Battle.render(ctx, innerWidth, innerHeight, dt); }
     else if (G.mode === "cut") { ctx.setTransform(DPR, 0, 0, DPR, 0, 0); ctx.fillStyle = "#000"; ctx.fillRect(0, 0, innerWidth, innerHeight); Cutscene.render(ctx, innerWidth, innerHeight, dt); }
     if (G.mode === "world" && typeof VillageLife !== "undefined") VillageLife.snow(ctx, innerWidth, innerHeight, dt);
-    if (G.mode === "world" || G.mode === "cave" || G.mode === "house") drawHUD(dt);
+    if (G.mode === "world" || G.mode === "cave" || G.mode === "house" || G.mode === "arena") drawHUD(dt);
     if (G.fadeA > 0) { ctx.setTransform(DPR, 0, 0, DPR, 0, 0); ctx.fillStyle = `rgba(0,0,0,${G.fadeA})`; ctx.fillRect(0, 0, innerWidth, innerHeight); }
     drawMinimap(now);
   } catch (e) { console.error(e); }
@@ -467,7 +477,7 @@ function updateCave(dt) {
 
 // ---------------------------------------------------------------- musique d'ambiance
 function ambience(force) {
-  if (!G.on || G.mode === "battle" || G.mode === "cut") return;
+  if (!G.on || G.mode === "battle" || G.mode === "cut" || G.mode === "arena") return;
   let want;
   if (G.mode === "cave") want = (G.boss && G.boss.alive) ? Music.current : (Dungeon.cave ? Dungeon.cave.music : "caveDoux");
   else {
@@ -593,7 +603,7 @@ function drawHUD() {
   Battle.hearts(c, 12, y0, Math.min(20, vw / 22));
   if (G.objective && G.mode === "world") { c.font = "700 11px ui-rounded, system-ui"; const w = Math.min(vw - 140, c.measureText(G.objective).width + 18); c.fillStyle = "rgba(255,250,240,.88)"; c.beginPath(); c.roundRect(12, y0 + 26 + Math.floor((Prog.P.maxHp - 1) / 10) * 23, w, 20, 10); c.fill(); c.fillStyle = "#6b5050"; c.textAlign = "left"; c.fillText("★ " + G.objective, 20, y0 + 40 + Math.floor((Prog.P.maxHp - 1) / 10) * 23, w - 14); }
   const b = G.boss;
-  if (b && b.alive && b.bar !== false && G.mode === "cave") { const w = Math.min(320, vw * .7), x = vw / 2 - w / 2, y = vh * .14 + top;
+  if (b && b.alive && b.bar !== false && (G.mode === "cave" || G.mode === "arena")) { const w = Math.min(320, vw * .7), x = vw / 2 - w / 2, y = vh * .14 + top;
     c.fillStyle = "rgba(20,10,20,.6)"; c.beginPath(); c.roundRect(x - 6, y - 18, w + 12, 34, 10); c.fill();
     c.fillStyle = "#fff"; c.font = "800 12px ui-rounded"; c.textAlign = "center"; c.fillText(b.name + (b.guard ? " 🛡" : ""), vw / 2, y - 4);
     c.fillStyle = "#3a2a2a"; c.fillRect(x, y + 2, w, 8); c.fillStyle = b.phase >= 2 ? "#ff3a3a" : b.phase ? "#ff7a3a" : "#ff5a7a"; c.fillRect(x, y + 2, w * Math.max(0, b.hp) / b.max, 8); }

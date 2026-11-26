@@ -90,7 +90,7 @@ const Dungeon = (() => {
   function doorState(dir) {
     const S = Prog.cave(n), def = R.def, kind = (def.locks || {})[dir];
     if (!def.exits || !def.exits[dir]) return "wall";
-    if (kind === "key" || kind === "boss") return S.open[R.id + dir] ? "open" : kind;
+    if (kind === "key" || kind === "boss" || kind === "code") return S.open[R.id + dir] ? "open" : kind;
     if ((kind === "shut" || def.shut) && !R.solved) return "shut";
     if (R.boss && R.boss.alive) return "shut";
     return "open";
@@ -160,6 +160,10 @@ const Dungeon = (() => {
       Music.play(def.music || "miniboss", .6);
       Game.bossBar(R.boss);
       if (def.intro) Game.toast(def.intro, 3000);
+    } else if (d.arena) { // les boss des îles, dans leur grande arène
+      const res = await Arena.start(d.arena);
+      if (res === "win") bossDown();
+      else { Prog.P.hp = Prog.P.maxHp; Prog.changed(); const back = d.exits && d.exits.s; Game.fade(() => { if (back) load(back, "n"); }); setTimeout(() => Game.toast(d.loseText || "Tu reprends tes esprits devant la porte. Retente ta chance quand tu veux !", 3200), 400); }
     } else if (d.battle) { // au tour par tour
       Game.player.y = R.entry.y;
       const res = await Battle.start({ foes: Array.isArray(d.battle) ? d.battle : [d.battle], bg: d.bg || "cave", bgOpt: { col: PAL[n].wall, glow: "rgba(120,200,255,.25)" } });
@@ -172,9 +176,9 @@ const Dungeon = (() => {
     S.done[R.id] = true; R.solved = true; Prog.changed();
     Music.jingle("victory"); Music.play(cave.music, 2);
     if (d.reward) { Prog.give(d.reward, 1); }
-    if (d.after) await d.after(api());
-    for (const c of R.chests) c.hidden = false;
     if (d.final) { Prog.cave(n).cleared = true; Prog.set("cave" + n + "_done"); }
+    for (const c of R.chests) c.hidden = false;
+    if (d.after) await d.after(api());
   }
 
   // ---------------------------------------------------------------- actions du joueur
@@ -192,6 +196,7 @@ const Dungeon = (() => {
     if (dd) { const st = doorState(dd);
       if (st === "key") { if (S.keys > 0) { S.keys--; S.open[R.id + dd] = true; Prog.changed(); Music.sfx("door"); Game.toast("🗝️ La porte s'ouvre."); } else Game.toast("🔒 Il faut une petite clé."); return true; }
       if (st === "boss") { if (Prog.has("cleBoss" + n) || S.bossKey) { S.open[R.id + dd] = true; Prog.changed(); Music.sfx("door"); Game.toast("🔑 La grande porte s'ouvre lentement…"); } else Game.toast("🔒 Une grande serrure. Il faut la Grande clé de cette grotte."); return true; }
+      if (st === "code") { codeDoor(dd); return true; }
       if (st === "shut") { Game.toast(R.def.shutText || "La porte est scellée par un mécanisme."); return true; } }
     if (ch === "l") { hitLever(tx, ty); return true; }
     return false;
@@ -204,9 +209,42 @@ const Dungeon = (() => {
     else if (item.startsWith("lore:")) { Prog.P.lore[item.slice(5)] = true; Prog.changed(); Music.jingle("secret"); Story.lore(item.slice(5)); }
     else { const [id, q] = item.split("*"); Prog.give(id, Number(q) || 1); Music.jingle("item"); }
   }
+  // ---- les indices du « fil rouge » (carnet de la grotte) et les portes à code
+  const norm = (s) => String(s || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]/g, "");
+  function addClue(c) { if (!c) return; const S = Prog.cave(n); S.clues = S.clues || {}; if (S.clues[c.k]) return; S.clues[c.k] = c.t; Prog.changed(); Music.jingle("secret"); Game.toast("📜 Carnet : " + c.t, 4200); }
+  const clueList = () => { const S = Prog.cave(n), C = (cave.clueOrder || Object.keys(S.clues || {})); return C.filter((k) => (S.clues || {})[k]).map((k) => "• " + S.clues[k]); };
+  async function codeDoor(dir) {
+    const S = Prog.cave(n), L = R.def.code; if (!L) return;
+    Game.lockInput(true);
+    try {
+      const cl = clueList();
+      if (L.intro) await Dialog.lines({ name: L.who || "Serrure à code", icon: "sceauFragment", color: "#24486e" }, [].concat(L.intro));
+      if (cl.length) await Dialog.lines({ name: "Ton carnet", icon: "sceauFragment", color: "#7a5a3a" }, ["Ce que tu as noté dans la grotte :\n" + cl.join("\n")]);
+      const ans = await Dialog.input({ name: L.who || "Serrure à code", icon: "sceauFragment", color: "#24486e" }, L.q, L.ph || "Le code…");
+      if (L.a.some((a) => norm(a) === norm(ans))) { S.open[R.id + dir] = true; Prog.changed(); Music.sfx("door"); Music.jingle("secret"); Game.shake(5, .4); Game.toast(L.ok || "🔓 Le code est bon ! La porte s'ouvre.", 3000); }
+      else if (ans) { Music.sfx("trap"); Game.toast(L.wrong || "❌ Ce n'est pas le bon code. Relis ton carnet…", 2600); }
+    } finally { Game.lockInput(false); }
+  }
+  async function quizStele(st, key) {
+    const S = Prog.cave(n), who = { name: st.who || "Stèle", icon: st.icon || "sceauFragment", color: st.color || "#7a6a9a" };
+    if (S.done[key]) { await Dialog.say(who, st.again || (st.clue ? "Déjà résolu. Dans ton carnet : « " + st.clue.t + " »" : "Déjà résolu.")); return; }
+    let ok = false;
+    if (st.quiz) { ok = true; let i = 0; for (const [q, opts, a] of st.quiz) { i++; const v = await Dialog.choose(who, `(${i}/${st.quiz.length}) ${q}`, opts.map((o, k) => [k, o])); if (v !== a) { ok = false; break; } Music.sfx("pickup", .5); } }
+    else if (st.order) { ok = true; const left = st.order.items.map((t, i) => [i, t]); for (let k = 0; k < st.order.items.length; k++) { const v = await Dialog.choose(who, `${st.order.q} (${k + 1}/${st.order.items.length})`, left.filter((x) => x[0] >= 0)); if (v !== st.order.a[k]) { ok = false; break; } left.find((x) => x[0] === v)[0] = -1; Music.sfx("pickup", .5); } }
+    else if (st.riddle) { const v = await Dialog.choose(who, st.riddle.q, st.riddle.opts.map((o, i) => [i, o])); ok = v === st.riddle.a; }
+    else if (st.ask) { const ans = await Dialog.input(who, st.ask.q, "Ta réponse…"); ok = st.ask.a.some((a) => norm(ans) === norm(a) || (st.ask.loose && norm(ans).includes(norm(a)))); if (!ans) return; }
+    if (ok) { S.done[key] = true; Prog.changed(); Music.sfx("puzzle"); if (st.good) await Dialog.say(who, st.good); addClue(st.clue); if (st.solve !== false && !R.solved) solve(); if (st.give) Prog.give(st.give, 1); }
+    else { Music.sfx("trap"); Game.toast(st.wrong || "Raté… La stèle s'éteint. Réessaie !", 2200); if (st.punish && !cave.turn) Act.spawn(st.punish, Game.player.x + 60, Game.player.y); if (st.hurt) { if (Prog.hurt(1)) Game.caveDeath(); } }
+  }
   async function readStele(x, y) {
     const def = R.def, st = (def.steles || {})[`${x},${y}`] || def.stele;
     if (!st) { Game.toast("Des spirales lumes, illisibles."); return; }
+    if (st.clue || st.quiz || st.order || st.fil) {
+      Game.lockInput(true);
+      try { if (st.lore) { Prog.P.lore[st.lore] = true; Prog.changed(); } if (st.text) await Dialog.lines({ name: st.who || "Stèle", icon: st.icon || "sceauFragment", color: st.color || "#7a6a9a" }, [].concat(st.text)); if (st.fil) addClue(st.fil); if (st.clue || st.quiz || st.order || st.riddle || st.ask) await quizStele(st, "q:" + R.id + ":" + x + "," + y); if (st.fn) await st.fn(api()); }
+      finally { Game.lockInput(false); }
+      return;
+    }
     Game.lockInput(true);
     try {
       if (st.lore) { Prog.P.lore[st.lore] = true; Prog.changed(); }
@@ -362,7 +400,7 @@ const Dungeon = (() => {
       case "P": floor(); c.fillStyle = blockAt(x, y) ? "#5a8a5a" : "#8a7a6a"; c.fillRect(X + 8, Y + 8, TS - 16, TS - 16); c.strokeStyle = "rgba(0,0,0,.3)"; c.strokeRect(X + 8, Y + 8, TS - 16, TS - 16); break;
       case "w": floor(); c.strokeStyle = "rgba(255,255,255,.45)"; c.lineWidth = 2; { const w = R.def.wind || [0, -1], o = (t * 40) % 16; for (let i = 0; i < 3; i++) { c.beginPath(); const cx = X + 24 + w[0] * (o + i * 16 - 16), cy = Y + 24 + w[1] * (o + i * 16 - 16); c.moveTo(cx - w[1] * 8 - w[0] * 4, cy - w[0] * 8 - w[1] * 4); c.lineTo(cx + w[0] * 4, cy + w[1] * 4); c.lineTo(cx + w[1] * 8 - w[0] * 4, cy + w[0] * 8 - w[1] * 4); c.stroke(); } } break;
       case "c": if (R.crumble[k] === -1) { c.fillStyle = "#07050a"; c.fillRect(X, Y, TS, TS); break; } floor(); c.strokeStyle = "rgba(0,0,0,.4)"; c.lineWidth = 1.5; c.beginPath(); c.moveTo(X + 6, Y + 10); c.lineTo(X + 20, Y + 24); c.lineTo(X + 40, Y + 14); c.moveTo(X + 20, Y + 24); c.lineTo(X + 24, Y + 42); c.stroke(); if (R.crumble[k] > 0) { c.fillStyle = "rgba(0,0,0,.3)"; c.fillRect(X, Y, TS, TS); } break;
-      case "D": { const st = doorState(doorDir(x, y)); floor(); if (st !== "open") { c.fillStyle = st === "key" ? "#8a6a3a" : st === "boss" ? "#5a2a5a" : "#4a4a52"; c.fillRect(X + 2, Y + 2, TS - 4, TS - 4); c.fillStyle = st === "key" ? "#ffd23a" : st === "boss" ? "#ff9ad0" : "#7a7a86"; c.beginPath(); c.arc(X + 24, Y + 24, st === "boss" ? 10 : 6, 0, TAU); c.fill(); if (st === "shut") { c.fillStyle = "#2a2a32"; for (let i = 0; i < 4; i++) c.fillRect(X + 6 + i * 11, Y + 2, 4, TS - 4); } } break; }
+      case "D": { const st = doorState(doorDir(x, y)); floor(); if (st !== "open") { c.fillStyle = st === "key" ? "#8a6a3a" : st === "boss" ? "#5a2a5a" : st === "code" ? "#24486e" : "#4a4a52"; c.fillRect(X + 2, Y + 2, TS - 4, TS - 4); if (st === "code") { c.fillStyle = "#8ad0ff"; for (let i = 0; i < 9; i++) c.fillRect(X + 12 + (i % 3) * 9, Y + 10 + Math.floor(i / 3) * 9, 6, 6); } c.fillStyle = st === "key" ? "#ffd23a" : st === "boss" ? "#ff9ad0" : st === "code" ? "rgba(0,0,0,0)" : "#7a7a86"; c.beginPath(); c.arc(X + 24, Y + 24, st === "boss" ? 10 : 6, 0, TAU); c.fill(); if (st === "shut") { c.fillStyle = "#2a2a32"; for (let i = 0; i < 4; i++) c.fillRect(X + 6 + i * 11, Y + 2, 4, TS - 4); } } break; }
       case "g": floor(); c.fillStyle = "#3a3a42"; for (let i = 0; i < 4; i++) c.fillRect(X + 6 + i * 11, Y, 4, TS); c.fillRect(X, Y + 8, TS, 4); break;
       case "r": case "b": floor(); { const up = ch === "r" ? R.crystal === 0 : R.crystal === 1, col = ch === "r" ? "#e05a6a" : "#5a8ae0"; c.fillStyle = up ? col : "rgba(0,0,0,.2)"; c.fillRect(X + 4, Y + (up ? 2 : 14), TS - 8, up ? TS - 8 : TS - 20); if (up) { c.fillStyle = "rgba(255,255,255,.3)"; c.fillRect(X + 4, Y + 2, TS - 8, 8); } else { c.strokeStyle = col; c.strokeRect(X + 6, Y + 16, TS - 12, TS - 24); } } break;
       default: floor(); if (ch === ",") { c.fillStyle = P.deco; c.globalAlpha = .5; c.fillRect(X + 10 + (x * 7) % 20, Y + 12 + (y * 5) % 18, 6, 4); c.fillRect(X + 28 - (x * 3) % 12, Y + 30, 4, 4); c.globalAlpha = 1; }
@@ -453,5 +491,5 @@ const Dungeon = (() => {
     return true;
   }
   const respawn = () => { load(cave.start, null); };
-  return { startBoss, CAVES, PAL, TS, CW, CH, enter, update, render, interact, hitWorld, respawn, solve, get room() { return R; }, get cave() { return cave; }, get n() { return n; } };
+  return { addClue, clueList, startBoss, CAVES, PAL, TS, CW, CH, enter, update, render, interact, hitWorld, respawn, solve, get room() { return R; }, get cave() { return cave; }, get n() { return n; } };
 })();
