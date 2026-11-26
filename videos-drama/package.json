@@ -1,0 +1,14 @@
+{
+  "name": "drama-house-videos",
+  "version": "1.0.0",
+  "description": "Générateur de vidéos TikTok drama",
+  "scripts": {},
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@fontsource/poppins": "^5.1.0",
+    "three": "^0.170.0"
+  },
+  "private": true
+}
