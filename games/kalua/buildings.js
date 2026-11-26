@@ -30,6 +30,7 @@ const BUILD = (() => {
     if (tex === "logs") { for (let yy = y - h + .6; yy < y; yy += 1.2) { c.fillStyle = sh(col, .88); c.fillRect(x, yy + .6, w, .25); ell(c, x + .5, yy, .55, .55, sh(col, 1.1), sh(col, .7)); ell(c, x + w - .5, yy, .55, .55, sh(col, 1.1), sh(col, .7)); } }
     if (tex === "stone") { for (let r = 0, yy = y; yy > y - h; r++, yy -= 1.25) { let xx = x - (r % 2) * .9; while (xx < x + w) { const bw = 1.4 + rnd() * 1.2; rrect(c, xx + .07, yy - 1.18, bw - .14, 1.1, .3, sh(col, .92 + rnd() * .14), sh(col, .72)); xx += bw; } } }
     if (tex === "brick") { for (let r = 0, yy = y; yy > y - h; r++, yy -= .7) { for (let xx = x - (r % 2) * .8; xx < x + w; xx += 1.6) rect(c, xx + .06, yy - .64, 1.48, .58, sh(col, .94 + rnd() * .1), null); } }
+    if (tex === "ashlar") { for (let r = 0, yy = y; yy > y - h; r++, yy -= 1.4) { line(c, [[x, yy], [x + w, yy]], sh(col, .86), .07); for (let xx = x + (r % 2) * 1.5; xx < x + w; xx += 3) line(c, [[xx, yy], [xx, yy - 1.4]], sh(col, .88), .06); } }
     if (tex === "plaster") { for (let k = 0; k < w * h / 4; k++) ell(c, x + rnd() * w, y - rnd() * h, .12, .08, sh(col, .93), null); }
     if (tex === "timber") { const bc = o.beam || "#6b4428"; rect(c, x, y - h, w, .45, bc, null); rect(c, x, y - .45, w, .45, bc, null); const n = Math.max(2, Math.round(w / 3.2)); for (let i = 0; i <= n; i++) { const xx = x + i * (w - .45) / n; rect(c, xx, y - h, .45, h, bc, null); if (i < n) { const x2 = x + (i + 1) * (w - .45) / n; line(c, i % 2 ? [[xx + .4, y - h + .4], [x2, y - .4]] : [[xx + .4, y - .4], [x2, y - h + .4]], bc, .38); } } }
     if (tex === "shingle") { for (let r = 0, yy = y - h; yy < y; r++, yy += .9) for (let xx = x - (r % 2) * .5; xx < x + w; xx += 1) rrect(c, xx + .05, yy, .9, .95, [0, 0, .3, .3], sh(col, .95 + rnd() * .08), sh(col, .78)); }
@@ -116,14 +117,90 @@ const BUILD = (() => {
     if (txt) banner(c, x, y + 2.6, txt);
   }
   function banner(c, x, y, txt, bg = "#5a3a2a", fg = "#fff4d8") { c.font = "900 1.15px 'Segoe UI',sans-serif"; const w = c.measureText(txt).width + 1.2; rrect(c, x - w / 2, y - .85, w, 1.6, .4, bg, OUT); c.fillStyle = fg; c.textAlign = "center"; c.fillText(txt, x, y + .35); c.textAlign = "left"; }
-  function chimney(c, x, y, w, h, col, t = 0) { wall(c, x, y, w, h, col, "brick", { noEave: true }); rect(c, x - .25, y - h - .45, w + .5, .5, sh(col, .7)); for (let k = 0; k < 4; k++) { const a = ((t * .35 + k / 4) % 1); ell(c, x + w / 2 + Math.sin(a * 6 + k) * .8, y - h - 1.2 - a * 6, .6 + a * 1.2, .5 + a, `rgba(240,240,245,${.55 * (1 - a)})`, null); } }
-  function flag(c, x, y, h, col, t = 0) { line(c, [[x, y], [x, y - h]], "#5a4a3a", .18); const w = Math.sin(t * 4 + x) * .5; c.beginPath(); c.moveTo(x, y - h); c.quadraticCurveTo(x + 1.6, y - h + .3 + w, x + 3.2, y - h + .7); c.quadraticCurveTo(x + 1.6, y - h + 1.6 - w, x, y - h + 1.9); fill(c, col, OUT, .1); }
+  // ---- parties animées : en cache, on note seulement leur place ; le jeu les anime par-dessus (fumée, drapeaux, ailes, jets d'eau)
+  let REC = null;
+  const AN = {
+    smoke(c, o, t) { for (let k = 0; k < 4; k++) { const a = ((t * .35 + k / 4) % 1); ell(c, Math.sin(a * 6 + k) * .8, -a * 6, .6 + a * 1.2, .5 + a, `rgba(240,240,245,${.55 * (1 - a)})`, null); } },
+    flag(c, o, t) { const w = Math.sin(t * 4 + (o.ph || 0)) * .5, w2 = Math.sin(t * 5.3 + (o.ph || 0)) * .3; c.beginPath(); c.moveTo(0, 0); c.quadraticCurveTo(1.6, .3 + w, 3.2, .7 + w2); c.quadraticCurveTo(1.6, 1.6 - w, 0, 1.9); fill(c, o.col, OUT, .1); },
+    blades(c, o, t) { c.save(); c.rotate(t * 1.1); for (let i = 0; i < 4; i++) { c.rotate(TAU / 4); rect(c, -.3, 0, .6, 9, "#7a5232", OUT); rect(c, .3, 2, 2.4, 6.6, "rgba(248,244,236,.95)", OUT); for (let k = 1; k < 4; k++) line(c, [[.3, 2 + k * 1.65], [2.7, 2 + k * 1.65]], "#c8b8a0", .08); } c.restore(); ell(c, 0, 0, .8, .8, "#5a3a22", OUT); },
+    jet(c, o, t) { for (let i = 0; i < o.n; i++) { const a = (t * 1.4 + i / o.n) % 1, s = i % 2 ? 1 : -1; ell(c, s * a * o.spread, a * a * o.drop, o.r || .22, (o.r || .22) * 1.3, "#cfeeff", null); } },
+    wheel(c, o, t) { c.save(); c.rotate(t); for (let k = 0; k < 8; k++) { c.rotate(TAU / 8); rect(c, -.1, 0, .2, 1.4, "#8a5a3a", null); rect(c, -.35, 1.2, .7, .3, "#a8784a", null); } c.restore(); ell(c, 0, 0, .3, .3, "#5a3a22", OUT); },
+  };
+  function anim(c, kind, x, y, o, t) {
+    if (REC) { const m = c.getTransform(), p = m.transformPoint(new DOMPoint(x, y)); REC.push({ kind, px: p.x, py: p.y, k: Math.hypot(m.a, m.b), flip: m.a < 0, o }); return; }
+    c.save(); c.translate(x, y); AN[kind](c, o, t); c.restore();
+  }
+  function chimney(c, x, y, w, h, col, t = 0) { wall(c, x, y, w, h, col, "brick", { noEave: true }); rect(c, x - .25, y - h - .45, w + .5, .5, sh(col, .7)); anim(c, "smoke", x + w / 2, y - h - 1.2, {}, t); }
+  function flag(c, x, y, h, col, t = 0) { line(c, [[x, y], [x, y - h]], "#5a4a3a", .18); anim(c, "flag", x, y - h, { col, ph: x }, t); }
   function bush(c, x, y, r, col = "#5aa05a", flowers) { ell(c, x + r * .2, y + r * .1, r * 1.1, r * .45, "rgba(40,60,30,.2)", null); for (const [dx, dy, k] of [[-.6, -.4, .75], [.6, -.4, .75], [0, -.8, .85], [-.25, -.2, .8], [.35, -.15, .7]]) ell(c, x + dx * r, y + dy * r, r * k, r * k * .9, sh(col, .92 + dy * -.1), null); ell(c, x - r * .3, y - r * .95, r * .4, r * .3, "rgba(255,255,255,.18)", null); if (flowers) for (let k = 0; k < 6; k++) ell(c, x + Math.cos(k * 2.4) * r * .7, y - r * .5 + Math.sin(k * 2.4) * r * .4, r * .13, r * .12, flowers, null); }
   function pot(c, x, y, col = "#c86a4a", plant = "#5aa05a") { poly(c, [[x - .6, y - 1.1], [x + .6, y - 1.1], [x + .45, y], [x - .45, y]]); fill(c, col); bush(c, x, y - 1.1, .75, plant); }
   function lamp(c, x, y, h = 4.5) { rect(c, x - .12, y - h, .24, h, "#3a3a42", null); rrect(c, x - .5, y - h - 1.1, 1, 1.2, .25, "#ffe28a", "#3a3a42"); poly(c, [[x - .65, y - h - 1.05], [x, y - h - 1.6], [x + .65, y - h - 1.05]]); fill(c, "#3a3a42", null); const g = c.createRadialGradient(x, y - h - .5, 0, x, y - h - .5, 3); g.addColorStop(0, "rgba(255,220,140,.3)"); g.addColorStop(1, "rgba(255,220,140,0)"); c.fillStyle = g; c.fillRect(x - 3, y - h - 3.5, 6, 6); }
   function grass(c, x, w) { for (let k = 0; k < w * 1.4; k++) { const gx = x + k * w / (w * 1.4) + Math.sin(k) * .2; line(c, [[gx, 0], [gx - .15, -.6 - (k % 3) * .2]], "#4f9a4f", .12); line(c, [[gx + .2, 0], [gx + .35, -.5]], "#5aa85a", .12); } }
   function flowerBed(c, x, y, w) { rrect(c, x, y - .8, w, .9, .4, "#7a5232", OUT); for (let k = 0; k < w * 1.5; k++) { ell(c, x + .3 + k / 1.5, y - .9, .32, .28, "#5aa05a", null); ell(c, x + .35 + k / 1.5, y - 1.15, .2, .18, ["#ff7f9f", "#ffd23a", "#fff", "#b48aff"][k % 4], null); } }
   function parasolTable(c, x, y, col = "#ff7f9f", col2 = "#ffffff") { ell(c, x + .4, y + .2, 2.2, .7, "rgba(40,40,30,.2)", null); rrect(c, x - 1.2, y - 1.4, 2.4, .5, .2, "#f4ecdc", OUT); line(c, [[x, y - 1], [x, y]], "#8a8a92", .2); for (const dx of [-1.9, 1.9]) { rrect(c, x + dx - .5, y - 1, 1, .4, .15, "#a8703a", OUT); line(c, [[x + dx - .3, y - .6], [x + dx - .3, y]], "#6a4a2a", .12); } line(c, [[x, y - 1.4], [x, y - 5]], "#8a8a92", .18); for (let i = 0; i < 6; i++) { poly(c, [[x, y - 5.6], [x - 3 + i, y - 4.2 + (i % 2 ? .1 : 0)], [x - 2 + i, y - 4.2]]); fill(c, i % 2 ? col2 : col, OUT, .08); } }
+
+  // ---- château Renaissance : fenêtres à meneaux, lucarnes, cheminées, tours en poivrière, lanterne, jardins
+  function renWin(c, x, y, w, h, st) {
+    rrect(c, x - .45, y - .5, w + .9, h + 1, .1, sh(st, .93), OUT); rect(c, x - .7, y + h + .3, w + 1.4, .45, sh(st, .88), OUT);
+    rect(c, x, y, w, h, lin(c, x, y, x + w, y + h, [[0, "#d8ecf8"], [.5, "#9cc0dc"], [1, "#6e94b8"]]), null);
+    rect(c, x + w / 2 - .14, y, .28, h, sh(st, .95), null); rect(c, x, y + h * .38, w, .26, sh(st, .95), null);
+    poly(c, [[x + .2, y + h * .3], [x + w * .4, y + .1], [x + w * .45, y + .1], [x + .25, y + h * .34]]); c.fillStyle = "rgba(255,255,255,.45)"; c.fill();
+    poly(c, [[x - .55, y - .5], [x + w / 2, y - 1.4], [x + w + .55, y - .5]]); fill(c, sh(st, .9));
+  }
+  function dormer(c, x, y, w, h, st, sl, gd) {
+    const x0 = x - w / 2; wall(c, x0, y, w, h * .55, st, "ashlar", { noEave: true });
+    renWin(c, x0 + w * .22, y - h * .5, w * .56, h * .4, st);
+    poly(c, [[x0 - .3, y - h * .55], [x, y - h], [x0 + w + .3, y - h * .55]]); fill(c, sh(st, .95));
+    poly(c, [[x0 + .5, y - h * .58], [x, y - h * .9], [x0 + w - .5, y - h * .58]]); fill(c, sh(st, .86), null);
+    ell(c, x, y - h * .7, w * .12, w * .12, gd, OUT);
+    for (const px of [x0 - .1, x0 + w + .1]) { rect(c, px - .3, y - h * .55 - 1.6, .6, 1.6, sh(st, .9), OUT); poly(c, [[px - .3, y - h * .55 - 1.6], [px, y - h * .55 - 2.6], [px + .3, y - h * .55 - 1.6]]); fill(c, gd); }
+    ell(c, x, y - h - .3, .35, .35, gd, OUT);
+  }
+  function renChimney(c, x, y, st, gd) {
+    wall(c, x - .9, y, 1.8, 6.5, st, "ashlar", { noEave: true });
+    for (let k = 0; k < 2; k++) rect(c, x - .55, y - 5.2 + k * 2.4, 1.1, 1.4, sh(st, .82), null);
+    rect(c, x - 1.2, y - 6.9, 2.4, .5, sh(st, .9), OUT); rect(c, x - .8, y - 7.5, 1.6, .6, sh(st, .95), OUT); ell(c, x, y - 7.7, .25, .25, gd, null);
+  }
+  function lantern(c, x, y, w, h, st, sl, gd, t) {
+    wall(c, x - w / 2, y, w, h, st, "ashlar", { noEave: true });
+    for (let k = 0; k < 3; k++) { const wx = x - w / 2 + .45 + k * (w - .9) / 3; rrect(c, wx + .15, y - h + 1, (w - .9) / 3 - .3, h - 2, [.5, .5, 0, 0], "#ffe7a6", OUT); }
+    rect(c, x - w / 2 - .3, y - h - .4, w + .6, .5, sh(st, .9), OUT);
+    c.beginPath(); c.ellipse(x, y - h - .4, w / 2 + .1, w * .55, 0, Math.PI, TAU); fill(c, lin(c, x - w / 2, 0, x + w / 2, 0, [[0, sh(sl, 1.3)], [1, sh(sl, .8)]]));
+    rect(c, x - .5, y - h - w * .55 - 1.4, 1, 1.1, st, OUT); ell(c, x, y - h - w * .55 - 1.6, .45, .45, gd, OUT); line(c, [[x, y - h - w * .55 - 2], [x, y - h - w * .55 - 3.4]], gd, .18);
+    poly(c, [[x - .5, y - h - w * .55 - 3.1], [x, y - h - w * .55 - 3.9], [x + .5, y - h - w * .55 - 3.1]]); fill(c, gd);
+  }
+  function renTower(c, x, y, r, h, st, sl, gd, t, flagCol) {
+    ell(c, x, y, r, r * .32, sh(st, .6), null);
+    c.save(); c.beginPath(); c.rect(x - r, y - h, r * 2, h); c.clip();
+    c.fillStyle = lin(c, x - r, 0, x + r, 0, [[0, sh(st, 1.02)], [.35, sh(st, 1.06)], [1, sh(st, .74)]]); c.fillRect(x - r, y - h, r * 2, h + 1);
+    for (let yy = y; yy > y - h; yy -= 1.3) line(c, [[x - r, yy], [x + r, yy]], "rgba(90,70,50,.12)", .08);
+    c.restore(); c.beginPath(); c.rect(x - r, y - h, r * 2, h); c.strokeStyle = OUT; c.lineWidth = LW; c.stroke();
+    for (const yy of [y - h * .45, y - h + .2]) rect(c, x - r - .2, yy, r * 2 + .4, .5, sh(st, .9), OUT);
+    renWin(c, x - .9, y - h * .4 + .8, 1.8, 3, st); renWin(c, x - .9, y - h * .9 + .6, 1.8, 2.8, st);
+    rrect(c, x - r * .9, y - 1.6, r * 1.8, .9, .3, sh(st, .85), null);
+    const rh = r * 3.1, top = y - h - rh, ov = .7;
+    c.save(); poly(c, [[x - r - ov, y - h + .3], [x, top], [x + r + ov, y - h + .3]]); c.fillStyle = lin(c, x - r, 0, x + r, 0, [[0, sh(sl, 1.25)], [.4, sh(sl, 1.05)], [1, sh(sl, .7)]]); c.fill(); c.clip();
+    for (let yy = top + 1; yy < y - h + 1; yy += .8) { const k = (yy - top) / rh, half = (r + ov) * k; line(c, [[x - half, yy], [x + half, yy]], sh(sl, .78), .07); }
+    c.restore(); poly(c, [[x - r - ov, y - h + .3], [x, top], [x + r + ov, y - h + .3]]); c.strokeStyle = OUT; c.lineWidth = LW; c.stroke();
+    // lucarne de la tour
+    rrect(c, x - .8, y - h - 2.6, 1.6, 2.2, [.8, .8, 0, 0], sh(st, .95), OUT); rrect(c, x - .45, y - h - 2.2, .9, 1.6, [.45, .45, 0, 0], "#ffe7a6", null);
+    // lanternon
+    rect(c, x - .55, top + .2, 1.1, 1.6, st, OUT); c.beginPath(); c.ellipse(x, top + .2, .7, .7, 0, Math.PI, TAU); fill(c, sl); line(c, [[x, top - .4], [x, top - 2.4]], gd, .16); ell(c, x, top - .6, .25, .25, gd, null);
+    flag(c, x, top - .8, 2.6, flagCol, t);
+  }
+  function renGarden(c, t) {
+    poly(c, [[-5.2, 1.9], [5.2, 1.9], [6.4, 6], [-6.4, 6]]); fill(c, "#ece2cc", null);
+    for (const sx of [-1, 1]) for (let i = 0; i < 2; i++) {
+      const x0 = sx < 0 ? -21.5 + i * 8 : 7 + i * 8, y0 = 2.2, w = 6.6, h = 3.4;
+      rrect(c, x0, y0, w, h, .6, "#d8ccb0", null); rrect(c, x0 + .3, y0 + .3, w - .6, h - .6, .5, "#4f9a52", "#3a7a3e");
+      line(c, [[x0 + .5, y0 + .5], [x0 + w - .5, y0 + h - .5]], "#d8ccb0", .3); line(c, [[x0 + w - .5, y0 + .5], [x0 + .5, y0 + h - .5]], "#d8ccb0", .3);
+      ell(c, x0 + w / 2, y0 + h / 2, 1, .65, "#3f8a46", null); for (let k = 0; k < 4; k++) ell(c, x0 + w / 2 + Math.cos(k * 1.57 + .78) * 1.9, y0 + h / 2 + Math.sin(k * 1.57 + .78) * 1, .35, .25, ["#ff8fae", "#ffd23a", "#ffffff", "#b48aff"][k], null);
+      for (const cx of [x0, x0 + w]) { ell(c, cx, y0 + .1, .55, .3, "rgba(40,60,30,.25)", null); poly(c, [[cx - .5, y0], [cx, y0 - 2.2], [cx + .5, y0]]); fill(c, "#3f7a40"); }
+    }
+    // bassin et jet d'eau
+    ell(c, 0, 5.1, 2.6, .9, "#cfc4ac", OUT); ell(c, 0, 5.05, 2.2, .7, "#7ab8de", null);
+    line(c, [[0, 5], [0, 3.2]], "rgba(220,240,255,.8)", .16); anim(c, "jet", 0, 3.2, { n: 6, spread: .9, drop: 1.8, r: .12 }, t);
+  }
 
   // ================================================================ la maison : 5 niveaux (cabane → château)
   const ROOMS = [5, 10, 15, 20, 25];
@@ -170,22 +247,39 @@ const BUILD = (() => {
       for (const x of [-16, 16]) { rect(c, x - .7, -3.4, 1.4, 2.2, "#c8c0b4"); pot(c, x, -3.4, "#c8c0b4", "#4f9a4f"); }
       for (let i = 0; i < 4; i++) { bush(c, -10 + i * 2.2, 0, .9, "#4f9a4f", i % 2 ? "#ffffff" : "#ff9fb8"); bush(c, 4 + i * 2.2, 0, .9, "#4f9a4f", i % 2 ? "#ffd23a" : "#ffffff"); }
     },
-    (c, t) => { // 5 · Château : donjon, quatre tours, remparts crénelés, herse, bannières, jardins à la française
-      shadow(c, 44, 30);
-      wall(c, -7.5, -12, 15, 22, "#ece6f4", "stone"); const n = 7, cw = 15.6 / (n * 2 - 1); for (let i = 0; i < n; i++) rect(c, -7.8 + i * cw * 2, -34 - cw * .9, cw, cw * .9, "#ddd4e8", OUT);
-      tower(c, -7.6, -12, 3, 29, "#efe9f6", "#6a5ab0", t, { flag: "#ffd23a", windows: 3 }); tower(c, 7.6, -12, 3, 29, "#efe9f6", "#6a5ab0", t, { flag: "#ff7f9f", windows: 3 });
-      tower(c, 0, -24, 4.4, 20, "#f4eff9", "#7a6ad0", t, { flag: "#ffd23a", windows: 2 });
-      for (const x of [-4.2, 2.4]) for (const y of [-19, -27]) win(c, x, y, 1.8, 3, { arch: true, frame: "#f8f2fc" });
-      wall(c, -18, 0, 36, 11, "#e2dbea", "stone", { base: 1.2, baseCol: "#b8b0c4" }); const m = 15, cw2 = 36.6 / (m * 2 - 1); for (let i = 0; i < m; i++) rect(c, -18.3 + i * cw2 * 2, -11 - cw2 * .8, cw2, cw2 * .8, "#d4cce0", OUT);
-      wall(c, -4.6, 0, 9.2, 13.5, "#e8e2f0", "stone", { noEave: true }); for (let i = 0; i < 4; i++) rect(c, -4.8 + i * 2.6, -14.4, 1.6, 1.2, "#d8d0e4", OUT);
-      door(c, -3, 0, 6, 8.6, { col: "#3a2a3a", frame: "#b8b0c4" }); for (let i = 1; i < 6; i++) line(c, [[-3 + i, -6.6], [-3 + i, 0]], "#9a8a5a", .16); for (let i = 1; i < 5; i++) line(c, [[-3, -i * 1.7], [3, -i * 1.7]], "#9a8a5a", .16);
-      for (const x of [-12.5, -9.2, 7.6, 10.9]) win(c, x, -8, 1.6, 3.2, { arch: true, frame: "#f8f2fc" });
-      for (const x of [-7.2, 5]) { rect(c, x, -11.4, 2.2, 6.4, "#7a6ad0", OUT); poly(c, [[x, -5], [x + 1.1, -4], [x + 2.2, -5]]); fill(c, "#7a6ad0"); ell(c, x + 1.1, -8.4, .6, .6, "#ffd23a", null); }
-      tower(c, -19, 0, 4.8, 18, "#ece6f4", "#6a5ab0", t, { flag: "#ffd23a", windows: 3 }); tower(c, 19, 0, 4.8, 18, "#ece6f4", "#6a5ab0", t, { flag: "#ff7f9f", windows: 3 });
-      tower(c, -11.6, -.4, 3.2, 13.5, "#ece6f4", "#6a5ab0", t, { crenel: true, windows: 1 }); tower(c, 11.6, -.4, 3.2, 13.5, "#ece6f4", "#6a5ab0", t, { crenel: true, windows: 1 });
-      poly(c, [[-3, 0], [3, 0], [4.4, 3], [-4.4, 3]]); fill(c, "#e8dcc4", null);
-      for (const sx of [-1, 1]) { for (let i = 0; i < 4; i++) bush(c, sx * (7 + i * 3.4), 2.2, 1.2, "#4f9a4f", ["#ff9fb8", "#ffd23a", "#ffffff", "#b48aff"][i]); lamp(c, sx * 5, 2.6, 4); }
-      for (let i = 0; i < 4; i++) { const a = (t * .25 + i * .25) % 1; ell(c, Math.sin(i * 7 + t * .5) * 12, -32 - a * 9, .3, .3, `rgba(255,230,150,${.8 * (1 - a)})`, null); }
+    (c, t) => { // 5 · Château Renaissance (façon Loire) : tuffeau blanc, hauts toits d'ardoise, lucarnes sculptées, tours d'angle à lanternons, perron, jardins à la française
+      const ST = "#f4eddc", ST2 = "#e9dfc8", SL = "#4d5d7a", GD = "#e8c060";
+      shadow(c, 46, 30);
+      // ---- ailes basses à arcades (derrière les tours d'angle)
+      for (const sx of [-1, 1]) {
+        const x0 = sx < 0 ? -22.5 : 14.5;
+        wall(c, x0, -.4, 8, 7.4, ST2, "ashlar", { base: 1, baseCol: "#cfc4ac" });
+        for (let i = 0; i < 3; i++) { const ax = x0 + .9 + i * 2.4; rrect(c, ax, -5.6, 1.9, 5.2, [.95, .95, 0, 0], "#6a6258", OUT); rrect(c, ax + .25, -5.2, 1.4, 4.8, [.7, .7, 0, 0], lin(c, 0, -5, 0, 0, [[0, "#3a3430"], [1, "#5a524a"]]), null); }
+        rect(c, x0, -7.4, 8, .5, "#ddd2ba", OUT); for (let i = 0; i < 12; i++) rect(c, x0 + .2 + i * .66, -8.4, .26, 1, "#ddd2ba", null); rect(c, x0, -8.6, 8, .3, "#d4c8ae", OUT);
+        roof(c, x0 + .6, -8.6, 6.8, 3.2, SL, "slate", { over: .4, inset: 1.2 });
+        win(c, x0 + 3.1, -11.2, 1.8, 1.6, { frame: ST, lit: true });
+      }
+      // ---- corps de logis
+      wall(c, -13, 0, 26, 13.5, ST, "ashlar", { base: 1.4, baseCol: "#cfc4ac" });
+      for (const x of [-13, -7.7, -2.9, 2.3, 7.1, 12.4]) { rect(c, x, -13.5, .6, 12.1, "#fbf6ea", OUT); rect(c, x - .1, -13.6, .8, .5, "#e8dcc2", null); }
+      for (const y of [-6.9, -13.2]) rect(c, -13.3, y, 26.6, .55, "#e6d9bd", OUT);
+      for (const x of [-11.3, -6.4, 3.6, 8.5]) { renWin(c, x, -5.8, 2.4, 4.2, ST); renWin(c, x, -12.2, 2.4, 4, ST); }
+      // ---- haut toit d'ardoise, lucarnes, cheminées et lanterne centrale
+      roof(c, -13, -14, 26, 11, SL, "slate", { over: .8, inset: 2.6 });
+      rect(c, -10.4, -25.4, 20.8, .35, GD, null);
+      for (const [x, big] of [[-8.2, 0], [0, 1], [8.2, 0]]) dormer(c, x, -14, big ? 4 : 3.2, big ? 6.2 : 5, ST, SL, GD);
+      for (const x of [-10.6, -4.6, 4.6, 10.6]) renChimney(c, x, -22.6, ST, GD);
+      lantern(c, 0, -25.3, 4.6, 6, ST, SL, GD, t);
+      // ---- tours d'angle (rondes, toits en poivrière, lanternons)
+      for (const sx of [-1, 1]) renTower(c, sx * 14.2, 0, 4.5, 16.5, ST, SL, GD, t, sx < 0 ? "#2f6fd0" : "#e8c060");
+      // ---- perron, portail et fronton
+      for (let i = 0; i < 4; i++) rrect(c, -5.4 - i * .7, -.5 + i * .6, 10.8 + i * 1.4, .7, .15, sh("#e4dac4", 1 - i * .03), OUT);
+      for (const sx of [-1, 1]) { rect(c, sx * 3.9 - .45, -9.4, .9, 9, "#fbf6ea", OUT); rect(c, sx * 3.9 - .65, -9.8, 1.3, .5, "#e6d9bd", OUT); rect(c, sx * 3.9 - .65, -.6, 1.3, .5, "#e6d9bd", OUT); }
+      door(c, -2.4, -.5, 4.8, 6.8, { double: true, col: "#4a3a5a", frame: "#d8ccb2" });
+      poly(c, [[-4.8, -10], [0, -12.6], [4.8, -10]]); fill(c, "#efe6d2"); poly(c, [[-3.6, -10.25], [0, -12.1], [3.6, -10.25]]); fill(c, "#e3d7bc", null);
+      ell(c, 0, -10.9, .7, .55, GD, OUT); rect(c, -1.2, -8.6, 2.4, 1, "#3a4a7a", OUT); c.fillStyle = GD; c.font = "900 .8px serif"; c.textAlign = "center"; c.fillText("✦ K ✦", 0, -7.85); c.textAlign = "left";
+      // ---- jardins à la française
+      renGarden(c, t);
     },
   ];
 
@@ -219,7 +313,7 @@ const BUILD = (() => {
   D.poulailler = (c, t) => { shadow(c, 9, 7); for (const x of [-3.4, 3.4]) rect(c, x - .3, -1.6, .6, 1.6, "#6b4a32", OUT); wall(c, -4, -1.6, 8, 4.2, "#e8b070", "planks"); roof(c, -4, -5.8, 8, 3.2, "#c8503a", "shingle", { over: .8 }); ell(c, 0, -3.6, .9, 1, "#3a2a1a", OUT); poly(c, [[-.8, -1.6], [.8, -1.6], [2.2, 0], [-2.2, 0]]); fill(c, "#a8784a"); for (let i = 0; i < 4; i++) line(c, [[-1.4 + i * .8, -.3], [-.9 + i * .7, -1.4]], "#7a5232", .1); ell(c, 4.6, -.6, .9, .7, "#fff", OUT); ell(c, 5.3, -1.2, .45, .45, "#fff", OUT); poly(c, [[5.7, -1.2], [6.2, -1.1], [5.7, -1]]); fill(c, "#ffa040", null); ell(c, 5.2, -1.7, .2, .25, "#e8304a", null); };
   D.etable = (c, t) => { shadow(c, 14, 9); wall(c, -7, 0, 14, 7, "#c8503a", "planks"); roof(c, -7, -7, 14, 4.6, "#6a5a5a", "shingle"); gableFront(c, -3, -7, 6, 4, "#c8503a", "#5a4a4a", "shingle"); rrect(c, -1, -9.6, 2, 1.4, .2, "#fff", OUT); rrect(c, -2.8, -5.2, 5.6, 5.2, .1, "#a8402a", OUT); c.strokeStyle = "#fff"; c.lineWidth = .3; c.strokeRect(-2.6, -5, 5.2, 5); line(c, [[-2.6, -5], [2.6, 0]], "#fff", .3); line(c, [[2.6, -5], [-2.6, 0]], "#fff", .3); win(c, -5.8, -5, 1.8, 1.6, { lit: false, frame: "#fff" }); win(c, 4, -5, 1.8, 1.6, { lit: false, frame: "#fff" }); ell(c, -8.4, -.8, 1.4, 1, "#e8c870", OUT); for (let k = 0; k < 6; k++) line(c, [[-9.4 + k * .4, -1.4], [-9.2 + k * .4, -.2]], "#c8a050", .1); };
   D.ruche = (c) => { shadow(c, 5, 4); rect(c, -1.8, -.8, 3.6, .8, "#8a5a3a", OUT); for (let i = 0; i < 4; i++) rrect(c, -2 + i * .2, -1.9 - i * 1.15, 4 - i * .4, 1.2, .5, i % 2 ? "#f0c050" : "#e0a830", OUT); ell(c, 0, -2.4, .4, .32, "#5a3a1a", null); for (let k = 0; k < 3; k++) { ell(c, 2.4 + k * .7, -4 + Math.sin(k * 2) * .8, .25, .2, "#ffd23a", "#3a2a1a"); } };
-  D.moulin = (c, t) => { shadow(c, 10, 9); poly(c, [[-4.8, 0], [-2.8, -15], [2.8, -15], [4.8, 0]]); fill(c, lin(c, -4.8, 0, 4.8, 0, [[0, "#f8f2e8"], [.6, "#efe6da"], [1, "#c8bcae"]])); for (let k = 1; k < 9; k++) line(c, [[-4.8 + k * .2, -k * 1.65], [4.8 - k * .2, -k * 1.65]], "rgba(120,100,80,.12)", .1); door(c, -1.2, 0, 2.4, 3.6, { col: "#7a4a2a" }); win(c, -.8, -8, 1.6, 1.8, { arch: true }); poly(c, [[-3.6, -14.6], [0, -19.5], [3.6, -14.6]]); fill(c, lin(c, -3.6, 0, 3.6, 0, [[0, "#d8705a"], [1, "#a8503a"]])); c.save(); c.translate(0, -14); c.rotate(t * 1.1); for (let i = 0; i < 4; i++) { c.rotate(TAU / 4); rect(c, -.3, 0, .6, 9, "#7a5232", OUT); rect(c, .3, 2, 2.4, 6.6, "rgba(248,244,236,.95)", OUT); for (let k = 1; k < 4; k++) line(c, [[.3, 2 + k * 1.65], [2.7, 2 + k * 1.65]], "#c8b8a0", .08); } c.restore(); ell(c, 0, -14, .8, .8, "#5a3a22", OUT); for (let i = 0; i < 2; i++) rrect(c, 4.6 + i * 1.6, -1.4, 1.4, 1.4, .3, "#e8dcc4", OUT); };
+  D.moulin = (c, t) => { shadow(c, 10, 9); poly(c, [[-4.8, 0], [-2.8, -15], [2.8, -15], [4.8, 0]]); fill(c, lin(c, -4.8, 0, 4.8, 0, [[0, "#f8f2e8"], [.6, "#efe6da"], [1, "#c8bcae"]])); for (let k = 1; k < 9; k++) line(c, [[-4.8 + k * .2, -k * 1.65], [4.8 - k * .2, -k * 1.65]], "rgba(120,100,80,.12)", .1); door(c, -1.2, 0, 2.4, 3.6, { col: "#7a4a2a" }); win(c, -.8, -8, 1.6, 1.8, { arch: true }); poly(c, [[-3.6, -14.6], [0, -19.5], [3.6, -14.6]]); fill(c, lin(c, -3.6, 0, 3.6, 0, [[0, "#d8705a"], [1, "#a8503a"]])); anim(c, "blades", 0, -14, {}, t); for (let i = 0; i < 2; i++) rrect(c, 4.6 + i * 1.6, -1.4, 1.4, 1.4, .3, "#e8dcc4", OUT); };
   D.four = (c, t) => { shadow(c, 8, 7); ell(c, 0, -3.2, 4.2, 3.6, lin(c, -4, 0, 4, 0, [[0, "#e8b080"], [1, "#b8784a"]]), OUT); rect(c, -4.2, -3.2, 8.4, 3.2, "#d8a070", null); line(c, [[-4.2, -3.2], [-4.2, 0]], OUT, LW); line(c, [[4.2, -3.2], [4.2, 0]], OUT, LW); for (let k = 0; k < 5; k++) line(c, [[-4, -1 - k * .9], [4, -1 - k * .9]], "rgba(120,60,30,.15)", .1); rrect(c, -1.7, -3.8, 3.4, 3.8, [1.7, 1.7, 0, 0], "#3a2014", OUT); ell(c, 0, -.9, 1.3, .6, "#ff8a3a", null); ell(c, 0, -1, .8, .35, "#ffd870", null); chimney(c, 1.8, -5.6, 1.2, 2, "#b8805a", t); for (let k = 0; k < 3; k++) rrect(c, 4.6 + k * .2, -1 - k * .7, 2.2, .6, .3, "#d8a050", OUT); };
   D.cuisine = (c, t) => { shadow(c, 9, 7); for (const x of [-4, 3.6]) rect(c, x, -5.4, .4, 5.4, "#6b4a32", OUT); roof(c, -4.6, -5.2, 9.2, 2.2, "#d8a060", "thatch", { over: .6 }); rrect(c, -3.4, -2.2, 6.8, 2.2, .2, "#a8784a", OUT); ell(c, -1.4, -2.6, 1.2, .6, "#4a4a52", OUT); ell(c, 1.6, -2.4, .9, .45, "#e8e0d0", OUT); for (let k = 0; k < 3; k++) { const a = (t * .5 + k / 3) % 1; ell(c, -1.4 + Math.sin(a * 5) * .5, -3.2 - a * 3.6, .5 + a, .4 + a * .6, `rgba(255,255,255,${.5 * (1 - a)})`, null); } for (let k = 0; k < 4; k++) line(c, [[-3 + k * 1.6, -4.6], [-3 + k * 1.6, -3.6]], "#8a8a92", .1); };
   D.forge = (c, t) => { shadow(c, 11, 9); for (const x of [-5, 4.6]) rect(c, x, -7.4, .6, 7.4, "#5a3a22", OUT); roof(c, -5.6, -7.2, 11.2, 3, "#6a5a5a", "slate", { over: .6 }); wall(c, -4.4, 0, 4, 3.8, "#8a8078", "stone", { noEave: true }); ell(c, -2.4, -2, 1.2, .8, `rgb(255,${130 + Math.sin(t * 8) * 40},40)`, null); const g = c.createRadialGradient(-2.4, -2, 0, -2.4, -2, 3.5); g.addColorStop(0, "rgba(255,140,60,.35)"); g.addColorStop(1, "rgba(255,140,60,0)"); c.fillStyle = g; c.fillRect(-6, -5.5, 7.2, 7); rrect(c, 1, -2.4, 3.4, 1, .2, "#3a3a44", OUT); rect(c, 2, -1.4, 1.3, 1.4, "#3a3a44", OUT); line(c, [[3.6, -3.6], [4.8, -2.4]], "#8a5a3a", .25); rect(c, 3.2, -4, 1.2, .6, "#6a6a72", OUT); rrect(c, 5.4, -1.6, 1.6, 1.6, .3, "#5a7a9a", OUT); };
@@ -236,7 +330,7 @@ const BUILD = (() => {
   D.cloture = (c) => { for (let i = 0; i < 5; i++) { rect(c, -4.6 + i * 2.2, -2.8, .7, 2.8, "#e8d8c0", OUT); poly(c, [[-4.6 + i * 2.2, -2.8], [-4.25 + i * 2.2, -3.4], [-3.9 + i * 2.2, -2.8]]); fill(c, "#e8d8c0"); } rect(c, -4.8, -2.2, 9.8, .4, "#d8c8b0", OUT); rect(c, -4.8, -1, 9.8, .4, "#d8c8b0", OUT); };
   D.dalles = (c) => { for (let r = 0; r < 2; r++) for (let k = 0; k < 3; k++) rrect(c, -3 + k * 2.05 - r * .4, -2.8 + r * 1.45, 1.9, 1.3, .35, ["#d8d0c4", "#cfc6b8", "#e0d8cc"][(r + k) % 3], "rgba(120,100,90,.35)"); };
   D.lanterne = (c) => lamp(c, 0, 0, 5);
-  D.fontaine = (c, t) => { shadow(c, 9, 7); ell(c, 0, -1.6, 4.4, 1.7, "#c8c0b4", OUT); wall(c, -4.4, -.1, 8.8, 1.5, "#bcb4a8", "stone", { noEave: true }); ell(c, 0, -1.7, 3.6, 1.3, lin(c, 0, -3, 0, -.4, [[0, "#9fd8f4"], [1, "#5aa0d0"]]), null); rect(c, -.5, -5.4, 1, 3.8, "#d8d0c4", OUT); ell(c, 0, -5.4, 1.8, .6, "#d8d0c4", OUT); ell(c, 0, -6.6, .7, .7, "#e0d8cc", OUT); for (let i = 0; i < 10; i++) { const a = (t * 1.4 + i / 10) % 1, s = i % 2 ? 1 : -1; ell(c, s * a * 2.6, -6.6 + a * a * 5, .22, .28, "#cfeeff", null); } };
+  D.fontaine = (c, t) => { shadow(c, 9, 7); ell(c, 0, -1.6, 4.4, 1.7, "#c8c0b4", OUT); wall(c, -4.4, -.1, 8.8, 1.5, "#bcb4a8", "stone", { noEave: true }); ell(c, 0, -1.7, 3.6, 1.3, lin(c, 0, -3, 0, -.4, [[0, "#9fd8f4"], [1, "#5aa0d0"]]), null); rect(c, -.5, -5.4, 1, 3.8, "#d8d0c4", OUT); ell(c, 0, -5.4, 1.8, .6, "#d8d0c4", OUT); ell(c, 0, -6.6, .7, .7, "#e0d8cc", OUT); anim(c, "jet", 0, -6.6, { n: 10, spread: 2.6, drop: 5 }, t); };
   D.arche = (c) => { for (const x of [-3.2, 2.6]) rect(c, x, -6.4, .6, 6.4, "#8a5a3a", OUT); c.beginPath(); c.arc(0, -6.4, 2.9, Math.PI, 0); c.strokeStyle = "#8a5a3a"; c.lineWidth = .6; c.stroke(); for (let i = 0; i < 16; i++) { const a = Math.PI + i / 15 * Math.PI; ell(c, Math.cos(a) * 3, -6.4 + Math.sin(a) * 3, .65, .6, i % 2 ? "#5aa05a" : "#6ab86a", null); ell(c, Math.cos(a) * 3, -6.6 + Math.sin(a) * 3, .3, .28, ["#ff9fb8", "#fff", "#ffb0c8"][i % 3], null); } for (const x of [-2.9, 2.9]) for (let k = 0; k < 4; k++) ell(c, x + (k % 2 ? .3 : -.3), -1 - k * 1.3, .45, .4, "#5aa05a", null); };
   D.banc = (c) => { ell(c, .3, 0, 3.6, .7, "rgba(40,50,30,.2)", null); for (const x of [-2.8, 2.4]) rect(c, x, -1.2, .4, 1.2, "#3a3a42", OUT); rrect(c, -3.2, -1.8, 6.4, .7, .2, "#b8885a", OUT); for (let k = 0; k < 2; k++) rrect(c, -3.2, -3.6 + k * .9, 6.4, .6, .2, "#a8784a", OUT); rect(c, -2.9, -3.8, .35, 2.2, "#3a3a42"); rect(c, 2.55, -3.8, .35, 2.2, "#3a3a42"); };
   D.statue = (c, t) => { shadow(c, 6, 5); wall(c, -2.6, 0, 5.2, 2.2, "#cfc6b8", "stone", { noEave: true }); rrect(c, -3, -2.8, 6, .7, .2, "#bcb4a8", OUT); ell(c, 0, -5.4, 2.1, 2.7, lin(c, -2, 0, 2, 0, [[0, "#ece6f4"], [1, "#b8b0c8"]]), OUT); ell(c, 0, -8.8, 1.5, 1.4, "#e8e2f0", OUT); poly(c, [[-1.3, -9.6], [-.7, -11.2], [0, -9.9], [.7, -11.2], [1.3, -9.6]]); fill(c, "#e0d8ec"); ell(c, -.5, -9, .2, .2, "#6a5a8a", null); ell(c, .5, -9, .2, .2, "#6a5a8a", null); ell(c, 0, -5, .7, .7, "#ffd23a", OUT); };
@@ -364,7 +458,8 @@ const BUILD = (() => {
   return {
     CATALOG, VILLAGE, LEVELS, ROOMS, ROOM_NAMES,
     draw(id, c, s, t = 0, lvl = 1) { const f = DRAW[id]; if (!f) return; c.save(); c.scale(s, s); f(c, t, lvl); c.restore(); },
-    kit: { wall, roof, gableFront, tower, win, door, awning, sign, banner, chimney, flag, bush, pot, lamp, grass, flowerBed, parasolTable, shadow, sh, lin, rrect, ell, rect, poly, fill, line, OUT },
+    AN, rec(on) { const r = REC; REC = on ? [] : null; return r; },
+    kit: { anim, wall, roof, gableFront, tower, win, door, awning, sign, banner, chimney, flag, bush, pot, lamp, grass, flowerBed, parasolTable, shadow, sh, lin, rrect, ell, rect, poly, fill, line, OUT },
   };
 })();
 if (typeof module !== "undefined") module.exports = BUILD;

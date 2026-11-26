@@ -409,6 +409,7 @@ function frame(now) {
     else if (G.mode === "house") { movePlayer(dt, House.move); House.update(dt); sendPos(false); updateOthers(dt); House.render(ctx, innerWidth, innerHeight); }
     else if (G.mode === "battle") { ctx.setTransform(DPR, 0, 0, DPR, 0, 0); Battle.render(ctx, innerWidth, innerHeight, dt); }
     else if (G.mode === "cut") { ctx.setTransform(DPR, 0, 0, DPR, 0, 0); ctx.fillStyle = "#000"; ctx.fillRect(0, 0, innerWidth, innerHeight); Cutscene.render(ctx, innerWidth, innerHeight, dt); }
+    if (G.mode === "world" && typeof VillageLife !== "undefined") VillageLife.snow(ctx, innerWidth, innerHeight, dt);
     if (G.mode === "world" || G.mode === "cave" || G.mode === "house") drawHUD(dt);
     if (G.fadeA > 0) { ctx.setTransform(DPR, 0, 0, DPR, 0, 0); ctx.fillStyle = `rgba(0,0,0,${G.fadeA})`; ctx.fillRect(0, 0, innerWidth, innerHeight); }
     drawMinimap(now);

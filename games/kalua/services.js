@@ -124,7 +124,7 @@ const Services = (() => {
       const t = e.target.closest("[data-a],[data-close]"); if (!t) return; buzz(); if (t.dataset.close !== undefined) { G.menuOpen = false; return; }
       if (t.dataset.a === "name") { const n = prompt("Le nouveau nom de votre île :", S.name || "Kalua"); if (n && n.trim()) { Village.save("name", n.trim().slice(0, 28)); toast("🏝️ L'île s'appelle maintenant « " + n.trim().slice(0, 28) + " »"); } return mairie(); }
       if (t.dataset.a === "fete") { Village.save("fete", S.fete ? null : Date.now()); toast(S.fete ? "🎉 La fête commence sur la place !" : "La fête est finie."); return mairie(); }
-      if (t.dataset.a === "projets") { closePanel(); G.menuOpen = false; await speak("Le maire", projet()); return; }
+      if (t.dataset.a === "projets") { closePanel(); G.menuOpen = false; return VillageLife.projects(); }
       if (t.dataset.a === "registre") { closePanel(); G.menuOpen = false; const names = NPC.list().filter((n) => !Prog.isDead(n.id)).map((n) => n.name); await speak("Le maire", `${names.length} habitants vivent sur l'île : ${names.slice(0, 18).join(", ")}${names.length > 18 ? "…" : "."}`); return; }
     });
     d.querySelector(".pdim").addEventListener("click", () => { G.menuOpen = false; });

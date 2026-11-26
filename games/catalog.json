@@ -34,11 +34,11 @@
       "name": "Les Échoués de Kalua",
       "category": "Aventure",
       "players": "Solo (avec un compagnon) ou à deux, en ligne",
-      "version": "0.6",
+      "version": "0.7",
       "addedAt": "2026-11-26",
-      "size": 1894993,
+      "size": 1936086,
       "controls": "Flèches, Taper, Ramasser, Esquiver, Sprint",
-      "description": "Vous vous êtes échoués sur l'archipel de Kalua.\nCrée ton personnage, puis joue à deux avec un ami de Von, ou en solo avec un compagnon. Trois niveaux : Facile, Normal, Challenge.\nUne grande île, 8 grottes, 12 Gardiens, des quêtes, de la magie et toute une histoire. Construis votre village partout sur l'île (50 bâtiments, maison jusqu'au château), décore chaque pièce, et habille-toi au Fil d'Or (3 000 vêtements).",
+      "description": "Vous vous êtes échoués sur l'archipel de Kalua.\nCrée ton personnage, puis joue à deux avec un ami de Von, ou en solo avec un compagnon. Trois niveaux : Facile, Normal, Challenge.\nUne grande île, 8 grottes, 12 Gardiens, des quêtes, de la magie et toute une histoire. Construis votre village partout sur l'île (50 bâtiments, maison jusqu'au château Renaissance), décore chaque pièce, habille-toi au Fil d'Or. Fêtes sur la place, marché de Noël, cinéma en plein air et de nouveaux habitants à aider.",
       "icon": "icon.png",
       "screenshots": [
         "shot1.png",
@@ -90,6 +90,7 @@
         "story.js",
         "style.css",
         "village.js",
+        "village2.js",
         "world.js"
       ]
     },

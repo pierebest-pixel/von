@@ -103,7 +103,7 @@ function showTitle() {
       <button class="tbtn main" data-x="play">▶&nbsp; JOUER</button>
       <button class="tbtn" data-x="perso">👤&nbsp; Mon personnage</button>
       <button class="tbtn" data-x="settings">⚙️&nbsp; Réglages</button>
-      <div class="ver">version 0.6 · Von</div>
+      <div class="ver">version 0.7 · Von</div>
     </div></div>`;
   const cvs = $("#tcv"); let alive = true; const t0 = performance.now();
   startMusic();

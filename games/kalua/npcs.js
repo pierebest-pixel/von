@@ -145,8 +145,10 @@ const NPC = (() => {
     if (h < sorted[0][0]) { cur = sorted[sorted.length - 1]; prev = sorted[sorted.length - 2] || cur; start = cur[0] - 24; }
     return { cur, prev, since: h - start };
   }
+  let hook = null; // fêtes : les habitants se rassemblent sur la place
   const override = {}; // positions imposées par l'histoire (escorte, scène…)
   function state(n, T) {
+    if (hook) { const r = hook(n, T); if (r) return r; }
     if (override[n.id]) { const o = override[n.id]; return { x: o.x, y: o.y, act: o.act || "idle", moving: Boolean(o.moving), dir: o.dir || "down", spot: null }; }
     const h = hourAt(T), { cur, prev, since } = slot(n, h);
     const WALK = .6; // il faut 0,6 h (36 s) pour aller d'un lieu à l'autre
@@ -156,7 +158,7 @@ const NPC = (() => {
     }
     // sur place : petits pas autour du lieu (déterministe)
     const base = W(cur[1]), seed = n.id.length * 7 + n.id.charCodeAt(0);
-    const still = ["sleep", "fish", "pray", "read", "forge", "star", "cook", "guard", "haunt"].includes(cur[2]);
+    const still = ["shop", "sleep", "fish", "pray", "read", "forge", "star", "cook", "guard", "haunt"].includes(cur[2]);
     const r = still ? 0 : 26, ph = T / 9 + seed;
     const x = base.x + Math.cos(ph) * r + (KALUA.hash(seed, 1) - .5) * 30, y = base.y + Math.sin(ph * 1.3) * r * .5;
     const moving = !still && Math.abs(Math.sin(ph)) > .3;
@@ -167,6 +169,7 @@ const NPC = (() => {
   function present(n) {
     if (typeof Prog === "undefined") return true;
     if (Prog.isDead(n.id)) return false;
+    if (n.homeAt) { const h = hourAt(Net.now()); if (h >= n.homeAt[0] || h < n.homeAt[1]) return false; }
     if (n.id === "arnaud") { const h = hourAt(Net.now()); return h >= 20 || h < 5; }
     if (n.id === "nalia" && !Prog.flag("intro_done")) return false;
     if (typeof Story !== "undefined" && Story.hidden && Story.hidden(n.id)) return false;
@@ -263,5 +266,6 @@ const NPC = (() => {
   const speaker = (id) => { const n = L[id]; if (!n) return { name: id }; return { name: n.name, avatar: n.avatar, color: n.color, draw: n.tree ? (c) => { c.translate(32, 120); c.scale(.42, .42); drawTree(c, 1, true); } : n.golem ? (c) => { c.translate(32, 70); c.scale(.62, .62); drawGolem(c, 1, false); } : null }; };
   const pos = (id, T) => state(L[id], T);
   const setOverride = (id, o) => { if (o) override[id] = o; else delete override[id]; };
-  return { L, list, SPOT, W, DAY, hourAt, visible, draw, nearest, get, speaker, pos, present, setOverride, drawTree, drawGolem, bubble };
+  const add = (id, o) => { def(id, o); if (!list.includes(L[id])) list.push(L[id]); return L[id]; };
+  return { setHook: (f) => { hook = f; }, add, props, av, L, list, SPOT, W, DAY, hourAt, visible, draw, nearest, get, speaker, pos, present, setOverride, drawTree, drawGolem, bubble };
 })();

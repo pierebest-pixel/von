@@ -172,6 +172,8 @@ const Music = (() => {
     marais: T({ bpm: 70, key: 52, sc: "phr", prog: [0, 1, 0, 6], lead: "bell", pad: .03, drums: "none", bass: "drone", dens: .25, seed: 41, choir: "u" }),
     falaises: T({ bpm: 88, key: 62, sc: "lyd", prog: [0, 1, 4, 0], lead: "flute", pad: .03, drums: "soft", bass: "root", dens: .4, seed: 51 }),
     volcan: T({ bpm: 96, key: 50, sc: "harm", prog: [0, 1, 0, 4], lead: "brass", pad: .03, drums: "tribal", bass: "eighth", dens: .45, seed: 61 }),
+    fete: T({ bpm: 124, key: 62, sc: "maj", prog: [0, 4, 5, 3, 0, 4, 3, 4], lead: "marimba", pad: .02, drums: "island", bass: "bounce", dens: .7, seed: 91 }),
+    noel: T({ bpm: 104, key: 60, sc: "maj", prog: [0, 3, 4, 0, 5, 1, 4, 0], lead: "bell", pad: .035, drums: "soft", bass: "root", dens: .5, seed: 97, choir: "a" }),
     night: T({ bpm: 66, key: 60, sc: "maj", prog: [0, 5, 3, 4], lead: "bell", pad: .025, drums: "none", bass: "root", dens: .3, seed: 71 }),
     iles: T({ bpm: 98, key: 64, sc: "pent", prog: [0, 3, 4, 0], lead: "marimba", pad: .02, drums: "island", bass: "bounce", dens: .5, seed: 81 }),
     sea: T({ bpm: 84, key: 55, sc: "dor", prog: [0, 3, 6, 4], lead: "strings", pad: .04, drums: "soft", bass: "root", dens: .4, seed: 91, choir: "o" }),

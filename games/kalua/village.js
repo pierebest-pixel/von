@@ -59,10 +59,16 @@ const Village = (() => {
     const wU = size[0] + (kind === "b" ? 14 : 8), hU = (kind === "b" ? Math.max(size[0] * 1.15, size[1] * 2.6) + 12 : Math.max(size[0], 4) * 2.4 + 8), below = kind === "b" ? 6 : 2;
     const cv = document.createElement("canvas"); cv.width = Math.ceil(wU * CS); cv.height = Math.ceil((hU + below) * CS); const g = cv.getContext("2d");
     g.translate(cv.width / 2, hU * CS); if (flip) g.scale(-1, 1);
-    try { if (kind === "b") BUILD.draw(id, g, CS, 1.2, lvl); else OUTDOOR.draw(id, g, CS, 1.2); } catch (e) { console.warn(e); }
-    sp = { cv, w: cv.width / CS * BS, h: cv.height / CS * BS, ox: wU / 2 * BS, oy: hU * BS }; cache.set(key, sp); return sp;
+    BUILD.rec(true); try { if (kind === "b") BUILD.draw(id, g, CS, 1.2, lvl); else OUTDOOR.draw(id, g, CS, 1.2); } catch (e) { console.warn(e); }
+    const anims = BUILD.rec(false);
+    sp = { cv, w: cv.width / CS * BS, h: cv.height / CS * BS, ox: wU / 2 * BS, oy: hU * BS, anims }; cache.set(key, sp); return sp;
   }
-  function drawSprite(c, sp, x, y, alpha = 1) { if (alpha !== 1) c.globalAlpha = alpha; c.drawImage(sp.cv, x - sp.ox, y - sp.oy, sp.w, sp.h); if (alpha !== 1) c.globalAlpha = 1; }
+  function drawSprite(c, sp, x, y, alpha = 1) {
+    if (alpha !== 1) c.globalAlpha = alpha; c.drawImage(sp.cv, x - sp.ox, y - sp.oy, sp.w, sp.h);
+    // les parties animées par-dessus (fumée des cheminées, drapeaux, ailes du moulin, jets d'eau)
+    if (sp.anims && sp.anims.length) { const k = sp.w / sp.cv.width, t = typeof G !== "undefined" ? G.t : performance.now() / 1000; for (const a of sp.anims) { const u = a.k * k; c.save(); c.translate(x - sp.ox + a.px * k, y - sp.oy + a.py * k); c.scale(a.flip ? -u : u, u); BUILD.AN[a.kind](c, a.o, t); c.restore(); } }
+    if (alpha !== 1) c.globalAlpha = 1;
+  }
 
   // ================================================================ intégration au monde
   // les arbres et rochers recouverts par un bâtiment disparaissent

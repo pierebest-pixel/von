@@ -309,7 +309,8 @@ const Story = (() => {
     else if (k === "crackrock") { c.fillStyle = "#8a8a90"; c.beginPath(); c.ellipse(0, -14, 22, 18, 0, 0, TAU); c.fill(); c.strokeStyle = "#3a3a40"; c.lineWidth = 2; c.beginPath(); c.moveTo(-8, -26); c.lineTo(0, -14); c.lineTo(-4, -4); c.moveTo(0, -14); c.lineTo(10, -20); c.stroke(); }
     else if (k === "bamboo") { c.fillStyle = "#7aaa4a"; for (let i = 0; i < 3; i++) { c.fillRect(-14 + i * 10, -150 + i * 10, 8, 150 - i * 10); } c.fillStyle = "#5a8a3a"; for (let y = -140; y < 0; y += 24) c.fillRect(-14, y, 30, 3); glow("#fff6a0", 12); }
     else if (k === "sheep") { c.save(); c.translate(0, -12 + Math.abs(b)); c.scale(1.4, 1.4); Creatures.drawKind(c, "mouton"); c.restore(); c.fillStyle = "#ffd23a"; c.beginPath(); c.arc(0, -40, 4, 0, TAU); c.fill(); }
-    else glow("#fff6a0");
+    else if (Story.drawExtra && Story.drawExtra(k, c, t, o)) { /* dessins ajoutés (village2.js…) */ }
+else glow("#fff6a0");
   }
   function nearestObj(p, reach = 70) { let best = null, bd = reach; for (const o of worldObjects()) { if (o.kind === "glow") continue; const d = Math.hypot(o.x - p.x, (o.y - p.y) * 1.2); if (d < bd) { bd = d; best = o; } } return best; }
   function hintAt(p) { const o = nearestObj(p, o0(p)); if (!o) return null; return { x: o.x, y: o.y - (o.kind === "lair" ? 100 : o.kind === "stone" ? 100 : 60), text: o.hint || (o.o && o.o.hint) || "✨" }; }

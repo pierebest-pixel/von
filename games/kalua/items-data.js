@@ -90,6 +90,11 @@ const ITEMS = (() => {
     notePerdue: ["Note perdue", "trophy", "La dernière note du Chant du Vent (Grotte 4).", "🎵"],
     // ---- quêtes
     harmonica: ["Harmonica de Tim", "quest", "Le seul souvenir de son père.", "🎵"],
+    colis: ["Colis pour Brann", "quest", "Un paquet bien ficelé. « Fragile » est écrit dessus. Trois fois.", "📦"],
+    timbre: ["Timbre de la Reine", "trophy", "Un timbre très rare, à l'effigie de la Reine Ilaïa. Léon en est très fier.", "📮"],
+    feve: ["Fève de la galette", "trophy", "Trouvée dans la galette de Mamie Brioche. Tu es le roi (ou la reine) de Kalua !", "👑"],
+    grandLivre: ["Le Grand Livre de Kalua", "trophy", "Un vieux livre de la bibliothèque. Il raconte le Cœur de l'île.", "📖"],
+    couronneVillage: ["Couronne du village", "trophy", "Offerte par le maire Barnabé quand le château a été construit.", "👑"],
     lettreArnaud: ["Lettre d'Arnaud", "quest", "« Louise, si tu lis ceci… »", "✉️"],
     carteMarine: ["Carte marine déchirée", "quest", "Un morceau de la carte de Maëlle.", "🗺️"],
     journalBord: ["Journal de bord", "quest", "Le journal du capitaine Bastien.", "📔"],

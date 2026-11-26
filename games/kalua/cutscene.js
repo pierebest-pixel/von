@@ -305,13 +305,70 @@ const Cutscene = (() => {
     if (!skipBtn) { skipBtn = document.createElement("button"); skipBtn.className = "skip-btn"; skipBtn.textContent = "Passer ⏭"; document.body.appendChild(skipBtn); }
     skipBtn.hidden = opts.noSkip === true;
     skipBtn.onclick = (e) => { e.stopPropagation(); if (S) { S.skipping = true; skipBtn.hidden = true; Dialog.abort(); } };
-    try { await script(api); }
+    const rec = opts.replay ? null : startRec(api, script);
+    try { await script(rec ? rec.api : api); }
     catch (e) { console.warn("cinématique", e); }
     finally {
       skipBtn.hidden = true;
+      if (rec) endRec(rec);
       const end = S; S = null;
       if (typeof Game !== "undefined") Game.leaveCutscene(end);
     }
   }
-  return { play, render, get active() { return Boolean(S); }, BG };
+  // ================================================================ le cinéma en plein air : chaque cinématique est « filmée » pendant qu'elle se joue
+  // (les ordres donnés à la scène, avec leur moment), puis peut être rejouée à l'identique.
+  const REC_CALLS = ["bg", "opt", "add", "remove", "move", "hop", "fadeActor", "scaleActor", "face", "cam", "camNow", "shake", "flash", "fade", "tint", "barsTo", "say", "choose", "caption", "music", "sfx", "fx", "burst"];
+  const filmKey = () => { try { return "kalua:films:" + ((typeof G !== "undefined" && G.session && G.session.id) || "x"); } catch { return "kalua:films:x"; } };
+  const films = () => { try { return JSON.parse(localStorage.getItem(filmKey()) || "{}") || {}; } catch { return {}; } };
+  function hash(str) { let h = 5381; for (let i = 0; i < str.length; i++) h = ((h << 5) + h + str.charCodeAt(i)) | 0; return (h >>> 0).toString(36); }
+  function ser(v, depth = 0) {
+    if (v === null || typeof v !== "object") return typeof v === "function" ? undefined : v;
+    if (S && v.id !== undefined && S.actors.get(v.id) === v) return { $a: v.id };
+    if (depth > 3) return undefined;
+    if (Array.isArray(v)) return v.map((x) => ser(x, depth + 1));
+    const o = {}; for (const [k, x] of Object.entries(v)) { if (k === "draw" || typeof x === "function") continue; const y = ser(x, depth + 1); if (y !== undefined) o[k] = y; } return o;
+  }
+  const des = (v) => (v && typeof v === "object" ? (v.$a !== undefined ? S.actors.get(v.$a) : Array.isArray(v) ? v.map(des) : Object.fromEntries(Object.entries(v).map(([k, x]) => [k, des(x)]))) : v);
+  function startRec(api, script) {
+    const rec = { key: hash(String(script)), ev: [], pause: 0, skipped: false, title: "", api: Object.create(api) };
+    const now = () => (S ? S.t : 0) - rec.pause;
+    for (const n of REC_CALLS) {
+      const f = api[n];
+      rec.api[n] = function (...args) {
+        if (S && S.skipping) rec.skipped = true;
+        try { rec.ev.push({ n, a: args.map((x) => ser(x)), t: Math.round(now() * 100) / 100 }); } catch { /* ignore */ }
+        if (n === "caption" && !rec.title) rec.title = [args[0], args[1]].filter(Boolean).join(" — ");
+        if (n === "say" && !rec.first) rec.first = String(args[1] || "");
+        if (n === "say" || n === "choose") { const t0 = S ? S.t : 0; const p = f.apply(api, args); return Promise.resolve(p).finally(() => { rec.pause += (S ? S.t : t0) - t0; }); }
+        return f.apply(api, args);
+      };
+    }
+    rec.api.lightning = async (n = 1) => { for (let i = 0; i < n; i++) { if (S && S.skipping) return; rec.api.flash("#dfe8ff", .9); rec.api.sfx("thunder", .8); rec.api.shake(5, .3); await api.wait(.2 + Math.random() * .3); } };
+    rec.api.lines = async (sp, list) => { for (const t of list) { if (S && S.skipping) return; await rec.api.say(sp, t); } };
+    return rec;
+  }
+  function endRec(rec) {
+    if (rec.ev.length < 4) return;
+    const all = films(); const old = all[rec.key];
+    if (rec.skipped && old && !old.partial) return;
+    const title = rec.title || (rec.first ? "« " + rec.first.slice(0, 48) + (rec.first.length > 48 ? "… »" : " »") : "Une scène");
+    all[rec.key] = { title, at: Date.now(), ev: rec.ev, partial: rec.skipped || undefined, n: old ? old.n : Object.keys(all).length + 1 };
+    try { localStorage.setItem(filmKey(), JSON.stringify(all)); } catch { /* plein : tant pis */ }
+  }
+  async function replay(key) {
+    const f = films()[key]; if (!f) return;
+    await play(async (api) => {
+      let pause = 0; const now = () => S.t - pause;
+      for (const e of f.ev) {
+        while (now() < e.t) { if (S.skipping) return; await api.wait(Math.min(.05, e.t - now())); }
+        const args = e.a.map(des);
+        if (e.n === "say" || e.n === "choose") { if (S.skipping) return; const t0 = S.t; await api[e.n](...args); pause += S.t - t0; }
+        else if (e.n === "caption" || e.n === "move" || e.n === "fade" || e.n === "cam" || e.n === "hop" || e.n === "fadeActor" || e.n === "scaleActor" || e.n === "barsTo") api[e.n](...args);
+        else api[e.n](...args);
+      }
+      await api.wait(1.2);
+    }, { replay: true });
+  }
+  const list = () => Object.entries(films()).map(([key, f]) => ({ key, title: f.title, at: f.at, n: f.n, partial: f.partial })).sort((a, b) => (a.n || 0) - (b.n || 0));
+  return { play, replay, films: list, render, get active() { return Boolean(S); }, BG };
 })();
