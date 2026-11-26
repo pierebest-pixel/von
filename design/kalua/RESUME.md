@@ -150,31 +150,30 @@ Maquettes : `design/kalua/maquettes-construction/` (10 planches + `PLAN.md`, ref
   - la fin et les crédits.
 - Astuce : quand le navigateur de test est caché, le jeu ne s'anime plus. On fait avancer les images à la main avec `frame()`, et on évite les `setTimeout`.
 
-## Ce qu'il reste à faire
+## Ce qu'il reste à faire (synthèse au 27/11/2026, après la 0.6)
 
-1. ⚠️ **Règles Firebase**
-   - À faire par l'utilisateur : coller `database.rules.json` dans la console Firebase (Realtime Database → Règles → Publier).
-   - Il y a une nouvelle règle `progress/{uid}` : sans elle, la sauvegarde en ligne de la progression risque d'être refusée. La sauvegarde dans le téléphone marche quand même.
-2. **Les 3 boss finaux des grottes des îles** (Tortues, Phare, Étoiles), à concevoir avec l'utilisateur.
-   - Les arènes sont prêtes et scellées (`sealed: true` dans `caves-iles.js`).
-   - Pour en brancher un :
-     - ajouter `boss:` (temps réel, dans `rtbosses.js`) ou `battle:` (tour par tour, dans `battle.js`) ;
-     - ajouter `reward:` et `final: true` ;
-     - retirer `sealed`.
-   - Dessin dans `bestiary.js`, musique dans `music.js` (`BOSS_COLORS`).
-   - Idées du lore : la grotte des Tortues est le nid sacré, avec la Tortue-Mère ; la grotte du Phare abrite la Cloche des Profondeurs ; la grotte des Étoiles est le cœur de l'étoile.
-3. **Tester sur iPhone, à deux** :
-   - le tactile, la lisibilité des dialogues et des cinématiques ;
-   - le clavier de la question personnalisée ;
-   - la fluidité des grottes en pixel art ;
-   - le son.
-   - **Personne n'a encore joué une partie complète à la main.**
-4. **Équilibrage** : les PV et dégâts des boss, et la difficulté des énigmes, ont été réglés à l'estime.
-5. **Coopération dans les grottes** : on voit l'autre joueur s'il est dans la même salle, mais les ennemis, énigmes et coffres sont propres à chaque joueur. Une vraie coop (grottes partagées) serait un gros chantier, à décider.
-6. **Créatures secrètes des îles** (Tortue Ancienne, Hibou-Lanterne, Renard Céleste) : leurs combats existent dans `battle.js`, mais elles ne sont pas encore placées sur les îles.
-7. **Reste de l'étape 2 des maquettes** : l'adoption des animaux (leur donner un nom) et le **cheval qu'on monte** (l'enclos, l'étable et les récoltes existent depuis la 0.6).
-8. Petites améliorations possibles :
-   - l'escorte de Nalia au début est un peu longue ;
-   - le Gardien Mère-Racine est grand et dépasse en haut de l'écran sur petit écran ;
-   - ajouter des icônes dessinées pour les nouveaux objets (aujourd'hui, ce sont des emojis) ;
-   - nettoyer les anciennes images `shot1.png`, `shot2.png`, `shot3.png` du dossier du jeu.
+### À faire par l'utilisateur
+1. **Règles Firebase** : vérifier que `database.rules.json` est bien collé dans la console (règle `progress/{uid}` de la 0.4). Rien de nouveau pour le village de la 0.6.
+2. **Jouer pour de vrai sur iPhone, à deux** : personne n'a encore fait une partie complète à la main. À vérifier en priorité : le village commun en ligne (constructions vues par les deux, chantier partagé, dormir à deux), le tactile, la lisibilité, la fluidité, le son.
+3. **Concevoir les 3 boss finaux des îles** (Tortues, Phare, Étoiles) : arènes prêtes et scellées (`sealed: true` dans `caves-iles.js`). Pour en brancher un : `boss:` (temps réel, `rtbosses.js`) ou `battle:` (tour par tour, `battle.js`), `reward:`, `final: true`, retirer `sealed` ; dessin dans `bestiary.js`, musique dans `music.js` (`BOSS_COLORS`).
+4. Donner la **vraie date de sortie** pour la bande-annonce (`bande-annonce/`, une fausse date floutée « 12 décembre 2026 » y est).
+
+### Gameplay encore à faire
+5. **Adoption des animaux** (leur donner un nom, qu'ils restent à l'enclos) et **le cheval qu'on monte** (l'enclos, l'étable et les récoltes existent).
+6. **Créatures secrètes des îles** (Tortue Ancienne, Hibou-Lanterne, Renard Céleste) : combats prêts dans `battle.js`, à placer sur les îles.
+7. **Coopération dans les grottes** : aujourd'hui chacun a ses ennemis, énigmes et coffres. Une vraie coop serait un gros chantier, à décider.
+8. **Sauvegarde en ligne du mode solo** (aujourd'hui dans le téléphone seulement, partie et village).
+
+### À compléter dans la 0.6 (construction / village)
+9. **Habitants dans les commerces** : Rosalie au Fil d'Or, un cuisinier à La Marmite, etc. (les commerces marchent, mais personne ne se tient derrière le comptoir).
+10. **Fête sur la place** (mairie) : le réglage est enregistré, mais aucun décor ni musique de fête n'apparaît encore ; **marché de Noël automatique** en décembre.
+11. **Projets du village** de la mairie : pour l'instant de simples conseils ; pourrait devenir de vraies quêtes avec récompenses.
+12. **Animations figées** : fumée des cheminées, ailes du moulin, drapeaux, fontaines sont immobiles dans le jeu (dessins en cache) — ajouter une petite couche animée.
+13. **Créateur de personnage** : il ne propose pas encore les nouveaux vêtements (seulement au Fil d'Or) ; on pourrait y ajouter l'armoire.
+14. **Cinéma en plein air** : revoir pour de vrai les cinématiques déjà vues (aujourd'hui un simple message).
+
+### Finitions
+15. **Équilibrage** : PV et dégâts des boss, difficulté des énigmes, coûts des constructions, bonus des restaurants (tout réglé à l'estime).
+16. L'escorte de Nalia au début est un peu longue ; le Gardien Mère-Racine dépasse en haut des petits écrans.
+17. Icônes dessinées pour les objets (aujourd'hui des emojis).
+18. **Nouvelles captures pour la fiche du jeu dans Von** : `shot1.png`, `shot2.png`, `shot3.png` datent de la 0.2 (remplacer par le village, le château, une grotte).
