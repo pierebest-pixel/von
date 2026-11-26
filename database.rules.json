@@ -17,6 +17,11 @@
             ".validate": "$uid === auth.uid && newData.child('x').isNumber() && newData.child('y').isNumber()"
           }
         },
+        "progress": {
+          "$uid": {
+            ".validate": "$uid === auth.uid"
+          }
+        },
         "players": {
           "$uid": {
             ".validate": "$uid === auth.uid"

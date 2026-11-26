@@ -1,58 +1,146 @@
 # Les Échoués de Kalua — résumé du projet (à lire en début de conversation)
 
-Jeu à deux en ligne dans **Von** (`games/kalua/`), pensé pour jouer avec sa copine.
-Publié dans Von en **version 0.3.1** (branches `main` et `kalua` identiques au moment de ce résumé).
+Jeu d'aventure à deux, en ligne, dans l'appli **Von** (dépôt `pierebest-pixel/von`, dossier `games/kalua/`), pensé pour jouer avec sa copine.
+**Version publiée : 0.4** (26/11/2026). Les branches `main` et `kalua` sont identiques.
+
+Documents à lire selon le besoin :
+- **`design/kalua/LOG.md`** : le rapport détaillé du développement autonome (fichiers, systèmes, salles, boss, quêtes, tests, bugs).
+- **`design/kalua/LORE.md`** : toute l'histoire du monde.
+- **`design/kalua/maquettes-0.4/`** : 7 planches d'images tirées du vrai jeu.
+  1. Intro
+  2. Bestiaire
+  3. Grottes
+  4. Boss en temps réel
+  5. Combats au tour par tour
+  6. Habitants
+  7. Monde et Nalia
 
 ## Règles de travail demandées par l'utilisateur
-- **Chaque étape est validée ensemble** : ne rien coder sans accord ; montrer d'abord des **maquettes en images**, puis des captures du vrai jeu avant de publier.
 - Répondre en français, simplement.
-- Publier sur `main` seulement quand l'utilisateur dit « publie ».
+- On valide chaque étape ensemble : **maquettes en images d'abord**, captures du vrai jeu avant de publier.
+- Publier sur `main` **seulement quand l'utilisateur dit « publie »**.
+- À chaque publication :
+  - augmenter `APP_CACHE` dans `sw.js` (actuellement `von-app-v8`) ;
+  - augmenter la version dans `games/kalua/menus.js` (écran titre) et dans `games/catalog.json`.
+- L'utilisateur veut concevoir **lui-même les boss finaux des 3 grottes des îles** (6 Tortues, 7 Phare, 8 Étoiles). Ne pas les créer sans lui.
+- Crédits de fin : **Sixte Maron** et **Claude**.
+- Consignes de jeu :
+  - **jamais de barre d'endurance** : course, esquive et attaques illimitées ; seuls les chants ont un temps de recharge ;
+  - un point **rouge** au-dessus des PNJ des grandes quêtes, un point **noir** au-dessus de ceux qui apprennent un chant magique.
 
-## Von (l'appli) — déjà fait
-- Lanceur de jeux web pour iPhone : `index.html`, `app.js`, `app.css`, `sw.js` (penser à augmenter `APP_CACHE` à chaque publication, actuellement `von-app-v6`).
-- **Amis** : tag unique par joueur (Réglages → Profil), onglet Amis, « Trouver un ami » par tag, demandes à accepter. Firebase **Firestore** + connexion anonyme (`friends.js`, `firestore.rules`).
-- Projet Firebase **« von-en-ligne »** : config dans `firebase-config.js` (dont `databaseURL` Realtime Database europe-west1).
-- Kalua utilise **Realtime Database** ; règles dans `database.rules.json`. ⚠️ L'utilisateur doit les coller dans la console (Realtime Database → Règles → Publier) ; pas encore confirmé.
+## Ce qui est fait
 
-## Décisions de design validées
-- **Nom** : Les Échoués de Kalua. **Icône** : A, carte au trésor.
-- **Style** : « simple et doux » (pastel, livre illustré) pour l'île, le village, les PNJ et les grottes 2, 4, 6, 7, 8. **Pixel art aventure** pour les grottes 1, 3 et 5.
-- **Jeu visible par tous** dans le catalogue ; chaque île est privée entre ses 2 membres (invitation d'un ami Von).
-- **Commandes** : flèches directionnelles (pas de joystick) + 4 boutons : **Taper** (frapper, couper le bois, casser les rochers), **Ramasser**, **Esquiver** (roulade), **Sprint**. Jouable en **portrait et paysage**.
-- **Créateur de personnage** très complet, 7 onglets : Corps, Visage, Cheveux, Tenue, Accessoires, Maquillage, ✨ Fancy (squelette, catrina, oreilles, cornes, ailes, queue, aura…).
-- **Carte** (`carte-v5.jpg`) : grande île en **5 biomes** (Côte Dorée au sud avec l'épave et « votre village » ; Jungle Émeraude à l'ouest ; Marais des Brumes au nord-ouest ; Falaises des Vents à l'est ; Volcan de Kalua au nord). Pas de brouillard. Rivières avec ponts, sentiers, villages et décors dans chaque biome.
-  - **3 îles autour** (Île aux Tortues, Île du Phare, Îlot aux Étoiles), accessibles **en bateau après une quête de PNJ**.
-- **8 grottes** : 1 Racines (Jungle, temps réel, pixel) · 2 Marine (Côte, tour par tour, doux) · 3 Brumes (Marais, temps réel, pixel) · 4 Vent (Falaises, tour par tour, doux) · 5 Cœur du Volcan (**boss final**, pixel) · 6 Tortues (temps réel, doux) · 7 Phare (temps réel, doux) · 8 Étoiles (tour par tour, doux).
-- **Boss final** (grotte 5) : phase 1 en temps réel découpée en **3 temps** (à 66 % et 33 % de vie), puis **phase 2 au tour par tour « spéciale »** que l'utilisateur détaillera.
-- **10 PNJ** (2 par biome) : énigmes, quiz, puzzles. Leurs récompenses débloquent la suite (pont, bottes, corde, masque, radeau…).
-- **12 boss optionnels au tour par tour** (`boss-optionnels.jpg`). **B1** Roi Crabe Corail, **B2** Petit Kraken et **B9** Aigle-Roi sont **en mer**, accessibles en bateau après la quête de PNJ.
-- **Bestiaire** (`bestiaire.jpg`) : 4 espèces par biome, 3 inoffensives (tuables pour leurs matériaux) et 1 agressive. Dans la Jungle (Sangliers épineux) et le Marais (Crocos des brumes), l'agressive **attaque en groupe**.
-  - **3 créatures secrètes**, une par île : Tortue Ancienne, Hibou-Lanterne, Renard Céleste. Inoffensives ; si on les attaque, **combat au tour par tour**.
-  - **Animaux partout** (vache, cochon, chèvre, mouton, poule, canard, **cheval montable**, chien, chat, lapin) : adoptables ou tuables.
-- **Menus** (`menus-et-icones.jpg`) : menu titre animé (Jouer / Mon personnage / Réglages) ; menu en jeu ≡ (Reprendre, Carte, **Sac**, **Sauvegarde**, Mon personnage, Réglages, Mes îles, Menu titre) ; réglages (sons, musique, vibrations, taille des boutons, gaucher, pseudos, zoom).
-- **Musique du titre** : épique + mignonne + rythmée (`kalua-titre.mp3`), composée en Web Audio (`music.js`).
+### Von (l'appli)
+- Lanceur de jeux web pour iPhone : `index.html`, `app.js`, `app.css`, `sw.js`.
+- Amis par tag (Firestore, `friends.js`, `firestore.rules`).
+- Projet Firebase « von-en-ligne » : config dans `firebase-config.js`. Kalua utilise la **Realtime Database** (règles dans `database.rules.json`).
 
-## Plan des étapes
-1. ✅ **Étape 1** (publiée en 0.3) : personnage, Mes îles et invitation, jeu à deux en direct, carte complète, décor, animaux qui se promènent, menus, musique du titre.
-   - ✅ **0.3.1** (retouches avant l'étape 2) : vignettes du créateur enfin cliquables (le toucher tombait sur le dessin), vue dézoomée (encore plus en paysage), mini-carte de toute l'île en haut à droite (touche = grande carte), bouton menu ≡ à gauche de la mini-carte, musique du titre débloquée au relâchement du doigt (exigence de Safari sur iPhone).
-2. ⏳ **Étape 2** : récolte, sac, atelier (recettes), construction du village, adoption, chasse, cheval. Maquettes dans `etape2-maquettes.jpg`, **en attente de validation**.
-3. ⏳ **Étape 3** : les 10 PNJ et leurs énigmes (éventuellement des questions personnalisées sur le couple, stockées dans l'île privée et jamais en clair dans le code).
-4. ⏳ **Étape 4** : grottes, combats (temps réel et tour par tour), boss, créatures agressives, boss optionnels.
+### Kalua 0.1 à 0.3.1 (étape 1)
+- Créateur de personnage (7 onglets, dont ✨ Fancy). Les images des choix sont cliquables depuis la 0.3.1.
+- « Mes îles » : on invite un ami, et chaque île est privée à deux.
+- Jeu à deux en direct.
+- La carte : 5 biomes, rivières, ponts, villages, animaux qui se promènent.
+- Menu titre avec sa musique, menu en jeu.
+- Vue dézoomée (encore plus en paysage), mini-carte en haut à droite, bouton menu ≡ à sa gauche.
+- Musique du titre qui démarre bien sur iPhone.
 
-## Code de Kalua (`games/kalua/`)
-- `index.html`, `style.css` : écrans et HUD.
-- `avatar.js` : options et dessin des personnages.
-- `net.js` : Firebase Realtime Database. Chemins : `islands/{id}` (members, players, pos), `userIslands/{uid}` ; heure serveur via `Net.now()`.
-- `map.js` : géographie en unités carte 1600×1000, avec 1 unité = 14 px monde. Contient biomes, relief, rivières, sentiers, ponts, PLACES, CAVES, NPCS, BOSSES, ANIMAL_ZONES, et le rendu du sol en tuiles de 512 px.
-- `world.js` : décor généré par morceaux, collisions (mer, rivières sauf ponts, lave), dessin.
-- `creatures.js` : dessins des animaux (repris du bestiaire) et promenades déterministes (identiques pour les 2 joueurs).
-- `menus.js` : réglages, menu titre, menu en jeu, carte, sac, sauvegarde.
-- `music.js` : musique.
-- `game.js` : créateur, Mes îles, boucle de jeu, commandes, synchronisation.
-- `design/kalua/items-maquette.js` : icônes des ~50 objets de l'étape 2, à réutiliser.
+### Kalua 0.4 (développement autonome, publié le 26/11/2026)
+- **Lore complet** : l'Étoile tombée, le Cœur de Kalua, les Lumes, la Reine Ilaïa et la Grande Fêlure, la Cendre Noire, les 12 Gardiens, la prophétie des « deux cœurs ». Le grand secret : Nalia a provoqué le naufrage.
+- **Introduction** : cinématique du naufrage de la Mouette d'Argent, réveil sur la plage, Nalia qui accompagne les joueurs jusqu'au village en leur donnant des conseils.
+- **Nalia la guide** :
+  - menu d'aide en 13 thèmes ;
+  - **« Question personnalisée »** au clavier : elle cherche la réponse dans environ 260 fiches tirées des données du jeu, sans internet ;
+  - on l'appelle partout avec la Conque d'appel ;
+  - après sa mort, c'est Coco qui répond à sa place.
+- **8 grottes, 117 salles** :
+  - grottes 1, 3, 5 : temps réel, pixel art ;
+  - grottes 2, 4, 8 : tour par tour ;
+  - grottes 6, 7 : temps réel.
+  - Pièges, énigmes, clés, passages secrets, 2 ou 3 mini-boss par grotte.
+  - Boss : Mère-Racine, Amiral Nacre, Geôlier sans visage, Tempestaire, **Reine Cendrée** (boss final).
+- **12 Gardiens** (boss optionnels au tour par tour) avec leurs mécaniques, repaires et récompenses. B1 et B9 se combattent en mer.
+- **Deux systèmes de combat** :
+  - temps réel : attaques annoncées au sol et protections à percer ;
+  - tour par tour : timing pour frapper et parer, chants, statuts, attaques annoncées.
+- **Magie : 6 chants** (Flamme, Racine, Marée, Bourrasque, Lueur, Onde), appris auprès de 6 maîtres au point noir. Ils servent au combat et aux énigmes.
+- **Fils de vie** : Mère Tikka tisse 8 améliorations permanentes de la vie (de 5 à 13 cœurs) avec ce que donnent les animaux. Les animaux dorés donnent une Larme dorée.
+- **Récolte, chasse, caresses, établi** (corde, torche, potion…), **forge de Brann** (hache, pioche, épée de corail, lame d'obsidienne).
+- **31 PNJ vivants** : emploi du temps selon l'heure, commune aux deux joueurs (1 journée = 20 min), activités visibles, petites phrases. Il y a le jour, la nuit et le coucher du soleil.
+- **5 grandes quêtes**, avec 3 cinématiques chacune :
+  - Kéo (très longue, mort de Kéo) ;
+  - Mère Tikka (très longue, l'âme de Mila) ;
+  - Grand-père Oro (très longue, mort d'Oro) ;
+  - Fennek (moyenne) ;
+  - Lili (normale).
+- **Quête du bateau** : l'enquête avec indices, témoins, construction et déduction, la nuit de la cloche, le Kraken, la mort de Bastien et l'aveu de Nalia. Elle débloque la navigation vers les 3 îles.
+- **6 quêtes de magie** et **10 petites quêtes** : Tim, Jojo, Rosalie, Nouk, Bodo, Tobi, Arnaud le fantôme, Nana, Pipa, Brann.
+- **Fin** :
+  - combat final en 3 temps ;
+  - phase spéciale au tour par tour « le Chant à Deux » : chanter tour à tour et tenir la main ;
+  - sacrifice de Nalia, conclusion, crédits.
+- **40 musiques** générées en direct (par région, par boss, par émotion) avec des fondus, plus 30 bruitages.
+- Menu en jeu : Appeler Nalia, Quêtes (avec la quête suivie), Carte, Sac (on peut manger), Chants et vie, Journal et lore, Sauvegarde, Réglages.
+- **Sauvegarde** de toute la progression dans le téléphone et en ligne (`islands/{id}/progress/{uid}`).
 
-## Tests (environnement cloud)
-- Émulateurs Firebase (auth + database) avec firebase-tools, en passant `NO_PROXY` pour le localhost.
-- Charger les règles via `curl --noproxy '*' -X PUT -H "Authorization: Bearer owner" --data-binary @database.rules.json "http://127.0.0.1:9000/.settings/rules.json?ns=demo-von"`.
-- Playwright : 2 contextes iPhone, CDN gstatic redirigé vers `node_modules/firebase`, `firebase-config.js` remplacé par une config d'émulateur (`databaseURL: https://demo-von.firebaseio.com`).
-- La vraie base `*.firebasedatabase.app` n'est pas joignable depuis le conteneur.
+### Architecture du code (`games/kalua/`)
+| Fichier | Rôle |
+|---|---|
+| `game.js` | écrans (chargement, créateur, Mes îles) |
+| `play.js` | le jeu : modes île / grotte / combat / cinématique, actions, HUD, mini-carte, ambiance musicale |
+| `state.js` | progression et sauvegarde (`Prog`) |
+| `npcs.js` | habitants et emplois du temps (`NPC`) |
+| `quests.js`, `quests2.js` | quêtes (`Quests`) |
+| `story.js` | histoire principale, intro, fin, Gardiens, navigation (`Story`) |
+| `guide.js` | savoir de Nalia (`Guide`) |
+| `dialog.js` | dialogues |
+| `cutscene.js` | cinématiques |
+| `action.js` | combat en temps réel (`Act`) |
+| `rtbosses.js` | boss en temps réel (`RTBoss`) |
+| `battle.js` | combat au tour par tour (`Battle`) |
+| `dungeon.js` | moteur des grottes (`Dungeon`) |
+| `caves-1.js` … `caves-5.js`, `caves-iles.js` | les salles |
+| `bestiary.js` | dessins des créatures et des boss (`Bosses`) |
+| `items.js`, `items-data.js` | objets |
+| `lore.js` | fragments de lore |
+| `music.js` | musiques et bruitages |
+| `menus.js` | menus |
+| `avatar.js`, `map.js`, `world.js`, `creatures.js`, `net.js` | personnages, carte, monde, animaux, réseau (inchangés pour l'essentiel) |
+
+### Tests (environnement local)
+- Copie de test avec un **faux réseau**, dans le dossier temporaire de la session : `kalua-test/`, `fake-net.js`, `sync.sh`, `validate.js`, `harness.js`.
+- `validate.js` vérifie les 117 salles : 0 problème.
+- Testés sans erreur :
+  - tous les boss en temps réel ;
+  - les 26 combats au tour par tour ;
+  - toutes les quêtes de bout en bout ;
+  - la fin et les crédits.
+- Astuce : quand le navigateur de test est caché, le jeu ne s'anime plus. On fait avancer les images à la main avec `frame()`, et on évite les `setTimeout`.
+
+## Ce qu'il reste à faire
+
+1. ⚠️ **Règles Firebase**
+   - À faire par l'utilisateur : coller `database.rules.json` dans la console Firebase (Realtime Database → Règles → Publier).
+   - Il y a une nouvelle règle `progress/{uid}` : sans elle, la sauvegarde en ligne de la progression risque d'être refusée. La sauvegarde dans le téléphone marche quand même.
+2. **Les 3 boss finaux des grottes des îles** (Tortues, Phare, Étoiles), à concevoir avec l'utilisateur.
+   - Les arènes sont prêtes et scellées (`sealed: true` dans `caves-iles.js`).
+   - Pour en brancher un :
+     - ajouter `boss:` (temps réel, dans `rtbosses.js`) ou `battle:` (tour par tour, dans `battle.js`) ;
+     - ajouter `reward:` et `final: true` ;
+     - retirer `sealed`.
+   - Dessin dans `bestiary.js`, musique dans `music.js` (`BOSS_COLORS`).
+   - Idées du lore : la grotte des Tortues est le nid sacré, avec la Tortue-Mère ; la grotte du Phare abrite la Cloche des Profondeurs ; la grotte des Étoiles est le cœur de l'étoile.
+3. **Tester sur iPhone, à deux** :
+   - le tactile, la lisibilité des dialogues et des cinématiques ;
+   - le clavier de la question personnalisée ;
+   - la fluidité des grottes en pixel art ;
+   - le son.
+   - **Personne n'a encore joué une partie complète à la main.**
+4. **Équilibrage** : les PV et dégâts des boss, et la difficulté des énigmes, ont été réglés à l'estime.
+5. **Coopération dans les grottes** : on voit l'autre joueur s'il est dans la même salle, mais les ennemis, énigmes et coffres sont propres à chaque joueur. Une vraie coop (grottes partagées) serait un gros chantier, à décider.
+6. **Créatures secrètes des îles** (Tortue Ancienne, Hibou-Lanterne, Renard Céleste) : leurs combats existent dans `battle.js`, mais elles ne sont pas encore placées sur les îles.
+7. **Reste de l'étape 2 des maquettes** : la construction du village, l'adoption des animaux (leur donner un nom, l'enclos, le lait, les œufs, la laine) et le **cheval qu'on monte**.
+8. Petites améliorations possibles :
+   - l'escorte de Nalia au début est un peu longue ;
+   - le Gardien Mère-Racine est grand et dépasse en haut de l'écran sur petit écran ;
+   - ajouter des icônes dessinées pour les nouveaux objets (aujourd'hui, ce sont des emojis) ;
+   - nettoyer les anciennes images `shot1.png`, `shot2.png`, `shot3.png` du dossier du jeu.

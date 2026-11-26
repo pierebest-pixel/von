@@ -192,3 +192,61 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 .acts { transform: scale(var(--btn, 1)); transform-origin: right bottom; }
 body.lefty .dpad { left: auto; right: calc(var(--sr) + 14px); transform-origin: right bottom; }
 body.lefty .acts { right: auto; left: calc(var(--sl) + 10px); transform-origin: left bottom; }
+
+/* ================================================================ chant (magie) */
+.acts { width: 214px; }
+.act.magic { width: 54px; height: 54px; right: 150px; bottom: 18px; background: #b49ae8; box-shadow: 0 3px 0 #8f74c8; overflow: hidden; }
+.act.magic span { font-size: 22px; line-height: 1; position: relative; z-index: 1; }
+.act.magic::after { content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: var(--cd, 0%); background: rgba(40, 20, 60, .45); }
+.act.magic.off { filter: grayscale(.7); opacity: .7; }
+.act.swap { width: 32px; height: 32px; right: 162px; bottom: 82px; background: #d8c8f4; box-shadow: 0 2px 0 #a890d0; font-size: 15px; color: #5a3a8a; }
+
+/* objets ramassés */
+.pickups { position: absolute; left: calc(var(--sl) + 12px); bottom: calc(var(--sb) + 190px); display: flex; flex-direction: column; gap: 4px; pointer-events: none !important; }
+.pick { background: rgba(255, 250, 240, .92); color: #5a4040; font-size: 12px; font-weight: 800; padding: 3px 10px 3px 4px; border-radius: 999px; display: flex; align-items: center; gap: 6px; animation: pickin .25s ease-out; box-shadow: 0 2px 6px rgba(0,0,0,.12); }
+.pick img { width: 24px; height: 24px; }
+@keyframes pickin { from { transform: translateX(-20px); opacity: 0; } }
+
+/* ================================================================ dialogues */
+#dialog { position: fixed; left: 0; right: 0; bottom: calc(var(--sb) + 10px); z-index: 60; display: flex; justify-content: center; padding: 0 10px; pointer-events: auto; }
+.dlg { position: relative; width: min(640px, 100%); background: rgba(255, 250, 242, .97); border-radius: 20px; box-shadow: 0 8px 24px rgba(40, 20, 20, .28); display: flex; gap: 12px; padding: 14px 16px 16px; border: 3px solid #f0dcc8; }
+#dialog.narr .dlg { background: rgba(30, 24, 36, .92); border-color: #4a3e56; color: #f4eee8; }
+.dlg-face { width: 64px; height: 64px; flex-shrink: 0; border-radius: 50%; }
+.dlg-main { flex: 1; min-width: 0; }
+.dlg-name { font-weight: 900; font-size: 14px; margin-bottom: 4px; color: #b05a6a; }
+.dlg-text { font-size: 15px; line-height: 1.38; font-weight: 600; min-height: 42px; white-space: pre-wrap; }
+.dlg-next { position: absolute; right: 14px; bottom: 6px; font-size: 11px; color: #c9a0a0; animation: bob 1s infinite; }
+@keyframes bob { 50% { transform: translateY(3px); } }
+.dlg-opts { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.dlg-opt { background: #ffe8ee; color: #8a3a50; border-radius: 12px; padding: 8px 12px; font-weight: 800; font-size: 13px; box-shadow: 0 2px 0 #f0c0cc; text-align: left; }
+.dlg-opt:active { transform: translateY(1px); }
+.dlg-opt.send { background: #b49ae8; color: #fff; box-shadow: 0 2px 0 #8f74c8; }
+.dlg-opt.ghost { background: transparent; box-shadow: none; color: #9a7a7a; }
+.dlg-form { display: flex; flex-wrap: wrap; gap: 6px; width: 100%; }
+.dlg-in { flex: 1 1 100%; font: inherit; font-size: 16px; padding: 10px 12px; border-radius: 12px; border: 2px solid #e8c8d0; background: #fff; color: #4a3434; }
+
+/* ================================================================ combat au tour par tour */
+#battle-ui { position: fixed; inset: 0; z-index: 50; pointer-events: none; }
+.b-msg { position: absolute; left: 50%; transform: translateX(-50%); top: calc(var(--st) + 10px); width: min(560px, 92%); background: rgba(30, 20, 34, .82); color: #fff; font-weight: 800; font-size: 14px; padding: 9px 14px; border-radius: 14px; text-align: center; min-height: 20px; }
+.b-menu { position: absolute; left: 0; right: 0; bottom: calc(var(--sb) + 12px); display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; padding: 0 10px; pointer-events: auto; }
+.b-btn { background: rgba(255, 250, 242, .96); color: #5a3a46; font-weight: 900; font-size: 14px; padding: 11px 14px; border-radius: 14px; box-shadow: 0 3px 0 #e0c8c0; min-width: 112px; display: flex; flex-direction: column; align-items: center; gap: 1px; }
+.b-btn small { font-size: 10px; font-weight: 700; color: #9a7a80; }
+.b-btn:disabled { opacity: .45; }
+.b-tap { position: absolute; left: 0; right: 0; bottom: calc(var(--sb) + 26px); text-align: center; }
+.b-tap-txt { display: inline-block; background: rgba(255, 230, 120, .95); color: #5a3a10; font-weight: 900; padding: 8px 16px; border-radius: 999px; animation: bob .5s infinite; }
+
+/* ================================================================ cinématiques */
+.skip-btn { position: fixed; right: calc(var(--sr) + 12px); top: calc(var(--st) + 12px); z-index: 70; background: rgba(0, 0, 0, .45); color: #fff; font-weight: 800; font-size: 12px; padding: 7px 12px; border-radius: 999px; }
+
+/* ================================================================ journal, quêtes, magie (panneaux) */
+.qlist { max-height: 56vh; overflow: auto; margin: 6px 0; }
+.qitem { background: #fff7ef; border-radius: 14px; padding: 10px 12px; margin: 6px 0; text-align: left; }
+.qitem b { display: block; font-size: 14px; color: #7a3a4a; }
+.qitem small { display: block; color: #8a6a6a; font-size: 12px; margin-top: 3px; line-height: 1.35; }
+.qitem.done { opacity: .55; }
+.qtag { display: inline-block; font-size: 10px; font-weight: 900; padding: 1px 7px; border-radius: 999px; margin-right: 6px; vertical-align: 1px; }
+.qtag.red { background: #ffd8dc; color: #c0303a; } .qtag.black { background: #2a2a2a; color: #fff; } .qtag.boat { background: #d8ecff; color: #2a5a8a; } .qtag.small { background: #fdf0d8; color: #9a6a2a; }
+.bag .slot img { width: 34px; height: 34px; }
+.bag .slot { position: relative; display: grid; place-items: center; }
+.bag .slot em { position: absolute; right: 3px; bottom: 1px; font-style: normal; font-size: 10px; font-weight: 900; color: #6b5050; }
+.iteminfo { min-height: 38px; font-size: 12.5px; color: #6b5050; margin: 6px 4px; text-align: left; }

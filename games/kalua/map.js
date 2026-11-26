@@ -217,6 +217,7 @@ const KALUA = (() => {
   }
   const clearQueue = (keep) => { queue = queue.filter((k) => keep.has(k)); };
 
-  return { MW, MH, K, TAU, ISLES, BIOMES, VOL, VILLAGE, RIVERS, TRAILS, BRIDGES, RIVER_W, TRAIL_W, CAVES, PLACES, ANIMAL_ZONES, NPCS, BOSSES,
+  const isleAt = (x, y) => { for (let i = 0; i < 3; i++) { const I = ISLES[i]; if (Math.abs(x - I.x) > I.rx * 1.4 || Math.abs(y - I.y) > I.ry * 1.4) continue; if (isleD(I, x, y) < .985) return i; } return -1; };
+  return { isleAt, MW, MH, K, TAU, ISLES, BIOMES, VOL, VILLAGE, RIVERS, TRAILS, BRIDGES, RIVER_W, TRAIL_W, CAVES, PLACES, ANIMAL_ZONES, NPCS, BOSSES,
     info, heightAt, weights, mainD, fbm, noise, hash, renderArea, getOverview, tile, work, clearQueue, TILE };
 })();

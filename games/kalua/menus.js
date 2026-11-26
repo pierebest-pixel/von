@@ -103,7 +103,7 @@ function showTitle() {
       <button class="tbtn main" data-x="play">▶&nbsp; JOUER</button>
       <button class="tbtn" data-x="perso">👤&nbsp; Mon personnage</button>
       <button class="tbtn" data-x="settings">⚙️&nbsp; Réglages</button>
-      <div class="ver">version 0.3.1 · Von</div>
+      <div class="ver">version 0.4 · Von</div>
     </div></div>`;
   const cvs = $("#tcv"); let alive = true; const t0 = performance.now();
   startMusic();
@@ -141,8 +141,12 @@ function openMenu() {
   const o = [...G.others.values()][0];
   const d = panel(`<h3>Menu</h3><div class="psub"><span class="dot ${o?.online ? "on" : ""}"></span>${o ? `${esc(o.name)} ${o.online ? "est sur l'île" : "n'est pas là"} · ` : ""}le jeu continue</div>
     <button class="item main" data-m="resume"><i>▶</i>Reprendre</button>
+    <button class="item" data-m="nalia"><i style="background:#e8eeff">🐚</i>${Prog.isDead("nalia") ? "Appeler Coco (conque)" : "Appeler Nalia (conque)"}<span class="chev">›</span></button>
+    <button class="item" data-m="quests"><i style="background:#ffe8ec">📜</i>Quêtes<span class="chev">›</span></button>
     <button class="item" data-m="map"><i style="background:#e0f2fb">🗺️</i>Carte de l'île<span class="chev">›</span></button>
     <button class="item" data-m="bag"><i style="background:#fdf0dc">🎒</i>Sac<span class="chev">›</span></button>
+    <button class="item" data-m="magic"><i style="background:#f1ecfb">✨</i>Chants et vie<span class="chev">›</span></button>
+    <button class="item" data-m="journal"><i style="background:#f4f0e6">📖</i>Journal et lore<span class="chev">›</span></button>
     <button class="item" data-m="save"><i style="background:#e6f6ea">💾</i>Sauvegarde<span class="chev">›</span></button>
     <button class="item" data-m="perso"><i style="background:#fde3ea">👤</i>Mon personnage<span class="chev">›</span></button>
     <button class="item" data-m="settings"><i style="background:#f1ecfb">⚙️</i>Réglages<span class="chev">›</span></button>
@@ -155,11 +159,15 @@ function openMenu() {
     if (m === "resume") return closeMenu();
     if (m === "map") return openMap();
     if (m === "bag") return openBag();
+    if (m === "quests") return openQuests();
+    if (m === "journal") return openJournal();
+    if (m === "magic") return openMagic();
+    if (m === "nalia") { closeMenu(); if (!Prog.has("conque")) { toast(Prog.flag("village_found") ? "Tu n'as pas de conque d'appel." : "Nalia est juste à côté de toi !"); return; } return Story.conque(); }
     if (m === "save") return openSave();
     if (m === "settings") return openSettings(openMenu);
     if (m === "islands") return leaveGame(showIslands);
     if (m === "title") return leaveGame(showTitle);
-    if (m === "perso") { closeMenu(); const id = G.session?.id; return leaveGame(() => showCreator(false, () => play(id))); }
+    if (m === "perso") { if (G.mode !== "world") { toast("Sors d'abord de la grotte."); return; } closeMenu(); const id = G.session?.id; return leaveGame(() => showCreator(false, () => play(id))); }
   });
 }
 
@@ -173,7 +181,7 @@ function openSettings(back) {
     ${row("✋ Boutons d'action", seg("lefty", [[true, "Gauche"], [false, "Droite"]]))}
     ${row("🏷️ Pseudos au-dessus", tg("names"))}
     ${row("🔍 Zoom", seg("zoom", [[.8, "−"], [1, "Normal"], [1.25, "+"]]))}
-    <p class="pnote">La musique joue dans les menus. Les bruitages arriveront avec une prochaine étape.</p>
+    <p class="pnote">Chaque région, chaque boss et chaque moment important a sa propre musique.</p>
     <button class="item main center" data-done>Fermer</button>`, "settings");
   d.querySelector(".panel").addEventListener("click", (e) => {
     const t = e.target.closest("[data-t],[data-s],[data-done]"); if (!t) return; buzz();
@@ -209,12 +217,13 @@ function openMap() {
       if (txt) { c.fillStyle = tc; c.font = `900 ${r * 1.2}px ui-rounded, system-ui`; c.textAlign = "center"; c.fillText(txt, x * k, y * k + r * .42); } };
     // village
     c.strokeStyle = "rgba(255,170,90,.95)"; c.setLineDash([3, 2]); c.lineWidth = 1.5; c.beginPath(); c.ellipse(KALUA.VILLAGE.x * k, KALUA.VILLAGE.y * k, 100 * k, 64 * k, 0, 0, TAU); c.stroke(); c.setLineDash([]);
-    for (const b of KALUA.BOSSES) dot(b[0], b[1], 5, "#e07a2a");
+    KALUA.BOSSES.forEach((b, i) => dot(b[0], b[1], 5, Prog.P.bosses["B" + (i + 1)] ? "#9a9aa6" : "#e07a2a"));
     for (const cv of KALUA.CAVES) dot(cv.x, cv.y, 7, cv.kind === "pix" ? "#2f6f86" : "#f49ab0", String(cv.n));
     c.font = "800 10px ui-rounded, system-ui"; c.textAlign = "center";
     const label = (x, y, t) => { c.lineWidth = 3; c.strokeStyle = "rgba(255,250,240,.95)"; c.strokeText(t, x * k, y * k); c.fillStyle = "#5a4040"; c.fillText(t, x * k, y * k); };
     label(800, 985, "Côte Dorée"); label(300, 760, "Jungle Émeraude"); label(500, 95, "Marais des Brumes"); label(1225, 645, "Falaises des Vents"); label(985, 66, "Volcan de Kalua");
-    KALUA.ISLES.forEach((I) => label(I.x, I.y + I.ry + 22, I.name + " 🔒"));
+    KALUA.ISLES.forEach((I) => label(I.x, I.y + I.ry + 22, I.name + (Prog.flag("bateau_ok") ? "" : " 🔒")));
+    const tg = Story.target(); if (tg) { c.fillStyle = "#ffd23a"; c.strokeStyle = "#fff"; c.lineWidth = 2; const x = tg.x / KALUA.K * k, y = tg.y / KALUA.K * k; c.beginPath(); c.moveTo(x, y - 8); c.lineTo(x + 6, y); c.lineTo(x, y + 8); c.lineTo(x - 6, y); c.closePath(); c.fill(); c.stroke(); }
     // joueurs
     const head = (o, av, col) => { const x = o.x / KALUA.K * k, y = o.y / KALUA.K * k; c.fillStyle = col; c.beginPath(); c.arc(x, y, 11, 0, TAU); c.fill(); c.fillStyle = "#fff"; c.beginPath(); c.arc(x, y, 9.5, 0, TAU); c.fill();
       c.save(); c.beginPath(); c.arc(x, y, 9.5, 0, TAU); c.clip(); c.translate(x, y + 2); c.scale(1.35, 1.35); Avatar.draw(c, av, { t: 1 }); c.restore(); };
@@ -225,9 +234,47 @@ function openMap() {
 
 // ---------------------------------------------------------------- sac
 function openBag() {
-  const d = panel(`<h3>Sac</h3><div class="bag">${Array.from({ length: 24 }, () => `<div class="slot"></div>`).join("")}</div>
-    <p class="pnote">Ton sac est vide pour l'instant.<br>La récolte (bois, pierres, coquillages…) arrive à l'étape 2.</p>
+  const P = Prog.P, ids = Object.keys(P.inv).filter((k) => P.inv[k] > 0);
+  const order = { tool: 0, food: 1, quest: 2, trophy: 3, cave: 4, faune: 5, res: 6 };
+  ids.sort((x, y) => (order[ITEMS.cat(x)] ?? 9) - (order[ITEMS.cat(y)] ?? 9) || ITEMS.name(x).localeCompare(ITEMS.name(y)));
+  const slots = ids.map((k) => `<button class="slot" data-it="${k}"><img src="${ITEMS.img(k, 34)}" alt=""><em>${P.inv[k]}</em></button>`).join("") + Array.from({ length: Math.max(0, 24 - ids.length) }, () => `<div class="slot"></div>`).join("");
+  const d = panel(`<h3>Sac</h3><div class="bag">${slots}</div><div class="iteminfo" id="iteminfo">${ids.length ? "Touche un objet pour le voir. Touche deux fois une nourriture pour la manger." : "Ton sac est vide. Récolte (Taper), cueille et chasse !"}</div>
     <button class="item main center" data-back>Retour</button>`, "bag-p");
+  let sel = null;
+  d.querySelector(".bag").addEventListener("click", (e) => { const b = e.target.closest("[data-it]"); if (!b) return; buzz(); const k = b.dataset.it;
+    if (sel === k && ITEMS.cat(k) === "food") { if (Prog.P.hp >= Prog.P.maxHp) { $("#iteminfo").textContent = "Tu n'as pas faim : ta vie est pleine."; return; } Prog.take(k); Prog.heal(ITEMS.val(k)); Music.sfx("pickup"); return openBag(); }
+    sel = k; $("#iteminfo").innerHTML = `<b>${esc(ITEMS.name(k))}</b> ×${P.inv[k]} — ${esc(ITEMS.desc(k))}${ITEMS.cat(k) === "food" ? " <i>(touche encore pour manger)</i>" : ""}`; });
+  d.querySelector("[data-back]").addEventListener("click", () => { buzz(); openMenu(); });
+  d.querySelector(".pdim").addEventListener("click", () => { G.menuOpen = false; });
+}
+
+// ---------------------------------------------------------------- quêtes
+function openQuests() {
+  const L = Quests.order.map((id) => ({ id, q: Quests.Q[id], s: Quests.stage(id) })).filter((x) => x.s >= 0);
+  const tag = (k) => ({ red: '<span class="qtag red">grande quête</span>', black: '<span class="qtag black">chant</span>', boat: '<span class="qtag boat">bateau</span>', small: '<span class="qtag small">petite quête</span>' }[k] || "");
+  const tr = Quests.tracked();
+  const html = L.length ? L.sort((a, b) => (a.s >= 999) - (b.s >= 999)).map(({ id, q, s }) => `<button class="qitem ${s >= 999 ? "done" : ""}" data-q="${id}">${tag(q.kind)}<b>${s >= 999 ? "✅ " : id === tr ? "★ " : ""}${esc(q.title)}</b><small>${s >= 999 ? "Terminée." : esc(q.stages[s] ? q.stages[s].obj : "")}</small></button>`).join("") : `<p class="pnote">Aucune quête pour l'instant. Parle aux gens qui ont un point rouge, noir ou orange au-dessus de la tête.</p>`;
+  const d = panel(`<h3>Quêtes</h3><div class="psub">★ = suivie sur la mini-carte · Histoire : ${esc(Story.goalText())}</div><div class="qlist">${html}</div><button class="item main center" data-back>Retour</button>`, "quests-p");
+  d.querySelector(".qlist").addEventListener("click", (e) => { const b = e.target.closest("[data-q]"); if (!b) return; buzz(); if (Quests.stage(b.dataset.q) < 999) { Prog.P.track = b.dataset.q; Prog.changed(); } openQuests(); });
+  d.querySelector("[data-back]").addEventListener("click", () => { buzz(); openMenu(); });
+  d.querySelector(".pdim").addEventListener("click", () => { G.menuOpen = false; });
+}
+function openJournal() {
+  const lore = Object.keys(Prog.P.lore).filter((k) => LORE[k]).map((k) => `<div class="qitem"><b>📖 ${esc(LORE[k].title)}</b><small>${esc(LORE[k].text)}</small></div>`).join("");
+  const notes = Prog.P.journal.slice(0, 12).map((j) => `<div class="qitem"><small>${esc(j.text)}</small></div>`).join("");
+  const nG = Object.keys(Prog.P.bosses).filter((k) => /^B\d+$/.test(k)).length, nC = [1, 2, 3, 4, 5, 6, 7, 8].filter((n) => Prog.cave(n).cleared).length;
+  const d = panel(`<h3>Journal</h3><div class="psub">Gardiens libérés : ${nG}/12 · Grottes terminées : ${nC} · Fragments de lore : ${Object.keys(Prog.P.lore).length}/${Object.keys(LORE).length}</div>
+    <div class="qlist">${lore || '<p class="pnote">Aucun fragment de lore. Lis les stèles et les fresques des grottes !</p>'}${notes}</div><button class="item main center" data-back>Retour</button>`, "journal-p");
+  d.querySelector("[data-back]").addEventListener("click", () => { buzz(); openMenu(); });
+  d.querySelector(".pdim").addEventListener("click", () => { G.menuOpen = false; });
+}
+function openMagic() {
+  const P = Prog.P, all = ["racine", "maree", "lueur", "bourrasque", "flamme", "onde"];
+  const masters = { racine: "Maître Tilo (jungle)", maree: "Ondine (ponton du port)", lueur: "Sœur Luciole (marais, la nuit)", bourrasque: "Zéphyr (moulins des falaises)", flamme: "Vulcain (camp du volcan)", onde: "Grumo (ruines des falaises)" };
+  const rows = all.map((s) => { const S = Battle.SPELLS[s], k = P.spells.includes(s); return `<button class="qitem ${k ? "" : "done"}" data-sp="${s}"><b>${S.icon} ${S.name} ${k ? (P.spell === s ? "· choisi" : "") : "· pas encore appris"}</b><small>${k ? S.short : "Maître : " + masters[s]}</small></button>`; }).join("");
+  const next = Quests.FILS[P.fils];
+  const d = panel(`<h3>Chants et vie</h3><div class="psub">❤️ ${P.hp}/${P.maxHp} cœurs · Fils de vie : ${P.fils}/8${next ? " · prochain fil : " + esc(Object.entries(next).map(([k, v]) => v + " " + ITEMS.name(k)).join(", ")) + " (Mère Tikka)" : ""}</div><div class="qlist">${rows}</div><button class="item main center" data-back>Retour</button>`, "magic-p");
+  d.querySelector(".qlist").addEventListener("click", (e) => { const b = e.target.closest("[data-sp]"); if (!b || !P.spells.includes(b.dataset.sp)) return; buzz(); P.spell = b.dataset.sp; Prog.changed(); refreshMagic(); openMagic(); });
   d.querySelector("[data-back]").addEventListener("click", () => { buzz(); openMenu(); });
   d.querySelector(".pdim").addEventListener("click", () => { G.menuOpen = false; });
 }
@@ -238,10 +285,10 @@ function openSave() {
   const d = panel(`<h3>Sauvegarde</h3>
     <div class="item">✅ Sauvegarde automatique<span class="pval">activée</span></div>
     <div class="item">🕑 Dernière sauvegarde<span class="pval" id="lastsave">${ago()}</span></div>
-    <p class="pnote">Ta position, ton personnage et (bientôt) ton sac et votre village sont enregistrés en ligne, pour vous deux. Tu peux quitter quand tu veux.</p>
+    <p class="pnote">Ta position, ton personnage, ton sac, tes quêtes, tes chants et tes grottes sont enregistrés dans le téléphone et en ligne, sur votre île. Tu peux quitter quand tu veux.</p>
     <button class="item main center" data-save>💾 Sauvegarder maintenant</button>
     <button class="item center" data-back>Retour</button>`, "save-p");
-  d.querySelector("[data-save]").addEventListener("click", (e) => { buzz(30); sendPos(true); G.lastSave = Date.now(); $("#lastsave").textContent = "à l'instant"; e.currentTarget.textContent = "✓ Partie sauvegardée"; });
+  d.querySelector("[data-save]").addEventListener("click", (e) => { buzz(30); sendPos(true); Prog.save(true); G.lastSave = Date.now(); $("#lastsave").textContent = "à l'instant"; e.currentTarget.textContent = "✓ Partie sauvegardée"; });
   d.querySelector("[data-back]").addEventListener("click", () => { buzz(); openMenu(); });
   d.querySelector(".pdim").addEventListener("click", () => { G.menuOpen = false; });
 }

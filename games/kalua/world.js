@@ -36,7 +36,7 @@ function makeWorld() {
   // ---------------------------------------------------------------- terrain franchissable
   function walkable(x, y) {
     const mx = x / K, my = y / K;
-    if (M.mainD(mx, my) > .985) return false; // la mer (les îles se rejoindront en bateau)
+    if (M.mainD(mx, my) > .985 && M.isleAt(mx, my) < 0) return false; // la mer (les trois îles se rejoignent en bateau)
     if (Math.hypot(mx - M.VOL.x, (my - M.VOL.y) * 1.2) < 34) return false; // la lave du cratère
     if (distTo(x, y, "r") < RHALF + 4 && !onBridge(x, y)) return false; // la rivière
     return true;
@@ -65,6 +65,11 @@ function makeWorld() {
       const x = cx * CH + gx + rnd() * STEP, y = cy * CH + gy + rnd() * STEP, mx = x / K, my = y / K;
       if (x < 0 || y < 0 || x > WW || y > WH) continue;
       const r = M.info(mx, my);
+      if (r.isl >= 0 && r.d < .9) { const q = rnd(); if (avoid.some(([ax, ay, ar]) => Math.hypot(ax - x, ay - y) < ar)) continue; // décor des îles
+        if (r.isl === 0) { if (q < .08) ch.solids.push({ kind: "palm", x, y, r: 12, s: 3.6 + rnd() * .8, lean: (rnd() - .5) * .25 }); else if (q < .2) ch.ground.push({ kind: "flower", x, y, s: 2.4, c: "#ff9fb8" }); else if (q < .26) ch.ground.push({ kind: "shell", x, y, s: 3, c: "#ffc6d6" }); }
+        else if (r.isl === 1) { if (q < .07) ch.solids.push({ kind: "rock", x, y, r: 13, s: 2.6 + rnd() }); else if (q < .2) ch.ground.push({ kind: "tuft", x, y, s: 2.2, c: "#a8b890" }); }
+        else { if (q < .06) ch.solids.push({ kind: "jtree", x, y, r: 12, s: 2.6, c: "#9a8ad0" }); else if (q < .22) ch.ground.push({ kind: "flower", x, y, s: 2.2, c: rnd() < .5 ? "#e0d0ff" : "#fff6a0" }); else if (q < .3) ch.ground.push({ kind: "firefly", x, y, s: 1 }); }
+        continue; }
       if (r.d > .97 || r.isl >= 0 || !r.w) continue;
       const t = distTo(x, y, "t"), rv = distTo(x, y, "r");
       if (rv < RHALF + 20) continue;

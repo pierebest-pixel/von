@@ -86,9 +86,17 @@ const Net = (() => {
     let lastSent = 0, pending = null, timer = null;
     const posRef = r(`islands/${id}/pos/${me.uid}`);
     const flush = () => { timer = null; if (!pending) return; lastSent = Date.now(); fb.set(posRef, pending).catch(() => {}); pending = null; };
+    const progRef = r(`islands/${id}/progress/${me.uid}`);
+    let progTimer = null, progPending = null;
     return {
       id, island, others, me,
       savedPos: (island.pos || {})[me.uid] || null,
+      progress: (island.progress || {})[me.uid] || null,
+      // progression (sac, quêtes, grottes…) : au plus une écriture toutes les 4 secondes
+      saveProgress(p) {
+        progPending = p;
+        if (!progTimer) progTimer = setTimeout(() => { progTimer = null; fb.set(progRef, progPending).catch(() => {}); }, 4000);
+      },
       watchPlayer(uid, cb) { unsubs.push(on(`islands/${id}/players/${uid}`, cb)); },
       watchPos(uid, cb) { unsubs.push(on(`islands/${id}/pos/${uid}`, cb)); },
       // ~10 envois par seconde au maximum
