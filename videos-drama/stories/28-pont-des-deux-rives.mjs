@@ -1,0 +1,46 @@
+// 28 — BELLE HISTOIRE : Le pont des deux rives
+const RIVE = (light = 'day', extra = []) => ({ set: 'country', light, props: [{ type: 'river', at: [0, -4], w: 300, d: 8 }, ...extra] });
+const HAUT = { type: 'house', at: [-6, -14], color: '#c8303a', floors: 2, w: 5, d: 5, rot: 0 };
+const BAS = { type: 'house', at: [6, 6], color: '#3a6fb0', floors: 2, w: 5, d: 5, rot: 180 };
+export default {
+  title: 'Le pont des deux rives',
+  autocut: true, mood: 'sad', speed: 1.12,
+  cast: {
+    elias: { skin: 'tan', hair: 'curly', hairColor: '#2a1a10', shirt: '#c8303a', pants: '#3a3a3a', scale: 0.72 },
+    capucine: { skin: 'light', hair: 'pigtails', hairColor: '#c0392b', shirt: '#3a6fb0', pants: '#3a3a3a', scale: 0.72, lashes: true, blush: true },
+    meunier: { skin: 'light', hair: 'cap', capColor: '#3a6fb0', shirt: '#f4f4f4', pants: '#3a6fb0', beard: '#c0392b' },
+    boulanger: { skin: 'tan', hair: 'bald', hairColor: '#333', shirt: '#c8303a', apron: '#f4f4f4', pants: '#3a3a3a', mustache: true },
+  },
+  shots: [
+    { say: 'Deux villages se font face sur la rivière Orbe. Haut-Clos, rive nord. Bas-Clos, rive sud. Depuis mille sept cent vingt-trois, *ils sont en guerre.*', ...RIVE('day', [HAUT, BAS, { ...HAUT, at: [-12, -16], color: '#b0413e' }, { ...BAS, at: [12, 8], color: '#457b9d' }]),
+      cam: { from: [-2, 9, 18], to: [-1, 8, 15], look: [-3, 1, -10] }, fx: [{ type: 'title', text: 'LE PONT DES DEUX RIVES' }, { type: 'label', text: 'DEPUIS 1723' }] },
+    { say: 'Pourquoi ? Une histoire de vache volée. Ou de mariage annulé. Plus personne ne s\'en souvient. Mais la règle, elle, est claire.', ...RIVE('day', [HAUT, BAS]),
+      cam: { from: [0, 2, 6], look: [0, 1, -10] }, fx: [{ type: 'poster', lines: [{ t: 'PAS DE PONT', s: 64, c: '#c8102e' }, { t: 'PAS DE MARIAGE', s: 52 }, { t: 'PAS UN MOT', s: 60, c: '#c8102e' }], h: 400, y: 420, rot: -2, from: 0.5 }] },
+    { say: 'Trois cents ans de silence. Deux églises qui sonnent exprès en même temps. Deux fêtes le même jour, dos à dos.', ...RIVE('sunset', [{ type: 'church', at: [-1.5, -18], s: 0.6 }, { type: 'church', at: [1.8, 9], rot: 180, s: 0.5 }]),
+      cam: { from: [0, 15, 26], to: [0, 13, 23], look: [0, 0, -8] }, fx: [{ type: 'counter', a: 1723, b: 2019, y: 250, color: '#fff' }], sfx: [['bell', 0.2], ['bell', 0.25], ['bell', 0.6], ['bell', 0.65]] },
+    { say: 'Mais deux enfants de dix ans ont trouvé une faille. Élias, au nord. Capucine, au sud. Chaque soir, ils se parlent en morse. *Avec des lampes de poche.*', ...RIVE('night'),
+      actors: [{ id: 'elias', at: [-0.3, -9], rot: 0, anim: 'point', face: 'happy', hold: 'flashlight' }, { id: 'capucine', at: [0.5, 1], rot: 180, anim: 'point', face: 'laugh', hold: 'flashlight' }],
+      cam: { from: [1.3, 2.0, 4.4], look: [-0.2, 1.0, -6] }, fx: [{ type: 'text', text: '• — • •  — — —', y: 300, color: '#ffd23f', size: 50 }], sfx: [['beep', 0.3], ['beep', 0.4], ['beep', 0.6], ['beep', 0.7]] },
+    { say: 'Pendant un an, ils construisent en secret un pont de planches volées. Quarante centimètres de large. Le plus petit pont du monde.', ...RIVE('sunset', [{ type: 'bridge', at: [0, -4], rot: 90, w: 9, y: 0.4, color: '#a07a4a' }]),
+      actors: [{ id: 'elias', at: [-0.2, -6.5], y: 0.45, rot: 0, anim: 'cheer', face: 'laugh' }, { id: 'capucine', at: [0.3, 0.6], rot: 180, anim: 'cheer', face: 'laugh' }],
+      cam: { from: [1.2, 2.4, 4.2], look: [0, 0.8, -4] }, fx: [{ type: 'counter', a: 0, b: 40, post: ' cm', y: 250, color: '#ffd23f' }] },
+    { say: 'Une nuit de crue, en octobre, Élias glisse sur le pont. Il tombe dans l\'Orbe déchaînée. Capucine hurle.', ...RIVE('horror'),
+      actors: [{ id: 'elias', at: [0, -4], y: -0.3, anim: 'panic', face: 'scared' }, { id: 'capucine', at: [0.4, -0.8], rot: 180, anim: 'panic', face: 'cry' }],
+      cam: { from: [1.4, 2.4, 2.8], look: [0, 0.6, -3.6] }, fx: [{ type: 'rain', kind: 'rain', n: 80 }, { type: 'impact', text: 'AU SECOURS !', color: '#fff', size: 80, y: 300 }, { type: 'shake', amt: 0.06 }], sfx: [['splash', 0.1], ['scream', 0.4, 0.5]] },
+    { say: 'Les deux villages accourent. Chacun sur sa rive. Et personne ne bouge. *Trois cents ans de règles.*', ...RIVE('horror', [{ type: 'crowd', at: [0, -10], n: 10, w: 8, d: 2, anim: 'idle', expr: 'scared', face: 0 }, { type: 'crowd', at: [0, 2], n: 10, w: 8, d: 2, anim: 'idle', expr: 'scared', face: Math.PI, seed: 9 }]),
+      cam: { from: [0, 6, 10], look: [0, 1, -6] }, fx: [{ type: 'rain', kind: 'rain', n: 70 }, { type: 'vignette' }], sfx: [['heartbeat', 0.3], ['heartbeat', 0.7]] },
+    { say: 'Alors le meunier de Bas-Clos, le père de Capucine, entre dans l\'eau. Le boulanger de Haut-Clos le suit. Puis un autre. Puis tous.', ...RIVE('horror'),
+      actors: [{ id: 'meunier', at: [0.4, -1.4], to: [0.4, -3.4], rot: 180, y: 0, anim: 'walk', face: 'determined' }, { id: 'boulanger', at: [-0.4, -6.6], to: [-0.4, -4.8], rot: 0, anim: 'walk', face: 'determined' }],
+      cam: { from: [0.6, 2.4, 3], look: [0, 1.2, -4] }, fx: [{ type: 'rain', kind: 'rain', n: 60 }] },
+    { say: 'Cinquante-deux personnes. Main dans la main. Une chaîne humaine en travers de la rivière. *Élias est sauvé.*', ...RIVE('horror', [{ type: 'crowd', at: [0, -4], n: 16, w: 0.8, d: 8, anim: 'hug', expr: 'determined', face: Math.PI / 2, seed: 12 }]),
+      actors: [{ id: 'elias', at: [-1.2, -4], y: 0, anim: 'cry', face: 'cry' }],
+      cam: { from: [6, 7, 5], to: [5, 6, 4], look: [0, 0.6, -4] }, fx: [{ type: 'counter', a: 0, b: 52, post: ' mains', y: 250, color: '#ffd23f' }, { type: 'rain', kind: 'rain', n: 40 }], mood: 'epic', sfx: [['cheer', 0.7]] },
+    { say: 'Trois semaines plus tard, les deux villages ont construit un vrai pont. Ensemble. Il s\'appelle le pont Élias-Capucine.', ...RIVE('day', [{ type: 'bridge', at: [0, -4], rot: 90, w: 12, y: 1.6, color: '#8d8f94' }, { type: 'banner', at: [0, 0, 2.6], text: 'PONT ÉLIAS-CAPUCINE', w: 6, h: 0.9, y: 4, bg: '#2e7d32', poles: true }]),
+      cam: { from: [0, 2.6, 9], to: [0, 3, 7], look: [0, 2.4, -4] }, fx: [{ type: 'rain', kind: 'confetti', n: 50 }], sfx: [['bell', 0.2], ['bell', 0.5]] },
+    { say: 'Dans les archives, on a enfin retrouvé l\'origine de la guerre. Mille sept cent vingt-trois : un mariage interdit. Entre un certain Élias. *Et une certaine Capucine.*', set: 'room', setOpt: { wall: '#5a4a3a', li: 9 }, light: 'warm', capY: 1120,
+      cam: { from: [0, 1.6, 3], look: [0, 1.6, 0] }, fx: [{ type: 'poster', lines: [{ t: 'REGISTRE 1723', s: 44 }, { t: 'MARIAGE REFUSÉ', s: 50, c: '#c8102e' }, { t: 'ÉLIAS', s: 64, c: '#c8303a' }, { t: '& CAPUCINE', s: 64, c: '#3a6fb0' }], h: 480, border: '#5a4a32', bg: '#efe2c4', y: 600, rot: 2 }], sfx: [['ding', 0.7]] },
+    { say: 'Ils ont seize ans aujourd\'hui. Ils se marieront en deux mille trente-quatre. *Toute la rivière est invitée.*', ...RIVE('sunset', [{ type: 'bridge', at: [0, -4], rot: 90, w: 12, y: 1.6, color: '#8d8f94' }]), pause: 1.6,
+      actors: [{ id: 'elias', at: [-0.4, -4], y: 1.75, rot: 90, anim: 'idle', face: 'love', scaleTo: 0.95 }, { id: 'capucine', at: [0.4, -4], y: 1.75, rot: -90, anim: 'idle', face: 'love', scaleTo: 0.92 }],
+      cam: { from: [0, 3, 2], to: [0, 3.4, 4], look: [0, 2.6, -4] }, fx: [{ type: 'rain', kind: 'heart', n: 12 }, { type: 'fade', dur: 1.2 }] },
+  ],
+};

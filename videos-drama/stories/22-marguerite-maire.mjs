@@ -1,0 +1,48 @@
+// 22 — LOUFOQUE : Marguerite, maire de Bovigny
+const PLACE = { set: 'square', setOpt: { bunting: true }, light: 'day' };
+const MAIRIE = [{ type: 'house', at: [0, -9], color: '#e8dcc0', floors: 2, w: 9, cols: 3, d: 6, doorColor: '#1b2a4a' }, { type: 'banner', at: [0, 0, -5.9], text: 'MAIRIE DE BOVIGNY', w: 6, h: 0.9, y: 3.2, bg: '#1b2a4a' }];
+const COW = (at, rot = 0, extra = {}) => ({ type: 'cow', at, rot, ...extra });
+export default {
+  title: 'Marguerite, maire de Bovigny',
+  autocut: true, mood: 'epic', speed: 1.13,
+  cast: {
+    fermier: { skin: 'tan', hair: 'cap', capColor: '#2e7d32', shirt: '#3a6fb0', pants: '#5a4a3a', mustache: '#5a3a24' },
+    prefet: { skin: 'pale', hair: 'side', hairColor: '#333', shirt: '#1a1a1a', vest: '#1a1a1a', tie: '#1b4fa8', pants: '#1a1a1a', glasses: true },
+    institutrice: { skin: 'brown', hair: 'bun', hairColor: '#1a1a1a', shirt: '#e86fa0', dress: '#e86fa0', lashes: true },
+  },
+  shots: [
+    { say: 'Bovigny, Haute-Saône, mille neuf cent soixante-cinq. Deux candidats aux municipales. Deux voisins qui se détestent depuis trente ans.', ...PLACE, props: MAIRIE,
+      cam: { from: [0, 3, 8], to: [0, 2.8, 5], look: [0, 2.4, -6] }, fx: [{ type: 'title', text: 'MARGUERITE, MAIRE' }, { type: 'label', text: '1965' }, { type: 'tint', color: 'rgba(140,100,40,.25)' }] },
+    { say: 'Excédés, les habitants votent pour protester. Ils écrivent un autre nom sur le bulletin : celui de la vache du père Mougin. *Marguerite.*', ...PLACE,
+      props: [COW([0, 0], 0)],
+      cam: { from: [0, 1.8, 4.4], to: [0, 1.7, 3.6], look: [0, 1.5, 1.2] }, fx: [{ type: 'poster', lines: [{ t: 'BULLETIN', s: 40 }, { t: 'MARGUERITE', s: 70, c: '#1f8a3a' }], h: 260, y: 300, rot: 5, from: 0.5 }], sfx: [['scratch', 0.5]] },
+    { say: 'Résultat : Marguerite, soixante-deux pour cent. *Élue au premier tour.*', ...PLACE, props: [...MAIRIE, COW([0, -4], 0)],
+      cam: { from: [0, 2.4, 4], look: [0, 1.6, -4] }, fx: [{ type: 'counter', a: 0, b: 62, post: ' %', y: 260, color: '#3dff6e' }, { type: 'rain', kind: 'confetti', n: 50, from: 0.4 }, { type: 'impact', text: 'ÉLUE !', color: '#ffd23f', from: 0.5 }], sfx: [['cheer', 0.4]] },
+    { say: 'Le préfet annule l\'élection. Le village refuse. Grève des impôts. Barricades de foin. Après six mois, Paris cède : Marguerite gouvernera. *Avec un adjoint humain.*', ...PLACE, props: MAIRIE,
+      actors: [{ id: 'prefet', at: [0, -4.4], anim: 'facepalm', face: 'angry' }],
+      cam: { type: 'medium', on: 'prefet' }, fx: [{ type: 'impact', text: 'ANNULÉ', stamp: true, y: 300, size: 80, to: 0.4 }, { type: 'impact', text: 'VALIDÉ', stamp: true, color: '#1f8a3a', y: 300, size: 80, from: 0.65 }] },
+    { say: 'Le protocole est simple. Chaque problème est présenté à Marguerite. On la promène. *Là où elle s\'arrête, on décide.*', set: 'country', light: 'day',
+      props: [COW([0, 0], 180, { to: [0, -8] })],
+      actors: [{ id: 'fermier', at: [0.9, 1.6], to: [0.9, -6.4], rot: 180, anim: 'walk', face: 'smile' }],
+      cam: { from: [2.4, 2.2, 4], look: [0, 1.2, -4] }, fx: [{ type: 'nametag', name: 'LE PÈRE MOUGIN', role: 'adjoint au maire', from: 0.1 }] },
+    { say: 'Été soixante-six : sécheresse. Marguerite s\'arrête au milieu d\'un champ et refuse de bouger. On creuse. *Une source.*', set: 'country', setOpt: { grass: '#c8b46a' }, light: 'sunset',
+      props: [COW([0, 0], 0), { type: 'well', at: [2.2, -0.6], showAt: 0.6 }],
+      cam: { from: [0, 2.2, 6], look: [0.8, 1.2, 0] }, fx: [{ type: 'emoji', text: '💧', x: 520, y: 400, from: 0.6 }], sfx: [['splash', 0.62]] },
+    { say: 'Soixante-huit : elle refuse de traverser le vieux pont. On fait un détour. Le lendemain, *le pont s\'effondre.*', set: 'country', light: 'grey',
+      props: [{ type: 'river', at: [0, -6], w: 60, d: 6 }, { type: 'bridge', at: [0, -6], rot: 90, w: 10, y: 1.4 }, COW([0, 0], 180)],
+      cam: { from: [3, 2.5, 5], look: [0, 1.2, -6] }, fx: [{ type: 'impact', text: 'CRAAAC', color: '#fff', from: 0.75, size: 90, sfx: 'crash' }, { type: 'shake', from: 0.75, to: 0.9, amt: 0.15 }] },
+    { say: 'Soixante-dix : elle broute devant l\'école délabrée pendant trois jours. On la rénove. Les inscriptions doublent.', ...PLACE,
+      props: [COW([1.2, -1], -30)],
+      actors: [{ id: 'institutrice', at: [-0.8, -0.4], rot: 30, anim: 'wave', face: 'happy' }],
+      cam: { type: 'medium', on: 'institutrice', ox: 0.6 }, fx: [{ type: 'counter', a: 21, b: 42, post: ' élèves', y: 250, color: '#ffd23f' }] },
+    { say: 'Sous son mandat, Bovigny n\'a jamais eu de dette. Ni de scandale. Ni de discours trop longs.', ...PLACE, props: [...MAIRIE, COW([0, -4], 0)],
+      cam: { from: [0, 2.6, 3.4], look: [0, 1.7, -4] }, fx: [{ type: 'cards', items: [{ v: '0 €', l: 'DE DETTE' }, { v: '0', l: 'SCANDALE', circle: true }], y: 330 }] },
+    { say: 'Marguerite est morte de vieillesse en mille neuf cent soixante-douze, pendant son mandat. Le village entier a porté le deuil. Même le préfet est venu.', set: 'cemetery', light: 'grey', mood: 'sad',
+      props: [{ type: 'grave', at: [0, 2], text: 'MARGUERITE', s: 1.6 }, { type: 'flowers', at: [0, 0, 2.6], n: 20, w: 1.6, d: 0.6 }, { type: 'crowd', at: [0, 5], n: 10, w: 6, d: 2, anim: 'sadidle', expr: 'cry', face: Math.PI }],
+      cam: { from: [0, 2.4, 9], to: [0, 2.2, 7.6], look: [0, 1.2, 2] }, fx: [{ type: 'label', text: '1972' }] },
+    { say: 'Aujourd\'hui, sur la place, il y a une statue de bronze. Et sur la porte de la mairie, une règle que personne n\'a jamais osé effacer :', ...PLACE, props: [...MAIRIE, COW([0, -3.6], 0, { s: 1.4 }), { type: 'box', at: [0, -3.6], w: 2, h: 0.4, d: 3.2, color: '#8d8f94' }],
+      cam: { from: [2, 2.2, 3], look: [0, 1.8, -3.6] }, fx: [{ type: 'label', text: 'AUJOURD\'HUI' }] },
+    { say: 'En cas de doute… *demandez à la vache.*', ...PLACE, props: MAIRIE, pause: 1.6,
+      cam: { from: [0, 2.6, -1], to: [0, 2.6, -3], look: [0, 2.2, -6] }, fx: [{ type: 'poster', lines: [{ t: 'EN CAS', s: 60 }, { t: 'DE DOUTE', s: 60 }, { t: 'DEMANDEZ À', s: 50 }, { t: 'LA VACHE 🐄', s: 60, c: '#1f8a3a' }], h: 480, y: 520, rot: -2 }, { type: 'fade', dur: 1.2 }], sfx: [['bell', 0.4]] },
+  ],
+};
