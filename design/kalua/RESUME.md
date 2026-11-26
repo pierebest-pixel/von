@@ -1,7 +1,7 @@
 # Les Échoués de Kalua — résumé du projet (à lire en début de conversation)
 
 Jeu à deux en ligne dans **Von** (`games/kalua/`), pensé pour jouer avec sa copine.
-Publié dans Von en **version 0.3** (branches `main` et `kalua` identiques au moment de ce résumé).
+Publié dans Von en **version 0.3.1** (branches `main` et `kalua` identiques au moment de ce résumé).
 
 ## Règles de travail demandées par l'utilisateur
 - **Chaque étape est validée ensemble** : ne rien coder sans accord ; montrer d'abord des **maquettes en images**, puis des captures du vrai jeu avant de publier.
@@ -34,7 +34,8 @@ Publié dans Von en **version 0.3** (branches `main` et `kalua` identiques au mo
 
 ## Plan des étapes
 1. ✅ **Étape 1** (publiée en 0.3) : personnage, Mes îles et invitation, jeu à deux en direct, carte complète, décor, animaux qui se promènent, menus, musique du titre.
-2. ⏳ **Étape 2** : récolte, sac, atelier (recettes), construction du village, adoption, chasse, cheval. Maquettes dans `etape2-maquettes.jpg`, **en attente de validation**. L'utilisateur veut d'abord **changer de petites choses** (à préciser dans la nouvelle conversation).
+   - ✅ **0.3.1** (retouches avant l'étape 2) : vignettes du créateur enfin cliquables (le toucher tombait sur le dessin), vue dézoomée (encore plus en paysage), mini-carte de toute l'île en haut à droite (touche = grande carte), bouton menu ≡ à gauche de la mini-carte, musique du titre débloquée au relâchement du doigt (exigence de Safari sur iPhone).
+2. ⏳ **Étape 2** : récolte, sac, atelier (recettes), construction du village, adoption, chasse, cheval. Maquettes dans `etape2-maquettes.jpg`, **en attente de validation**.
 3. ⏳ **Étape 3** : les 10 PNJ et leurs énigmes (éventuellement des questions personnalisées sur le couple, stockées dans l'île privée et jamais en clair dans le code).
 4. ⏳ **Étape 4** : grottes, combats (temps réel et tour par tour), boss, créatures agressives, boss optionnels.
 

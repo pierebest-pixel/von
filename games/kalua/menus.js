@@ -14,8 +14,15 @@ function startMusic() {
   if (!SET.music || (window.Von && Von.sound === false) || (typeof G !== "undefined" && G.on) || document.hidden) return;
   Music.setEnabled(true); Music.start();
 }
-// iPhone : le son ne peut démarrer qu'après un toucher
-document.addEventListener("pointerdown", () => { if (!(typeof G !== "undefined" && G.on)) startMusic(); }, { capture: true });
+// iPhone : le son ne peut démarrer qu'après un toucher. Safari ne compte pas « pointerdown » au doigt
+// comme un vrai geste : il faut écouter la fin du toucher (touchend / pointerup / click).
+function onGesture() {
+  if (!SET.music || (window.Von && Von.sound === false)) return;
+  Music.unlock();
+  if (!(typeof G !== "undefined" && G.on)) startMusic();
+}
+// on garde l'écoute : après un appel ou un retour d'arrière-plan, iPhone peut de nouveau couper le son
+["pointerdown", "pointerup", "touchend", "click", "keydown"].forEach((ev) => document.addEventListener(ev, onGesture, true));
 document.addEventListener("visibilitychange", () => { if (document.hidden) Music.stop(.2); else startMusic(); });
 const buzz = (ms = 15) => { if (SET.vibe) try { navigator.vibrate?.(ms); } catch { /* ignore */ } };
 
@@ -96,7 +103,7 @@ function showTitle() {
       <button class="tbtn main" data-x="play">▶&nbsp; JOUER</button>
       <button class="tbtn" data-x="perso">👤&nbsp; Mon personnage</button>
       <button class="tbtn" data-x="settings">⚙️&nbsp; Réglages</button>
-      <div class="ver">version 0.3 · Von</div>
+      <div class="ver">version 0.3.1 · Von</div>
     </div></div>`;
   const cvs = $("#tcv"); let alive = true; const t0 = performance.now();
   startMusic();
@@ -181,6 +188,11 @@ function openSettings(back) {
 
 // ---------------------------------------------------------------- carte de l'île
 let BIGMAP = null;
+// image de toute l'île (calculée une seule fois, partagée par la carte et la mini-carte)
+function bigMap() {
+  if (!BIGMAP) { BIGMAP = document.createElement("canvas"); BIGMAP.width = 800; BIGMAP.height = 500; KALUA.renderArea(BIGMAP, 0, 0, 2, false); }
+  return BIGMAP;
+}
 function openMap() {
   const d = panel(`<h3>Carte de Kalua</h3><div class="mapbox"><canvas id="mapcv"></canvas><div class="spinner" id="mapspin"></div></div>
     <div class="maplegend"><span>🧭 toi</span><span>💗 ${esc([...G.others.values()][0]?.name || "ton ami")}</span><span><b class="lg c1"></b>grottes</span><span><b class="lg c2"></b>boss</span></div>
@@ -188,11 +200,10 @@ function openMap() {
   d.querySelector("[data-back]").addEventListener("click", () => { buzz(); openMenu(); });
   d.querySelector(".pdim").addEventListener("click", () => { G.menuOpen = false; });
   setTimeout(() => {
-    if (!BIGMAP) { BIGMAP = document.createElement("canvas"); BIGMAP.width = 800; BIGMAP.height = 500; KALUA.renderArea(BIGMAP, 0, 0, 2, false); }
     $("#mapspin")?.remove();
     const cvs = $("#mapcv"); if (!cvs) return;
     const W = cvs.clientWidth, H = W * 500 / 800; cvs.style.height = H + "px"; cvs.width = W * DPR; cvs.height = H * DPR;
-    const c = cvs.getContext("2d"); c.scale(DPR, DPR); c.drawImage(BIGMAP, 0, 0, W, H);
+    const c = cvs.getContext("2d"); c.scale(DPR, DPR); c.drawImage(bigMap(), 0, 0, W, H);
     const k = W / KALUA.MW, TAU = Math.PI * 2;
     const dot = (x, y, r, col, txt, tc = "#fff") => { c.fillStyle = "#fff"; c.beginPath(); c.arc(x * k, y * k, r + 1.5, 0, TAU); c.fill(); c.fillStyle = col; c.beginPath(); c.arc(x * k, y * k, r, 0, TAU); c.fill();
       if (txt) { c.fillStyle = tc; c.font = `900 ${r * 1.2}px ui-rounded, system-ui`; c.textAlign = "center"; c.fillText(txt, x * k, y * k + r * .42); } };

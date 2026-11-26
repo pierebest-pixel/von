@@ -90,7 +90,8 @@ function showCreator(first, back = showIslands) {
     tileDraw();
   }
   ui.querySelector(".creator").addEventListener("click", (e) => {
-    const t = e.target.closest("[data-tab],[data-x],[data-val]");
+    // On vise le bouton (pas la vignette dessinée dedans, qui porte aussi data-val)
+    const t = e.target.closest("[data-tab],[data-x],button[data-val]");
     if (!t) return;
     if (t.dataset.tab) { tab = t.dataset.tab; renderOpts(); opts.scrollTop = 0; return; }
     if (t.dataset.x === "dice") { av = Avatar.random(); renderOpts(); return; }
@@ -209,7 +210,9 @@ const G = {
 
 function resize() {
   cv.width = Math.round(innerWidth * DPR); cv.height = Math.round(innerHeight * DPR);
-  G.cam.z = Math.max(1.05, Math.min(1.7, Math.min(innerWidth, innerHeight) / 300));
+  // vue plus large : environ 1,5 fois plus de carte visible qu'avant (et encore plus en paysage)
+  const land = innerWidth > innerHeight;
+  G.cam.z = Math.max(land ? .5 : .72, Math.min(1.15, Math.min(innerWidth, innerHeight) / (land ? 620 : 450)));
 }
 addEventListener("resize", resize);
 resize();
@@ -219,6 +222,7 @@ async function play(id) {
   clearScreen(); showLoading();
   let s;
   try { s = await Net.enter(id, avatar); } catch (err) { console.warn(err); return showError(err.code === "gone" ? "gone" : "offline"); }
+  bigMap(); // prépare l'image de la mini-carte pendant l'écran de chargement
   clearScreen();
   G.session = s; G.world = world();
   const sp = s.savedPos && G.world.walkable(s.savedPos.x, s.savedPos.y) ? s.savedPos : { x: G.world.spawn.x + (s.island.owner === me.uid ? -26 : 26), y: G.world.spawn.y };
@@ -381,8 +385,30 @@ if (window.Von) { Von.onPause(resetInput); }
 function frame(now) {
   if (!G.on) return;
   const dt = Math.min(.05, (now - G.last) / 1000); G.last = now; G.t += dt;
-  update(dt); render();
+  update(dt); render(); drawMinimap(now);
   requestAnimationFrame(frame);
+}
+
+// ---------------------------------------------------------------- mini-carte
+const MINI = { cv: $("#minimap"), last: 0, w: 0, h: 0 };
+MINI.cv.addEventListener("click", () => { if (G.on && !G.menuOpen) openMap(); });
+function drawMinimap(now) {
+  if (now - MINI.last < 120) return; // 8 fois par seconde suffit
+  MINI.last = now;
+  const cvs = MINI.cv, W = cvs.clientWidth, H = cvs.clientHeight;
+  if (!W) return;
+  if (MINI.w !== W || MINI.h !== H) { MINI.w = W; MINI.h = H; cvs.width = W * DPR; cvs.height = H * DPR; }
+  const c = cvs.getContext("2d"), k = W / KALUA.MW, TAU = Math.PI * 2;
+  c.setTransform(DPR, 0, 0, DPR, 0, 0);
+  c.drawImage(bigMap(), 0, 0, W, H);
+  const dot = (o, col, r) => {
+    const x = o.x / KALUA.K * k, y = o.y / KALUA.K * k;
+    c.fillStyle = "#fff"; c.beginPath(); c.arc(x, y, r + 1.6, 0, TAU); c.fill();
+    c.fillStyle = col; c.beginPath(); c.arc(x, y, r, 0, TAU); c.fill();
+  };
+  for (const o of G.others.values()) if (o.has) dot(o, "#ff7f9f", 3);
+  // moi : point qui pulse doucement
+  dot(G.p, "#3a8fc0", 3.4 + Math.sin(now / 260) * .5);
 }
 
 function update(dt) {

@@ -139,6 +139,14 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
 .islands .top h1 { flex: 1; }
 .burger { display: block; width: 16px; height: 2.5px; background: #8a7471; border-radius: 2px; box-shadow: 0 -5px 0 #8a7471, 0 5px 0 #8a7471; }
 .round.back { border-radius: 12px; }
+/* mini-carte : toute l'île, en petit, en haut à droite */
+.minimap { position: absolute; top: calc(var(--st) + 10px); right: calc(var(--sr) + 12px); width: 96px; height: 60px; border-radius: 10px; border: 2px solid rgba(255, 255, 255, .92); box-shadow: 0 2px 6px rgba(0, 0, 0, .15); background: #8fd3e0; }
+/* bouton menu (pause) collé à gauche de la mini-carte */
+#menu-btn { left: auto; right: calc(var(--sr) + 12px + 96px + 8px); top: calc(var(--st) + 22px); }
+@media (max-width: 520px) {
+  /* en portrait, le badge se range à gauche pour laisser la place au bouton et à la mini-carte */
+  .badge { left: calc(var(--sl) + 12px); transform: none; max-width: calc(100% - 186px); overflow: hidden; text-overflow: ellipsis; }
+}
 .title-screen { padding: 0; background: #7a6ab8; }
 .title-screen canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
 .title-btns { position: absolute; left: 50%; transform: translateX(-50%); bottom: calc(var(--sb) + 34px); width: min(78%, 300px); }

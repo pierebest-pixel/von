@@ -136,10 +136,18 @@ const Music = (() => {
     if (!playing) return;
     while (nextT < ac.currentTime + .25) { playBar(bus, nextBar, nextT); nextBar++; nextT += BAR; }
   }
+  // À appeler pendant un toucher : réveille le son (iPhone le laisse « suspended » ou « interrupted » sinon)
+  function unlock() {
+    if (!ensure()) return;
+    if (ac.state !== "running") ac.resume().catch(() => {});
+    try { // un son vide d'un échantillon : nécessaire sur les anciens iPhone pour débloquer l'audio
+      const s = ac.createBufferSource(); s.buffer = ac.createBuffer(1, 1, 22050); s.connect(ac.destination); s.start(0);
+    } catch { /* ignore */ }
+  }
   function start() {
     if (!enabled || !ensure()) return;
-    if (playing) { if (ac.state === "suspended") ac.resume().catch(() => {}); return; }
-    if (ac.state === "suspended") ac.resume().catch(() => {});
+    if (ac.state !== "running") ac.resume().catch(() => {});
+    if (playing) return;
     playing = true; nextBar = 0; nextT = ac.currentTime + .08;
     out0.gain.cancelScheduledValues(ac.currentTime); out0.gain.setValueAtTime(out0.gain.value, ac.currentTime); out0.gain.linearRampToValueAtTime(.8, ac.currentTime + .6);
     tick(); timer = setInterval(tick, 60);
@@ -157,5 +165,5 @@ const Music = (() => {
     for (let i = 0, t = .05; t < seconds; i++, t += BAR) playBar(b, i, t);
     return oac.startRendering();
   }
-  return { start, stop, render, get playing() { return playing; }, setEnabled(v) { enabled = v; if (!v) stop(.3); } };
+  return { start, stop, render, unlock, get running() { return Boolean(ac) && ac.state === "running"; }, get playing() { return playing; }, setEnabled(v) { enabled = v; if (!v) stop(.3); } };
 })();
