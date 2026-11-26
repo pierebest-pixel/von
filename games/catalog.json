@@ -1,6 +1,35 @@
 {
   "games": [
     {
+      "id": "comete",
+      "name": "Comète",
+      "category": "Arcade",
+      "players": "Un joueur",
+      "version": "1.0",
+      "addedAt": "2026-11-26",
+      "size": 198309,
+      "controls": "Glisser le doigt",
+      "description": "Pilote un petit vaisseau qui monte sans fin à travers la galaxie, de plus en plus vite. Il tire tout seul : toi, tu esquives.\nRamasse des armes (canon alien aux énormes boules de plasma, foudre, missiles, rayon, onde, éventail), des bonus (bouclier, drones, bombe nova, orbitales…) et des soins pour garder ta barre de vie.\nÀ chaque palier de points, un boss tiré au hasard parmi 100 t'attend dans son arène : pirates du vide, ruche xylienne, empire obsidien, dévoreurs d'étoiles… Complète le Codex des 100 boss !",
+      "icon": "icon.png",
+      "screenshots": [
+        "shot1.png",
+        "shot2.png",
+        "shot3.png"
+      ],
+      "files": [
+        "index.html",
+        "font.js",
+        "sprites.js",
+        "audio.js",
+        "bosses.js",
+        "game.js",
+        "icon.png",
+        "shot1.png",
+        "shot2.png",
+        "shot3.png"
+      ]
+    },
+    {
       "id": "kalua",
       "name": "Les Échoués de Kalua",
       "category": "Aventure",
