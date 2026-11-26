@@ -16,7 +16,7 @@ const Avatar = (() => {
     face: "rond", eyes: "grands", eyeColor: "#4a3a3a", brows: "fins", nose: "point", mouth: "sourire",
     freckles: 0, mole: "aucun", scar: "aucune",
     hair: "court", hairColor: "#8a5a3c", streak: "", tips: "", beard: "aucune", mustache: "aucune",
-    top: "tshirt", topColor: "#8fb8ff", topColor2: "#ffffff", pattern: "uni",
+    top: "tshirt", topColor: "#8fb8ff", topColor2: "#ffffff", topColor3: "#ffd27a", pattern: "uni", print: "aucun",
     bottom: "short", bottomColor: "#c98d63", shoes: "sandales", shoesColor: "#8a5a3c",
     hat: "aucun", hatColor: "#ffd27a", glasses: "aucunes", earrings: "aucunes", necklace: "aucun", earFlower: "aucune",
     lips: "", eyeshadow: "", eyeliner: "aucun", lashes: "aucun", blush: "#ff9c9c", glitter: "aucunes",
@@ -410,6 +410,9 @@ const Avatar = (() => {
     switch (a.hat) {
       case "paille": c.fillStyle = "#f3d08a"; ell(c, 0, -5.6, 8, 2.2); c.fillStyle = "#e8c070"; rr(c, -4, -9.6, 8, 4.4, 2.2); c.fillStyle = col; c.fillRect(-4, -6.6, 8, 1.1); break;
       case "bob": c.fillStyle = col; ell(c, 0, -5.4, 6.8, 1.8); rr(c, -4.6, -9.4, 9.2, 4.6, 2.6); break;
+      case "beret": c.fillStyle = col; ell(c, .8, -7.2, 6, 2.6, -.15); circle(c, .8, -9.6, .6); break;
+      case "capeline": c.fillStyle = col; ell(c, 0, -5.6, 9.4, 2.4); rr(c, -4, -9.4, 8, 4.2, 2.2); c.fillStyle = shade(col, -.2); c.fillRect(-4, -6.4, 8, 1); break;
+      case "melon": c.fillStyle = col; ell(c, 0, -5.4, 6.2, 1.4); c.beginPath(); c.arc(0, -6, 4.2, Math.PI, 0); c.fill(); c.fillStyle = shade(col, -.25); c.fillRect(-4.2, -6.6, 8.4, .8); break;
       case "casquette": c.fillStyle = col; c.beginPath(); c.arc(0, -5.2, 5.4, Math.PI, 0); c.fill(); ell(c, 3.4, -5.1, 4, 1.1, .1); c.fillStyle = shade(col, -.2); circle(c, 0, -10.5, .7); break;
       case "bandana": c.fillStyle = col; c.beginPath(); c.arc(0, -2.8, 5.6, Math.PI * 1.05, Math.PI * 1.95); c.lineTo(5.2, -4.2); c.lineTo(-5.2, -4.2); c.fill(); ell(c, 5.6, -3.4, 1, .7, .6); ell(c, 6.4, -2.4, .7, 1.2, .3);
         c.fillStyle = "#fff"; c.globalAlpha = .6; [[-2, -6.2], [1, -7], [3, -5.6], [-3.6, -4.8]].forEach(([x, y]) => circle(c, x, y, .3)); c.globalAlpha = 1; break;
@@ -467,7 +470,7 @@ const Avatar = (() => {
     const feetY = 13.7, hip = feetY - legLen, top = hip + 2 - 8; // haut du torse
     const walk = o.walk, step = walk == null ? 0 : Math.sin(walk * TAU);
     const lift = [Math.max(0, step) * .9, Math.max(0, -step) * .9];
-    const skin = a.skin, bc = a.bottomColor, dress = a.top === "robe";
+    const skin = a.skin, bc = a.bottomColor, dress = a.top === "robe" || a.top === "manteau";
     // jambes
     [-1, 1].forEach((s, i) => {
       const x = s * 1.9 - 1.3, y = hip + 1 - lift[i], h = legLen - .8;
@@ -481,6 +484,9 @@ const Avatar = (() => {
         case "baskets": c.fillStyle = a.shoesColor; rr(c, x - .3, fy - .4, 3.2, 1.6, .8); c.fillStyle = "#fff"; rr(c, x - .3, fy + .7, 3.2, .6, .3); break;
         case "bottes": c.fillStyle = a.shoesColor; rr(c, x - .2, fy - 2.4, 3, 3.6, 1); c.fillStyle = shade(a.shoesColor, -.2); rr(c, x - .3, fy + .7, 3.2, .6, .3); break;
         case "sandales": c.fillStyle = a.shoesColor; rr(c, x - .2, fy + .7, 3, .6, .3); c.fillRect(x + .2, fy - .1, 2.2, .45); break;
+        case "ballerines": c.fillStyle = a.shoesColor; rr(c, x - .2, fy + .1, 3, 1.2, .6); break;
+        case "mocassins": c.fillStyle = a.shoesColor; rr(c, x - .3, fy - .1, 3.2, 1.5, .7); c.fillStyle = shade(a.shoesColor, -.25); c.fillRect(x + .4, fy + .2, 1.8, .3); break;
+        case "espadrilles": c.fillStyle = a.shoesColor; rr(c, x - .3, fy - .1, 3.2, 1.3, .6); c.fillStyle = "#e8d0a0"; rr(c, x - .3, fy + .8, 3.2, .6, .3); break;
         case "tongs": c.fillStyle = a.shoesColor; rr(c, x - .2, fy + .7, 3, .55, .3); line(c, [[x + .4, fy + .1], [x + 1.3, fy + .5], [x + 2.2, fy + .1]], .3, a.shoesColor); break;
       }
     });
@@ -492,7 +498,7 @@ const Avatar = (() => {
     // bras (derrière les manches)
     const swing = o.walk == null ? 0 : step * .6, sw = o.swing || 0;
     const handY = top + 4.4, handX = W / 2 + .3;
-    const sleeveLong = a.top === "pull" || a.top === "kimono" || a.top === "veste";
+    const sleeveLong = ["pull", "kimono", "veste", "sweat", "blouson", "manteau"].includes(a.top);
     const armCol = sleeveLong ? a.topColor : skin;
     c.fillStyle = armCol; rr(c, -handX - .9, top + 1 - swing, 1.8, 4, .9); rr(c, handX - .9, top + 1 + swing - sw * 2.2, 1.8, 4, .9);
     if (sleeveLong) { c.fillStyle = a.topColor2; rr(c, -handX - .95, handY - 1.2 - swing, 1.9, .7, .3); rr(c, handX - .95, handY - 1.2 + swing - sw * 2.2, 1.9, .7, .3); }
@@ -517,6 +523,13 @@ const Avatar = (() => {
         }
       }
       if (a.pattern === "rayures") for (let y = top + .8; y < yMax; y += 1.6) c.fillRect(-W, y, W * 2, .7);
+      if (a.pattern === "mariniere") for (let y = top + 1.6; y < yMax; y += 1.3) c.fillRect(-W, y, W * 2, .45);
+      if (a.pattern === "vichy") { c.globalAlpha = .45; for (let y = top; y < yMax; y += 1.4) c.fillRect(-W, y, W * 2, .7); for (let x = -W; x < W; x += 1.4) c.fillRect(x, top, .7, 14); c.globalAlpha = .75; }
+      if (a.pattern === "hibiscus" || a.pattern === "palmiers" || a.pattern === "coquillages") for (let y = top + 1.4; y < yMax; y += 3) for (let x = -W / 2 + ((y - top) % 6 < 3 ? .6 : 2); x < W / 2 + 1; x += 3.2) { if (a.pattern === "hibiscus") flower(c, x, y, .55, pc, "#ffd27a"); else if (a.pattern === "palmiers") { c.fillRect(x - .1, y - .2, .25, 1.4); ell(c, x - .5, y - .3, .7, .25, -.4); ell(c, x + .5, y - .3, .7, .25, .4); } else { c.beginPath(); c.moveTo(x, y + .6); c.lineTo(x - .8, y - .3); c.quadraticCurveTo(x, y - 1.2, x + .8, y - .3); c.fill(); } }
+      if (a.pattern === "camouflage") { c.globalAlpha = .7; for (let k = 0; k < 9; k++) ell(c, -W / 2 + (k * 37 % 10) / 10 * W, top + (k * 23 % 10) / 10 * (yMax - top), 1.4, .8, k); c.globalAlpha = .75; }
+      if (a.pattern === "zigzag") for (let y = top + 1.4; y < yMax; y += 2) line(c, Array.from({ length: 12 }, (_, i) => [-W + i * W / 5.5, y + (i % 2 ? .5 : -.5)]), .35, pc);
+      if (a.pattern === "degrade") { const gr = c.createLinearGradient(0, top, 0, yMax); gr.addColorStop(0, "rgba(0,0,0,0)"); gr.addColorStop(1, pc); c.fillStyle = gr; c.globalAlpha = .85; c.fillRect(-W, top, W * 2, yMax - top + 1); }
+      if (a.pattern === "tiedye") { c.globalAlpha = .45; [[pc, 3.2], [a.topColor3 || "#ffd27a", 2.2], [pc, 1.2]].forEach(([cc, r]) => { c.fillStyle = cc; circle(c, 0, top + 4, r); }); }
       if (a.pattern === "carreaux") { for (let y = top + .5; y < yMax; y += 1.6) c.fillRect(-W, y, W * 2, .5); for (let x = -W; x < W; x += 1.6) c.fillRect(x, top, .5, 14); }
       c.restore(); c.globalAlpha = 1;
     }
@@ -530,7 +543,12 @@ const Avatar = (() => {
       case "veste": c.fillStyle = a.topColor2; rr(c, -1.6, top, 3.2, 8, 1); c.fillStyle = shade(tc, -.15); c.fillRect(-1.7, top, .4, 8); c.fillRect(1.3, top, .4, 8); break;
       case "feuilles": for (let i = 0; i < 7; i++) { c.fillStyle = i % 2 ? "#9fd68f" : "#5fae6b"; ell(c, -W / 2 + .8 + i * (W - 1.6) / 6, top + 4 + (i % 2) * 1.6, 1, 2.8, (i - 3) * .12); } c.fillStyle = "#c9956b"; c.fillRect(-W / 2, top + 6.6, W, .7); break;
       case "robe": c.fillStyle = a.topColor2; rr(c, -W / 2, top + 3.6, W, .8, .4); break;
+      case "sweat": c.fillStyle = shade(tc, -.1); c.beginPath(); c.arc(0, top + .2, 3, Math.PI * .95, Math.PI * 2.05); c.fill(); c.fillStyle = a.topColor2; line(c, [[-.8, top + .6], [-.9, top + 3]], .25, a.topColor2); line(c, [[.8, top + .6], [.9, top + 3]], .25, a.topColor2); rr(c, -2.2, top + 5, 4.4, 1.8, .6); break;
+      case "blouson": c.fillStyle = a.topColor2; rr(c, -W / 2, top + 6.9, W, 1.1, .5); c.fillStyle = shade(tc, -.2); c.fillRect(-.2, top, .4, 8); c.fillStyle = a.topColor2; c.beginPath(); c.moveTo(-2, top); c.lineTo(0, top + 1.6); c.lineTo(2, top); c.fill(); break;
+      case "manteau": c.fillStyle = shade(tc, -.15); c.fillRect(-.25, top, .5, hip + 3 - top); for (let i = 0; i < 4; i++) circle(c, .9, top + 1.6 + i * 1.8, .3); c.fillStyle = a.topColor2; c.beginPath(); c.moveTo(-2.4, top); c.lineTo(0, top + 2.4); c.lineTo(2.4, top); c.fill(); break;
+      case "maillot": c.fillStyle = skin; c.beginPath(); c.arc(0, top, 2.4, 0, Math.PI); c.fill(); rr(c, -W / 2 - .1, top - .1, 1.2, 3, .5); rr(c, W / 2 - 1.1, top - .1, 1.2, 3, .5); break;
     }
+    if (a.print && a.print !== "aucun" && a.top !== "feuilles") { const P = { ancre: "⚓", etoile: "★", coeur: "♥", palmier: "🌴", coquillage: "🐚", vague: "🌊", soleil: "☀", lune: "☾", tortue: "🐢", poisson: "🐟", fleur: "🌺", volcan: "🌋", kalua: "K", deuxcoeurs: "♥", spirale: "@", etoileFilante: "☄", perroquet: "🦜", ananas: "🍍", cerise: "🍒", eclair: "⚡", note: "♪", papillon: "🦋", arcenciel: "🌈" }[a.print]; if (P) { c.fillStyle = "#fff"; circle(c, 0, top + 3.6, 1.5); c.fillStyle = a.topColor3 || "#e2627c"; c.font = "2.2px sans-serif"; c.textAlign = "center"; c.textBaseline = "middle"; c.fillText(P, 0, top + 3.7); c.textAlign = "left"; c.textBaseline = "alphabetic"; } }
     necklace(c, a, top);
     c.restore();
     return top + by; // haut du torse, pour placer la tête

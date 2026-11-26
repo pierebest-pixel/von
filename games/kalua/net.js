@@ -11,7 +11,7 @@
 const Net = (() => {
   const SDK = "https://www.gstatic.com/firebasejs/13.2.0/";
   const config = window.VON_FIREBASE || null;
-  let fb = null, db = null, me = null, offset = 0;
+  let fb = null, db = null, me = null, offset = 0, shift = 0;
 
   const ls = (k, f) => { try { const v = localStorage.getItem(k); return v === null ? f : JSON.parse(v); } catch { return f; } };
 
@@ -73,8 +73,11 @@ const Net = (() => {
     if (!x) throw Object.assign(new Error("gone"), { code: "gone" });
     const island = { owner: me.uid, name: `L'île de ${me.name}`, seed: x.seed, createdAt: x.createdAt, members: { [me.uid]: { name: me.name } }, difficulty: x.difficulty || "normal", solo: true, bot: x.bot };
     const noop = () => {};
+    const vk = `kalua:village:${id}`; let V = ls(vk, {}) || {}; let vcb = null;
     return { id, island, others: [], me, savedPos: null, progress: null, solo: true,
-      saveProgress: noop, watchPlayer: noop, watchPos: noop, sendPos: noop, setOnline: noop, async leave() {} };
+      saveProgress: noop, watchPlayer: noop, watchPos: noop, sendPos: noop, setOnline: noop, setAvatar: noop, async leave() {},
+      watchVillage(cb) { vcb = cb; cb(JSON.parse(JSON.stringify(V))); return () => { vcb = null; }; },
+      saveVillage(path, value) { const parts = path.split("/"); let o = V; for (let i = 0; i < parts.length - 1; i++) { if (!o[parts[i]] || typeof o[parts[i]] !== "object") o[parts[i]] = {}; o = o[parts[i]]; } if (value === null) delete o[parts[parts.length - 1]]; else o[parts[parts.length - 1]] = value; try { localStorage.setItem(vk, JSON.stringify(V)); } catch { /* ignore */ } } };
   }
 
   async function createIsland(friend, difficulty = "normal") {
@@ -91,7 +94,7 @@ const Net = (() => {
   }
 
   const leaveIsland = async (id) => {
-    if (isSolo(id)) { soloSave(soloList().filter((x) => x.id !== id)); try { localStorage.removeItem(`kalua:prog:${id}:${me.uid}`); } catch { /* ignore */ } return; }
+    if (isSolo(id)) { soloSave(soloList().filter((x) => x.id !== id)); try { localStorage.removeItem(`kalua:prog:${id}:${me.uid}`); localStorage.removeItem(`kalua:village:${id}`); } catch { /* ignore */ } return; }
     return fb.remove(r(`userIslands/${me.uid}/${id}`));
   };
 
@@ -132,6 +135,10 @@ const Net = (() => {
         if (wait <= 0) flush(); else if (!timer) timer = setTimeout(flush, wait);
       },
       setOnline(v) { fb.update(playerRef, { online: v, seen: fb.serverTimestamp() }).catch(() => {}); },
+      setAvatar(av) { fb.update(playerRef, { avatar: av }).catch(() => {}); },
+      // le village commun (bâtiments, déco, pièces, chantiers, horloge)
+      watchVillage(cb) { const u = on(`islands/${id}/village`, cb); unsubs.push(u); return u; },
+      saveVillage(path, value) { const ref = r(`islands/${id}/village/${path}`); (value === null ? fb.remove(ref) : fb.set(ref, value)).catch((e) => console.warn("village", e)); },
       async leave() {
         unsubs.forEach((u) => u()); flush();
         await fb.update(playerRef, { online: false, seen: fb.serverTimestamp() }).catch(() => {});
@@ -140,5 +147,5 @@ const Net = (() => {
     };
   }
 
-  return { now: () => (Date.now() + offset) / 1000, init, friends, watchMyIslands, watchOnline, createIsland, leaveIsland, enter, createSolo, isSolo, get me() { return me; } };
+  return { setShift: (s) => { shift = Number(s) || 0; }, now: () => (Date.now() + offset) / 1000 + shift, init, friends, watchMyIslands, watchOnline, createIsland, leaveIsland, enter, createSolo, isSolo, get me() { return me; } };
 })();

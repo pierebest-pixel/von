@@ -1,7 +1,7 @@
 # Les Échoués de Kalua — résumé du projet (à lire en début de conversation)
 
 Jeu d'aventure à deux, en ligne, dans l'appli **Von** (dépôt `pierebest-pixel/von`, dossier `games/kalua/`), pensé pour jouer avec sa copine.
-**Version publiée : 0.5** (26/11/2026). Les branches `main` et `kalua` sont identiques.
+**Version publiée : 0.6** (27/11/2026). Les branches `main` et `kalua` sont identiques.
 
 Documents à lire selon le besoin :
 - **`design/kalua/LOG.md`** : le rapport détaillé du développement autonome (fichiers, systèmes, salles, boss, quêtes, tests, bugs).
@@ -18,9 +18,10 @@ Documents à lire selon le besoin :
 ## Règles de travail demandées par l'utilisateur
 - Répondre en français, simplement.
 - On valide chaque étape ensemble : **maquettes en images d'abord**, captures du vrai jeu avant de publier.
-- Publier sur `main` **seulement quand l'utilisateur dit « publie »**.
+- Publier sur `main` **seulement quand l'utilisateur dit « publie »**. Pour le grand chantier « construction » (0.6), l'utilisateur a demandé de tout coder et publier sans attendre sa validation, en lui envoyant des captures ; il arrête le travail en écrivant « STOP » en majuscules.
+- Toujours **couper le son** du jeu de test dans le navigateur (l'utilisateur l'entend sur son PC).
 - À chaque publication :
-  - augmenter `APP_CACHE` dans `sw.js` (actuellement `von-app-v10`) ;
+  - augmenter `APP_CACHE` dans `sw.js` (actuellement `von-app-v11`) ;
   - augmenter la version dans `games/kalua/menus.js` (écran titre) et dans `games/catalog.json`.
 - L'utilisateur veut concevoir **lui-même les boss finaux des 3 grottes des îles** (6 Tortues, 7 Phare, 8 Étoiles). Ne pas les créer sans lui.
 - Crédits de fin : **Sixte Maron** et **Claude**.
@@ -101,6 +102,18 @@ Documents à lire selon le besoin :
   - comme le deuxième joueur en duo, il ne combat pas à ta place, donc l'équilibrage est le même en solo et en duo.
 - Le menu en jeu affiche le niveau.
 
+### Kalua 0.6 (construction, village, décoration, vêtements — publié le 27/11/2026)
+Maquettes : `design/kalua/maquettes-construction/` (10 planches + `PLAN.md`, refaire les images avec `node capture.js`).
+- **Nouveau style de dessin** pour tous les bâtiments (`buildings.js`, boîte à outils `BUILD.kit`) : murs texturés, toits à tuiles / ardoises / chaume, fenêtres à volets, auvents, enseignes, lanternes. Dans le jeu, 1 unité de bâtiment = 24 px (`Village.BS`) ; chaque dessin est mis en cache (rendu ≈ 1 ms par image).
+- **Village de base reconstruit** autour de `KALUA.VILLAGE` (`Village.BASE`) : mairie, place de l'Étoile, Le Fil d'Or, La Marmite de Kalua, auberge, bibliothèque, café, boulangerie, glacier, marché, épicerie, poste, et 36 décorations.
+- **Construction libre partout** (`village.js`) : menu ≡ → Construire (Bâtiments / Décorations / Modifier). Le fantôme est vert ou rouge selon les règles (eau, lave, grottes, lieux des habitants, objets de quête, autres bâtiments). Les arbres sous un bâtiment donnent leur bois. Démonter rend toutes les ressources.
+- **50 bâtiments** constructibles et **220 décorations d'extérieur** (`outdoor.js`). Services (`services.js`) : 10 restaurants avec 3 plats par jour (soins, course plus rapide, chants prêts), mairie (renommer l'île, fête, projets, registre), entrepôt commun, récoltes quotidiennes (potager, serre, ruche, poulailler, enclos, ponton, moulin), soins, bains, poste…
+- **Maison en 5 niveaux** (5 / 10 / 15 / 20 / 25 pièces), améliorée par un **chantier partagé** (chacun dépose ses ressources).
+- **Intérieurs** (`house.js`, mode `house`) : une pièce à la fois, chargée en passant sa porte (grille de 5 de large), mobilier de départ, **247 objets de déco gratuits** (`decor.js`, dont 31 de Noël), menu ≡ → Décorer la maison / Mon armoire / Sortir. Objets utilisables (s'asseoir, jouer, lire, se baigner…). **Dormir** passe la nuit (à deux, seulement si les deux sont couchés) via un décalage d'horloge commun (`Net.setShift`).
+- **Le Fil d'Or** (`clothes.js`, `shop.js`) : 15 types × 200 modèles = 3 000 vêtements, retouche (3 couleurs + roue, 16 motifs, 24 imprimés), armoire. Le personnage (`avatar.js`) porte les nouveaux hauts (sweat, blouson, manteau, maillot), les 16 motifs, les imprimés, de nouveaux chapeaux et chaussures.
+- **Village commun** : `islands/{id}/village` (b, o, rooms, site, chest, clock, bed, name, fete). Les règles Firebase existantes l'autorisent déjà (les membres écrivent sous leur île) : rien à recoller. En solo : `kalua:village:{id}` dans le téléphone.
+- Corrigé : la liste `files` de Kalua dans `games/catalog.json` était restée à la 0.3 (installation hors connexion incomplète).
+
 ### Architecture du code (`games/kalua/`)
 | Fichier | Rôle |
 |---|---|
@@ -123,7 +136,9 @@ Documents à lire selon le besoin :
 | `lore.js` | fragments de lore |
 | `music.js` | musiques et bruitages |
 | `menus.js` | menus |
-| `avatar.js`, `map.js`, `world.js`, `creatures.js`, `net.js` | personnages, carte, monde, animaux, réseau (inchangés pour l'essentiel) |
+| `avatar.js`, `map.js`, `world.js`, `creatures.js`, `net.js` | personnages, carte, monde, animaux, réseau |
+| `buildings.js`, `outdoor.js`, `decor.js`, `clothes.js` | dessins : bâtiments, déco extérieure, déco intérieure, vêtements |
+| `village.js`, `services.js`, `house.js`, `shop.js` | village et construction, services des bâtiments, intérieurs, magasin de vêtements |
 
 ### Tests (environnement local)
 - Copie de test avec un **faux réseau**, dans le dossier temporaire de la session : `kalua-test/`, `fake-net.js`, `sync.sh`, `validate.js`, `harness.js`.
@@ -157,7 +172,7 @@ Documents à lire selon le besoin :
 4. **Équilibrage** : les PV et dégâts des boss, et la difficulté des énigmes, ont été réglés à l'estime.
 5. **Coopération dans les grottes** : on voit l'autre joueur s'il est dans la même salle, mais les ennemis, énigmes et coffres sont propres à chaque joueur. Une vraie coop (grottes partagées) serait un gros chantier, à décider.
 6. **Créatures secrètes des îles** (Tortue Ancienne, Hibou-Lanterne, Renard Céleste) : leurs combats existent dans `battle.js`, mais elles ne sont pas encore placées sur les îles.
-7. **Reste de l'étape 2 des maquettes** : la construction du village, l'adoption des animaux (leur donner un nom, l'enclos, le lait, les œufs, la laine) et le **cheval qu'on monte**.
+7. **Reste de l'étape 2 des maquettes** : l'adoption des animaux (leur donner un nom) et le **cheval qu'on monte** (l'enclos, l'étable et les récoltes existent depuis la 0.6).
 8. Petites améliorations possibles :
    - l'escorte de Nalia au début est un peu longue ;
    - le Gardien Mère-Racine est grand et dépasse en haut de l'écran sur petit écran ;

@@ -261,6 +261,6 @@ const Act = (() => {
       c.restore();
     }
   }
-  return { E, spawn, clear, setEnv, update, collect, drawEnemy, drawTop, playerHit, cast, cooldown, CD, shot, zone, addFx, damage, kill, hurtPlayer, tryMove,
+  return { resetCool: () => { for (const k of Object.keys(cool)) cool[k] = 0; }, E, spawn, clear, setEnv, update, collect, drawEnemy, drawTop, playerHit, cast, cooldown, CD, shot, zone, addFx, damage, kill, hurtPlayer, tryMove,
     get enemies() { return enemies; }, get inv() { return inv; }, set inv(v) { inv = v; }, get env() { return env; } };
 })();

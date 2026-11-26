@@ -12,7 +12,7 @@ const NPC = (() => {
   // ---------------------------------------------------------------- lieux (unités carte)
   const SPOT = {
     plage: [790, 905], epave: [812, 925], recif: [700, 912], dune: [860, 905],
-    village: [765, 652], villageFeu: [772, 668], villageNord: [760, 612], villageEst: [800, 640], villageOuest: [728, 650],
+    village: [765, 652], villageFeu: [772, 668], villageNord: [760, 628], villageEst: [800, 640], villageOuest: [728, 650],
     port: [905, 872], portFeu: [905, 888], ponton: [955, 878], hutte1: [880, 858], hutte2: [905, 876], hutte3: [930, 860],
     camp: [612, 872], campFeu: [628, 884], tente1: [600, 858], tente2: [618, 878],
     champ: [700, 712], champ2: [842, 705], prairie: [720, 590],

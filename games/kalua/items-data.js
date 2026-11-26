@@ -37,6 +37,8 @@ const ITEMS = (() => {
     cuir: ["Cuir", "faune", "Cuir épais de bête domestique ou de sanglier.", "🟫"],
     lait: ["Lait", "food", "Rend 2 cœurs.", "🥛", 2],
     oeuf: ["Œuf", "food", "Rend 1 cœur.", "🥚", 1],
+    miel: ["Miel", "food", "Le miel des ruches du village. Rend 2 cœurs.", "🍯", 2],
+    farine: ["Farine", "res", "Moulue au moulin du village.", "🌾"],
     poisson: ["Poisson", "food", "Rend 1 cœur, 2 s'il est cuit.", "🐟", 1],
     fil: ["Fil", "res", "Tressé à partir de fibres.", "🧵"],
     corde: ["Corde", "res", "Une vraie corde solide.", "🪢"],

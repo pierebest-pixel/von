@@ -103,7 +103,7 @@ function showTitle() {
       <button class="tbtn main" data-x="play">▶&nbsp; JOUER</button>
       <button class="tbtn" data-x="perso">👤&nbsp; Mon personnage</button>
       <button class="tbtn" data-x="settings">⚙️&nbsp; Réglages</button>
-      <div class="ver">version 0.5 · Von</div>
+      <div class="ver">version 0.6 · Von</div>
     </div></div>`;
   const cvs = $("#tcv"); let alive = true; const t0 = performance.now();
   startMusic();
@@ -142,6 +142,8 @@ function openMenu() {
   const d = panel(`<h3>Menu</h3><div class="psub"><span class="dot ${o?.online ? "on" : ""}"></span>${o ? `${o.bot ? "🤖 " : ""}${esc(o.name)} ${o.bot ? "t'accompagne" : o.online ? "est sur l'île" : "n'est pas là"} · ` : ""}niveau ${esc(Prog.diffInfo().name)} · le jeu continue</div>
     <button class="item main" data-m="resume"><i>▶</i>Reprendre</button>
     <button class="item" data-m="nalia"><i style="background:#e8eeff">🐚</i>${Prog.isDead("nalia") ? "Appeler Coco (conque)" : "Appeler Nalia (conque)"}<span class="chev">›</span></button>
+    ${G.mode === "world" ? `<button class="item" data-m="build"><i style="background:#fff1c4">🔨</i>Construire<span class="chev">›</span></button>` : ""}
+    ${G.mode === "house" ? `<button class="item" data-m="decor"><i style="background:#fff1c4">🛋️</i>Décorer la maison<span class="chev">›</span></button><button class="item" data-m="wardrobe"><i style="background:#fdf0dc">🧺</i>Mon armoire<span class="chev">›</span></button><button class="item" data-m="out"><i style="background:#e8f6e6">🌴</i>Sortir de la maison<span class="chev">›</span></button>` : ""}
     <button class="item" data-m="quests"><i style="background:#ffe8ec">📜</i>Quêtes<span class="chev">›</span></button>
     <button class="item" data-m="map"><i style="background:#e0f2fb">🗺️</i>Carte de l'île<span class="chev">›</span></button>
     <button class="item" data-m="bag"><i style="background:#fdf0dc">🎒</i>Sac<span class="chev">›</span></button>
@@ -158,6 +160,10 @@ function openMenu() {
     const m = b.dataset.m;
     if (m === "resume") return closeMenu();
     if (m === "map") return openMap();
+    if (m === "build") return openBuild();
+    if (m === "decor") return House.openDecoMenu();
+    if (m === "wardrobe") return Shop.wardrobe();
+    if (m === "out") { closeMenu(); return House.leave(); }
     if (m === "bag") return openBag();
     if (m === "quests") return openQuests();
     if (m === "journal") return openJournal();

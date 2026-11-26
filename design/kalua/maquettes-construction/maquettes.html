@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Kalua — maquettes : construction et décoration</title>
+<style>
+  body { margin: 0; background: #1c1a24; color: #fff; font-family: "Segoe UI", system-ui, sans-serif; }
+  .planche { width: 1680px; padding: 34px 40px 40px; box-sizing: border-box; background: #1c1a24; }
+  h1 { margin: 0; font-size: 34px; font-weight: 900; }
+  .sub { color: #b8a8d8; font-weight: 700; font-size: 15px; margin: 4px 0 22px; }
+  .row { display: flex; gap: 22px; align-items: flex-start; }
+  .cap { font-weight: 800; font-size: 15px; margin-top: 10px; line-height: 1.35; }
+  .cap small { display: block; font-weight: 600; color: #c8c0dc; font-size: 13px; margin-top: 3px; }
+  .note { background: #2a2734; border-radius: 16px; padding: 16px 18px; font-size: 14px; line-height: 1.5; color: #e8e2f4; }
+  .note b { color: #fff; } .note h3 { margin: 0 0 6px; font-size: 16px; }
+  .phone { width: 390px; height: 760px; border-radius: 42px; background: #000; padding: 10px; box-sizing: border-box; box-shadow: 0 10px 30px rgba(0,0,0,.4); }
+  .phone canvas { width: 370px; height: 740px; border-radius: 34px; display: block; }
+  .cards { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 12px; }
+  .card { background: #fff8f0; color: #4a3a3a; border-radius: 16px; padding: 8px 8px 10px; }
+  .card canvas { width: 100%; height: 130px; display: block; border-radius: 10px; }
+  .card .n { font-weight: 900; font-size: 14px; margin-top: 6px; } .card .c { font-size: 11.5px; color: #7a6a6a; margin-top: 2px; line-height: 1.3; }
+  .card .cat { font-size: 10px; font-weight: 800; color: #b07ad0; text-transform: uppercase; letter-spacing: .05em; }
+  .deco { display: grid; grid-template-columns: repeat(16, minmax(0, 1fr)); gap: 6px; }
+  .deco .it { background: #fff8f0; border-radius: 10px; padding: 4px; text-align: center; color: #4a3a3a; }
+  .deco canvas { width: 100%; height: 66px; display: block; }
+  .deco .n { font-size: 9.5px; font-weight: 700; line-height: 1.15; height: 22px; overflow: hidden; }
+  .deco .u { font-size: 8.5px; color: #b07ad0; font-weight: 800; }
+  .ctitle { grid-column: 1 / -1; font-weight: 900; font-size: 17px; margin: 10px 0 2px; color: #ffd86a; }
+</style>
+</head>
+<body>
+<script src="../../../games/kalua/avatar.js"></script>
+<script src="../../../games/kalua/buildings.js"></script>
+<script src="../../../games/kalua/decor.js"></script>
+<script src="../../../games/kalua/clothes.js"></script>
+<script src="../../../games/kalua/outdoor.js"></script>
+<script src="maquettes2.js"></script>
+<script>
+"use strict";
+const ICON = { bois: "🪵", feuille: "🌿", corde: "🪢", pierre: "🪨", argile: "🟤", fer: "⛏️", laine: "🧶", silex: "🔪", coquillage: "🐚", perle: "⚪", obsidienne: "🖤", cristalFeu: "🔥", herbe: "🌱", roseau: "🌾", gelee: "🟢", bambou: "🎋", sable: "⏳", lotus: "🪷", liane: "〰️", plume: "🪶", fil: "🧵", soufre: "🟡" };
+const NAMES = { bois: "Bois", feuille: "Feuille", corde: "Corde", pierre: "Pierre", argile: "Argile", fer: "Fer", laine: "Laine", silex: "Silex", coquillage: "Coquillage", perle: "Perle", obsidienne: "Obsidienne", cristalFeu: "Cristal de feu", herbe: "Herbe", roseau: "Roseau", gelee: "Gelée", bambou: "Bambou", sable: "Sable", lotus: "Lotus", liane: "Liane", plume: "Plume" };
+const cost = (o) => Object.entries(o).map(([k, v]) => `${ICON[k] || "•"} ${v}`).join("  ");
+const $ = (h) => { const d = document.createElement("div"); d.innerHTML = h.trim(); return d.firstChild; };
+function cv(w, h, dpr = 2) { const c = document.createElement("canvas"); c.width = w * dpr; c.height = h * dpr; c.style.width = w + "px"; c.style.height = h + "px"; const g = c.getContext("2d"); g.scale(dpr, dpr); return [c, g]; }
+let seed = 7; const rnd = () => { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
+function grass(g, w, h, col = "#a9d98a") { g.fillStyle = col; g.fillRect(0, 0, w, h); for (let i = 0; i < w * h / 900; i++) { g.fillStyle = ["rgba(255,255,255,.18)", "rgba(80,140,60,.15)", "#ff9fb8", "#fff4a0"][i % 23 === 0 ? 2 : i % 31 === 0 ? 3 : i % 2]; g.beginPath(); g.ellipse(rnd() * w, rnd() * h, 1.6, 1.2, 0, 0, 7); g.fill(); } }
+function tree(g, x, y, s = 1) { g.fillStyle = "rgba(40,60,30,.2)"; g.beginPath(); g.ellipse(x + 4 * s, y + 2 * s, 18 * s, 6 * s, 0, 0, 7); g.fill(); g.fillStyle = "#7a5232"; g.fillRect(x - 3 * s, y - 16 * s, 6 * s, 18 * s); for (const [dx, dy, r, c] of [[0, -30, 16, "#4f9a4f"], [-10, -22, 12, "#5aa85a"], [10, -22, 12, "#5aa85a"], [0, -38, 10, "#6ab86a"]]) { g.fillStyle = c; g.beginPath(); g.arc(x + dx * s, y + dy * s, r * s, 0, 7); g.fill(); } }
+const ME = { ...Avatar.DEFAULT }, HER = Avatar.normalize(Object.assign({}, Avatar.DEFAULT, { hair: "long", hairColor: "#c96a3a", top: "robe", topColor: "#ffb0c8" }));
+function person(g, x, y, av, name, s = 2.6, dir = "down") { g.save(); g.translate(x, y - 14 * s); g.scale(s, s); Avatar.draw(g, av, { dir, t: 1 }); g.restore(); if (name) tag(g, x, y - 52 * s / 2.6, name); }
+function tag(g, x, y, txt, bg = "rgba(255,255,255,.92)", col = "#5a3a3a") { g.font = "800 12px Segoe UI"; const w = g.measureText(txt).width + 14; g.fillStyle = bg; g.beginPath(); g.roundRect(x - w / 2, y - 10, w, 20, 10); g.fill(); g.fillStyle = col; g.textAlign = "center"; g.fillText(txt, x, y + 4); g.textAlign = "left"; }
+function hud(g, w, opts = {}) { for (let i = 0; i < 7; i++) { g.fillStyle = "#ff5a7a"; g.font = "16px Segoe UI Emoji"; g.fillText("❤", 14 + i * 17, 34); } g.fillStyle = "rgba(255,255,255,.9)"; g.beginPath(); g.roundRect(w - 54, 18, 40, 40, 12); g.fill(); g.fillStyle = "#5a3a3a"; for (let i = 0; i < 3; i++) g.fillRect(w - 44, 29 + i * 7, 20, 3); if (opts.obj) tag(g, 14 + g.measureText(opts.obj).width / 2 + 40, 52, "★ " + opts.obj); }
+function btn(g, x, y, r, col, label, txt = "#fff") { g.fillStyle = col; g.beginPath(); g.arc(x, y, r, 0, 7); g.fill(); g.fillStyle = txt; g.font = `900 ${r * .34}px Segoe UI`; g.textAlign = "center"; g.fillText(label, x, y + r * .12); g.textAlign = "left"; }
+function pads(g, w, h) { g.fillStyle = "rgba(255,255,255,.75)"; for (const [dx, dy] of [[0, -1], [-1, 0], [1, 0], [0, 1]]) { g.beginPath(); g.roundRect(58 + dx * 34 - 15, h - 110 + dy * 34 - 15, 30, 30, 9); g.fill(); } btn(g, w - 60, h - 120, 30, "#ff7f9f", "TAPER"); btn(g, w - 118, h - 90, 24, "#8fd18a", "RAMASSER"); btn(g, w - 108, h - 158, 22, "#7ab4e8", "ESQUIVE"); btn(g, w - 54, h - 190, 21, "#ffc04a", "SPRINT"); }
+function panel(g, x, y, w, h) { g.fillStyle = "#fff8f0"; g.beginPath(); g.roundRect(x, y, w, h, 22); g.fill(); }
+function wrapText(g, txt, x, y, maxW, lh) { const words = txt.split(" "); let line = ""; for (const w of words) { const t = line ? line + " " + w : w; if (g.measureText(t).width > maxW) { g.fillText(line, x, y); y += lh; line = w; } else line = t; } g.fillText(line, x, y); return y; }
+
+// ================================================================ planche 1 : la maison en 5 niveaux
+function planche1() {
+  const el = $(`<div class="planche" id="p1"><h1>1 · La maison : 5 niveaux, de la cabane au château</h1><div class="sub">Améliorable 4 fois · chaque niveau ajoute 5 pièces · elle grandit vraiment sur la carte</div></div>`);
+  const [c, g] = cv(1600, 560); el.appendChild(c);
+  grass(g, 1600, 560); g.fillStyle = "#e8d8b4"; g.fillRect(0, 470, 1600, 26);
+  const xs = [90, 270, 500, 830, 1300], S = [6.5, 6.5, 6.5, 6.5, 6.5];
+  for (let i = 0; i < 5; i++) { g.save(); g.translate(xs[i], 455); BUILD.draw("maison", g, S[i], 1.2, i + 1); g.restore(); }
+  person(g, 1500, 500, ME, "", 2.2); person(g, 1540, 502, HER, "", 2.2);
+  for (let i = 0; i < 5; i++) { const L = BUILD.LEVELS[i]; g.fillStyle = "rgba(28,26,36,.82)"; g.beginPath(); g.roundRect(xs[i] - 85, 500, 170, 52, 12); g.fill(); g.fillStyle = "#ffd86a"; g.font = "900 15px Segoe UI"; g.textAlign = "center"; g.fillText(`Niv. ${i + 1} · ${L.name}`, xs[i], 520); g.fillStyle = "#fff"; g.font = "700 12px Segoe UI"; g.fillText(`${BUILD.ROOMS[i]} pièces · ${L.size[0]}×${L.size[1]} cases`, xs[i], 538); g.textAlign = "left"; }
+  const notes = $(`<div class="row" style="margin-top:18px">${BUILD.LEVELS.map((L, i) => `<div class="note" style="flex:1"><h3>Niv. ${i + 1} · ${L.name}</h3>${cost(L.cost)}<br><small style="color:#c8c0dc">+ pièces : ${BUILD.ROOM_NAMES[i].join(", ")}</small></div>`).join("")}</div>`);
+  el.appendChild(notes);
+  el.appendChild($(`<div class="note" style="margin-top:14px"><b>Le château fait 44 × 30 cases</b> : plus grand qu'un écran de téléphone, il devient le cœur du village, mais il occupe moins d'1 % de l'île (on peut construire tout le reste autour). Chaque amélioration change le dessin <b>et</b> l'emprise au sol : il faut de la place autour pour agrandir (sinon le jeu montre en rouge ce qui gêne).</div>`));
+  return el;
+}
+// ================================================================ planche 2 : le catalogue des bâtiments
+function planche2() {
+  const el = $(`<div class="planche" id="p2"><h1>2 · Les bâtiments : ${BUILD.CATALOG.length} à construire</h1><div class="sub">Tout se paie avec les ressources de l'île · on peut en poser partout, pas seulement au village</div><div class="cards"></div></div>`);
+  const box = el.querySelector(".cards");
+  BUILD.CATALOG.forEach((b) => {
+    const card = $(`<div class="card"><div class="cat">${b.cat}</div></div>`); const [c, g] = cv(210, 130);
+    grass(g, 210, 130, b.id === "ponton" || b.id === "pont" ? "#7ac0e0" : "#b4e09a"); const s = b.id === "maison" ? 5 : Math.min(7.5, 150 / Math.max(b.size[0], b.size[1] * 1.6, 8));
+    g.save(); g.translate(105, 120); BUILD.draw(b.id, g, s, 1.3, 1); g.restore();
+    card.appendChild(c); card.appendChild($(`<div class="n">${b.name}</div>`)); card.appendChild($(`<div class="c">${cost(b.cost)}</div>`)); card.appendChild($(`<div class="c">${b.desc}</div>`)); box.appendChild(card);
+  });
+  return el;
+}
+// ================================================================ planche 3 : construire partout + chantier partagé
+function planche3() {
+  const el = $(`<div class="planche" id="p3"><h1>3 · Construire n'importe où, ensemble</h1><div class="sub">Pose libre sur toute l'île · un village commun aux deux joueurs · un chantier où chacun apporte ses ressources</div><div class="row"></div></div>`);
+  const row = el.querySelector(".row");
+  // écran A : mode construction
+  { const ph = $(`<div><div class="phone"></div><div class="cap">Le mode construction<small>Vert = possible, rouge = il y a un obstacle. On tourne, on valide.</small></div></div>`); const [c, g] = cv(370, 740); ph.querySelector(".phone").appendChild(c);
+    grass(g, 370, 740); g.strokeStyle = "rgba(255,255,255,.35)"; g.lineWidth = 1; for (let x = 0; x < 370; x += 22) { g.beginPath(); g.moveTo(x, 0); g.lineTo(x, 600); g.stroke(); } for (let y = 0; y < 600; y += 22) { g.beginPath(); g.moveTo(0, y); g.lineTo(370, y); g.stroke(); }
+    tree(g, 300, 150); tree(g, 60, 120, .8);
+    g.save(); g.translate(110, 300); BUILD.draw("maison", g, 3, 1, 2); g.restore();
+    g.fillStyle = "rgba(90,220,120,.28)"; g.fillRect(190, 300, 132, 88); g.strokeStyle = "#3aa05a"; g.lineWidth = 2; g.setLineDash([6, 4]); g.strokeRect(190, 300, 132, 88); g.setLineDash([]);
+    g.save(); g.globalAlpha = .75; g.translate(256, 384); BUILD.draw("moulin", g, 5.4, 1.4); g.restore();
+    g.fillStyle = "rgba(240,80,90,.3)"; g.fillRect(250, 452, 88, 66); g.strokeStyle = "#e0566b"; g.strokeRect(250, 452, 88, 66);
+    tree(g, 300, 500, .7); tag(g, 294, 444, "Un arbre gêne", "#e0566b", "#fff");
+    person(g, 120, 470, ME, "Pierre"); person(g, 175, 486, HER, "Zoé");
+    hud(g, 370); tag(g, 185, 82, "🔨 Mode construction · partout sur l'île");
+    btn(g, 200, 418, 20, "#7ab4e8", "↻"); btn(g, 248, 418, 20, "#6cc287", "✔"); btn(g, 296, 418, 20, "#e0566b", "✕");
+    panel(g, 10, 560, 350, 170); g.fillStyle = "#5a3a3a"; g.font = "900 15px Segoe UI"; g.fillText("Bâtiments", 26, 588); g.fillStyle = "#b07ad0"; g.font = "800 12px Segoe UI"; g.fillText("Tout · Habitat · Animaux · Nourriture · Déco", 112, 588);
+    ["maison", "moulin", "potager", "fontaine", "lanterne"].forEach((id, i) => { const x = 18 + i * 68; g.fillStyle = i === 1 ? "#ffe0e8" : "#fff"; g.beginPath(); g.roundRect(x, 600, 62, 112, 12); g.fill(); if (i === 1) { g.strokeStyle = "#ff7f9f"; g.lineWidth = 2; g.stroke(); } g.save(); g.translate(x + 31, 668); BUILD.draw(id, g, id === "maison" ? 2.4 : id === "lanterne" ? 4 : 3, 1, 1); g.restore(); const b = BUILD.CATALOG.find((q) => q.id === id); g.fillStyle = "#5a3a3a"; g.font = "800 10px Segoe UI"; g.textAlign = "center"; g.fillText(b.name.split(" ")[0], x + 31, 686); g.font = "9px Segoe UI Emoji"; g.fillText(Object.entries(b.cost).slice(0, 2).map(([k, v]) => (ICON[k] || "") + v).join(" "), x + 31, 702); g.textAlign = "left"; });
+    row.appendChild(ph); }
+  // écran B : le chantier d'amélioration partagé
+  { const ph = $(`<div><div class="phone"></div><div class="cap">Améliorer : le chantier partagé<small>Chacun dépose ce qu'il a. Quand tout est là, la maison grandit.</small></div></div>`); const [c, g] = cv(370, 740); ph.querySelector(".phone").appendChild(c);
+    grass(g, 370, 740); g.save(); g.translate(185, 330); BUILD.draw("maison", g, 3.6, 1, 3); g.restore();
+    for (let i = 0; i < 4; i++) { g.fillStyle = "#c8a070"; g.fillRect(40 + i * 14, 360, 10, 22); } tag(g, 185, 110, "🏗️ Chantier : Grande maison → Manoir");
+    person(g, 70, 420, ME, "Pierre"); person(g, 300, 430, HER, "Zoé");
+    panel(g, 10, 440, 350, 290); g.fillStyle = "#5a3a3a"; g.font = "900 17px Segoe UI"; g.fillText("Manoir (niveau 4)", 26, 470); g.font = "700 12px Segoe UI"; g.fillStyle = "#8a7a78"; g.fillText("+5 pièces : salle à manger, grand salon, bureau…", 26, 490);
+    const need = Object.entries(BUILD.LEVELS[3].cost), have = [.8, .55, 1, .4, .9, 0];
+    need.forEach(([k, v], i) => { const y = 512 + i * 30; g.font = "16px Segoe UI Emoji"; g.fillText(ICON[k], 26, y + 6); g.fillStyle = "#5a3a3a"; g.font = "800 12px Segoe UI"; g.fillText(NAMES[k], 50, y + 4); g.fillStyle = "#eee2da"; g.beginPath(); g.roundRect(140, y - 6, 140, 12, 6); g.fill(); g.fillStyle = "#7ab4e8"; g.beginPath(); g.roundRect(140, y - 6, 140 * have[i] * .55, 12, 6); g.fill(); g.fillStyle = "#ff9fb8"; g.beginPath(); g.roundRect(140 + 140 * have[i] * .55, y - 6, 140 * have[i] * .45, 12, 0); g.fill(); g.fillStyle = "#5a3a3a"; g.font = "800 11px Segoe UI"; g.fillText(`${Math.round(v * have[i])}/${v}`, 288, y + 4); });
+    g.font = "700 11px Segoe UI"; g.fillStyle = "#7ab4e8"; g.fillText("■ Pierre", 26, 708); g.fillStyle = "#ff9fb8"; g.fillText("■ Zoé", 90, 708); g.fillStyle = "#6cc287"; g.beginPath(); g.roundRect(200, 690, 150, 30, 15); g.fill(); g.fillStyle = "#fff"; g.font = "900 13px Segoe UI"; g.fillText("Déposer mes objets", 214, 710);
+    row.appendChild(ph); }
+  // écran C : vue de l'île avec des constructions partout
+  { const ph = $(`<div><div class="phone"></div><div class="cap">Toute l'île est constructible<small>Sauf l'eau, la lave, les entrées de grottes, les quêtes et les maisons des habitants.</small></div></div>`); const [c, g] = cv(370, 740); ph.querySelector(".phone").appendChild(c);
+    g.fillStyle = "#4a9ac8"; g.fillRect(0, 0, 370, 740); g.fillStyle = "#f0dcaa"; g.beginPath(); g.ellipse(185, 380, 170, 300, 0, 0, 7); g.fill();
+    [["#9fd08a", 185, 470, 150, 170], ["#5a9a4a", 110, 300, 80, 120], ["#8a9a7a", 110, 200, 70, 60], ["#d0c8c0", 270, 300, 70, 140], ["#a87a6a", 185, 170, 70, 80]].forEach(([col, x, y, rx, ry]) => { g.fillStyle = col; g.beginPath(); g.ellipse(x, y, rx, ry, 0, 0, 7); g.fill(); });
+    g.fillStyle = "#ff6a2a"; g.beginPath(); g.arc(185, 160, 10, 0, 7); g.fill();
+    const pins = [["maison", 185, 520, 1.2, 5], ["moulin", 270, 320, 1.6], ["potager", 150, 560, 1.6], ["ponton", 70, 600, 1.6], ["tourGuet", 110, 300, 1.4], ["enclos", 230, 580, 1.2], ["autel", 190, 240, 2], ["fontaine", 200, 470, 1.5], ["serre", 110, 200, 1.4], ["statue", 290, 380, 1.6], ["lanterne", 120, 470, 2]];
+    pins.forEach(([id, x, y, s, lvl]) => { g.save(); g.translate(x, y); BUILD.draw(id, g, s, 1, lvl || 1); g.restore(); });
+    tag(g, 185, 40, "🗺️ Carte : vos constructions"); tag(g, 185, 640, "Le château, au village"); tag(g, 270, 260, "Moulin aux falaises"); tag(g, 85, 640, "Ponton sur la côte"); tag(g, 120, 330, "Tour dans la jungle");
+    row.appendChild(ph); }
+  row.appendChild($(`<div class="note" style="width:300px"><h3>Les règles</h3>• <b>Pose libre</b> sur une grille fine, partout où l'on peut marcher.<br>• Interdit : eau, lave, rivières (sauf le pont), entrées de grottes, objets de quête, lieux des habitants.<br>• Les arbres et rochers sous un bâtiment sont coupés automatiquement (ils donnent leurs ressources).<br>• <b>Village commun</b> : les deux joueurs voient et modifient les mêmes bâtiments, en direct.<br>• Les ressources viennent du sac de celui qui construit, ou des deux via le chantier.<br>• On peut <b>déplacer</b> ou <b>démonter</b> un bâtiment : on récupère la moitié des ressources.<br>• En solo, le compagnon aide à porter : rien ne change à l'équilibrage.</div>`));
+  return el;
+}
+// ================================================================ planche 4 : les pièces
+function room(g, x, y, w, h, name, floor = "#e8c898", wallCol = "#f4e8d8", doors = []) {
+  g.fillStyle = wallCol; g.fillRect(x, y, w, 70); g.fillStyle = "rgba(0,0,0,.06)"; g.fillRect(x, y + 60, w, 10);
+  g.fillStyle = floor; g.fillRect(x, y + 70, w, h - 70); g.strokeStyle = "rgba(0,0,0,.07)"; g.lineWidth = 1; for (let yy = y + 70; yy < y + h; yy += 18) { g.beginPath(); g.moveTo(x, yy); g.lineTo(x + w, yy); g.stroke(); }
+  g.fillStyle = "#8a6a4a"; g.fillRect(x, y + h - 8, w, 8); g.fillRect(x, y, 8, h); g.fillRect(x + w - 8, y, 8, h);
+  for (const [dx, label, side] of doors) { if (side === "top") { g.fillStyle = "#7a4a2a"; g.beginPath(); g.roundRect(x + dx - 16, y + 18, 32, 52, [14, 14, 0, 0]); g.fill(); g.fillStyle = "#e8c060"; g.beginPath(); g.arc(x + dx + 9, y + 46, 2.4, 0, 7); g.fill(); tag(g, x + dx, y + 10, "🚪 " + label); } else { g.fillStyle = "#5a3a22"; g.fillRect(side === "left" ? x : x + w - 8, y + dx - 22, 8, 44); tag(g, side === "left" ? x + 54 : x + w - 54, y + dx - 30, "🚪 " + label); } }
+}
+function planche4() {
+  const el = $(`<div class="planche" id="p4"><h1>4 · L'intérieur : une pièce à la fois</h1><div class="sub">On entre par la porte d'entrée · chaque porte charge la pièce suivante · 5 pièces au niveau 1, jusqu'à 25 au château</div><div class="row"></div></div>`);
+  const row = el.querySelector(".row");
+  { const ph = $(`<div><div class="phone"></div><div class="cap">On pousse la porte…<small>Un court fondu, et la pièce se charge.</small></div></div>`); const [c, g] = cv(370, 740); ph.querySelector(".phone").appendChild(c);
+    grass(g, 370, 740); g.save(); g.translate(195, 470); BUILD.draw("maison", g, 9, 1, 2); g.restore(); person(g, 162, 540, ME, "Pierre", 2.6, "up"); tag(g, 162, 400, "Ramasser pour entrer");
+    const gr = g.createLinearGradient(0, 480, 0, 740); gr.addColorStop(0, "rgba(0,0,0,0)"); gr.addColorStop(1, "rgba(0,0,0,.75)"); g.fillStyle = gr; g.fillRect(0, 480, 370, 260); g.fillStyle = "#fff"; g.font = "900 20px Segoe UI"; g.textAlign = "center"; g.fillText("Maison de Pierre & Zoé", 185, 660); g.font = "700 13px Segoe UI"; g.fillText("Entrée · niveau 2 · 10 pièces", 185, 682); g.textAlign = "left"; hud(g, 370); row.appendChild(ph); }
+  { const ph = $(`<div><div class="phone"></div><div class="cap">L'entrée<small>Chaque porte porte le nom de la pièce derrière.</small></div></div>`); const [c, g] = cv(370, 740); ph.querySelector(".phone").appendChild(c);
+    g.fillStyle = "#2a2230"; g.fillRect(0, 0, 370, 740); room(g, 15, 110, 340, 470, "Entrée", "#e0b888", "#f4e4cc", [[90, "Pièce à vivre", "top"], [260, "Cuisine", "top"], [300, "Chambre", "left"], [300, "Réserve", "right"]]);
+    const put = (id, x, y, k = 2.2) => { DECOR.draw(id, g, k, 1); }; const at = (id, x, y, k = 2.2) => { g.save(); g.translate(x, y); DECOR.draw(id, g, k, 1); g.restore(); };
+    at("tapis_rondrose", 130, 340, 2.4); at("console", 155, 200, 2.2); at("fougere", 40, 190, 2.2); at("horlogeComtoise", 300, 200, 2); at("portraitDeux", 175, 172, 2); at("lanterne_dorée", 40, 520, 2);
+    person(g, 185, 470, ME, "Pierre", 2.4, "up"); person(g, 240, 480, HER, "Zoé", 2.4, "left"); hud(g, 370); tag(g, 185, 82, "🏠 Entrée · 1/10");
+    g.fillStyle = "rgba(255,255,255,.92)"; g.beginPath(); g.roundRect(14, 600, 342, 120, 18); g.fill(); g.fillStyle = "#5a3a3a"; g.font = "900 13px Segoe UI"; g.fillText("Plan de la maison", 28, 622);
+    const names = ["Entrée", "Vivre", "Chambre", "Cuisine", "Réserve", "Ch. amis", "Bain", "Atelier", "Grenier", "Véranda"]; names.forEach((n, i) => { const x = 28 + (i % 5) * 64, y = 634 + Math.floor(i / 5) * 40; g.fillStyle = i === 0 ? "#ff9fb8" : i < 5 ? "#ffe8c8" : "#e8e0f4"; g.beginPath(); g.roundRect(x, y, 58, 32, 8); g.fill(); g.fillStyle = "#5a3a3a"; g.font = "800 10px Segoe UI"; g.textAlign = "center"; g.fillText(n, x + 29, y + 20); g.textAlign = "left"; });
+    row.appendChild(ph); }
+  { const ph = $(`<div><div class="phone"></div><div class="cap">Le château : 25 pièces<small>Salle du trône, salle de bal, chapelle des Lumes, donjon…</small></div></div>`); const [c, g] = cv(370, 740); ph.querySelector(".phone").appendChild(c);
+    g.fillStyle = "#2a2230"; g.fillRect(0, 0, 370, 740); room(g, 15, 110, 340, 470, "Salle du trône", "#c8b8d8", "#e8e0f0", [[185, "Salle de bal", "top"], [320, "Chapelle", "left"], [320, "Armurerie", "right"]]);
+    const at = (id, x, y, k = 2.2) => { g.save(); g.translate(x, y); DECOR.draw(id, g, k, 1); g.restore(); };
+    at("tapis_royal", 112, 300, 3); at("lustre", 150, 240, 2.4); at("rideauxVelours", 40, 172, 1.8); at("rideauxVelours", 268, 172, 1.8); at("lanterne_dorée", 40, 230, 2); at("lanterne_dorée", 300, 230, 2); at("trophee_phenix", 60, 470, 2.2); at("trophee_dragonnet", 270, 470, 2.2); at("litRoyal", 999, 999);
+    g.fillStyle = "#e8c060"; g.beginPath(); g.roundRect(160, 250, 50, 60, 8); g.fill(); g.fillStyle = "#8a2a4a"; g.beginPath(); g.roundRect(166, 262, 38, 44, 6); g.fill(); g.fillStyle = "#e8c060"; for (let i = 0; i < 3; i++) { g.beginPath(); g.moveTo(166 + i * 15, 252); g.lineTo(173 + i * 15, 238); g.lineTo(180 + i * 15, 252); g.fill(); }
+    person(g, 165, 420, ME, "Pierre", 2.4, "up"); person(g, 205, 422, HER, "Zoé", 2.4, "up"); hud(g, 370); tag(g, 185, 82, "🏰 Salle du trône · 21/25");
+    g.fillStyle = "rgba(255,255,255,.92)"; g.beginPath(); g.roundRect(14, 600, 342, 120, 18); g.fill(); g.fillStyle = "#5a3a3a"; g.font = "900 13px Segoe UI"; g.fillText("Plan du château (25 pièces)", 28, 622);
+    for (let i = 0; i < 25; i++) { const x = 28 + (i % 9) * 36, y = 634 + Math.floor(i / 9) * 26; g.fillStyle = i === 20 ? "#ff9fb8" : ["#ffe8c8", "#e8e0f4", "#d8f0e0", "#f4e0e8", "#fff0c0"][Math.floor(i / 5)]; g.beginPath(); g.roundRect(x, y, 32, 22, 6); g.fill(); }
+    row.appendChild(ph); }
+  row.appendChild($(`<div class="note" style="width:300px"><h3>Les pièces</h3>${BUILD.ROOM_NAMES.map((l, i) => `<b>Niv. ${i + 1}</b> : ${l.join(", ")}`).join("<br>")}<br><br>• Chaque pièce est un petit lieu à part : <b>elle se charge quand on passe sa porte</b> (fondu rapide), comme les salles des grottes.<br>• Les deux joueurs se voient s'ils sont dans la même pièce.<br>• Les pièces gardent leur déco quand la maison s'agrandit.</div>`));
+  return el;
+}
+// ================================================================ planche 5 : décorer
+function planche5() {
+  const el = $(`<div class="planche" id="p5"><h1>5 · Décorer la maison : 247 objets, tous gratuits</h1><div class="sub">« Décorer la maison » apparaît dans le menu ≡ quand on est à l'intérieur · on pose, on tourne, on range · beaucoup d'objets s'utilisent</div><div class="row"></div></div>`);
+  const row = el.querySelector(".row");
+  const at = (g, id, x, y, k = 2.2) => { g.save(); g.translate(x, y); DECOR.draw(id, g, k, 1); g.restore(); };
+  { const ph = $(`<div><div class="phone"></div><div class="cap">Le menu ≡ dans une maison<small>Une nouvelle ligne : Décorer la maison.</small></div></div>`); const [c, g] = cv(370, 740); ph.querySelector(".phone").appendChild(c);
+    g.fillStyle = "#2a2230"; g.fillRect(0, 0, 370, 740); room(g, 15, 110, 340, 470, "", "#e8c898", "#f4e8d8", []); g.fillStyle = "rgba(20,10,30,.45)"; g.fillRect(0, 0, 370, 740);
+    panel(g, 40, 120, 290, 520); g.fillStyle = "#5a3a3a"; g.font = "900 20px Segoe UI"; g.textAlign = "center"; g.fillText("Menu", 185, 156); g.textAlign = "left";
+    [["▶", "Reprendre", "#ff9fb8"], ["🛋️", "Décorer la maison", "#ffd86a"], ["🐚", "Appeler Nalia (conque)", "#e8eeff"], ["📜", "Quêtes", "#ffe8ec"], ["🗺️", "Carte de l'île", "#e0f2fb"], ["🎒", "Sac", "#fff0e0"], ["✨", "Chants et vie", "#f0e8ff"], ["🏠", "Sortir de la maison", "#e8f4e0"]].forEach(([ic, t, col], i) => { const y = 172 + i * 56; g.fillStyle = i === 1 ? "#fff1c4" : "#fff"; g.beginPath(); g.roundRect(54, y, 262, 46, 14); g.fill(); if (i === 1) { g.strokeStyle = "#e8b830"; g.lineWidth = 2.5; g.stroke(); } g.fillStyle = col; g.beginPath(); g.roundRect(62, y + 7, 32, 32, 9); g.fill(); g.font = "17px Segoe UI Emoji"; g.fillText(ic, 68, y + 30); g.fillStyle = "#5a3a3a"; g.font = "800 14px Segoe UI"; g.fillText(t, 104, y + 28); });
+    row.appendChild(ph); }
+  { const ph = $(`<div><div class="phone"></div><div class="cap">Le mode décoration<small>Catalogue par pièce, l'objet suit le doigt, ↻ tourner, ✔ poser, 🗑 ranger.</small></div></div>`); const [c, g] = cv(370, 740); ph.querySelector(".phone").appendChild(c);
+    g.fillStyle = "#2a2230"; g.fillRect(0, 0, 370, 740); room(g, 15, 80, 340, 400, "", "#e8c898", "#fbe6ee", []);
+    at(g, "tapis_rondrose", 120, 280, 2.4); at(g, "litDouble_rose", 40, 170, 2.2); at(g, "chevetClair", 150, 180, 2.2); at(g, "lampeChevet_rose", 152, 158, 2.2); at(g, "armoirePeinte", 270, 150, 2); at(g, "tableauSoleil", 190, 146, 2); at(g, "fenetre", 0, 0); at(g, "ours", 290, 360, 2.4); at(g, "monstera", 40, 380, 2.4);
+    g.save(); g.globalAlpha = .8; at(g, "coiffeuse", 190, 300, 2.2); g.restore(); g.strokeStyle = "#3aa05a"; g.setLineDash([5, 4]); g.lineWidth = 2; g.strokeRect(190, 290, 72, 40); g.setLineDash([]); btn(g, 200, 352, 16, "#7ab4e8", "↻"); btn(g, 238, 352, 16, "#6cc287", "✔"); btn(g, 276, 352, 16, "#e0566b", "🗑");
+    tag(g, 185, 56, "🛋️ Décorer · Chambre · gratuit");
+    panel(g, 10, 490, 350, 240); g.fillStyle = "#5a3a3a"; g.font = "900 14px Segoe UI"; g.fillText("Chambre", 24, 516); g.fillStyle = "#b07ad0"; g.font = "800 11px Segoe UI"; g.fillText("Salon · Cuisine · Bain · Bureau · Lumières · Plantes · Noël…", 90, 516);
+    const pick = ["litSimple_bleu", "litBaldaquin", "hamac", "berceau", "armoireBlanche", "commodeRose", "coiffeuse", "miroirPied", "coffreJouets", "malleMarin", "paravent", "penderie"];
+    pick.forEach((id, i) => { const x = 20 + (i % 6) * 56, y = 528 + Math.floor(i / 6) * 96; g.fillStyle = id === "coiffeuse" ? "#fff1c4" : "#fff"; g.beginPath(); g.roundRect(x, y, 50, 88, 10); g.fill(); g.save(); g.translate(x + 4, y + 38); DECOR.draw(id, g, id.startsWith("lit") || id === "hamac" ? .9 : 1.4, 1); g.restore(); g.fillStyle = "#5a3a3a"; g.font = "700 8.5px Segoe UI"; g.textAlign = "center"; wrapText(g, DECOR.get(id).name, x + 25, y + 72, 46, 9); g.textAlign = "left"; });
+    row.appendChild(ph); }
+  { const ph = $(`<div><div class="phone"></div><div class="cap">Les objets s'utilisent<small>S'asseoir, dormir (passe la nuit), allumer, jouer du piano…</small></div></div>`); const [c, g] = cv(370, 740); ph.querySelector(".phone").appendChild(c);
+    g.fillStyle = "#2a2230"; g.fillRect(0, 0, 370, 740); room(g, 15, 110, 340, 470, "", "#d8b088", "#eef4e8", []);
+    at(g, "chemineeBrique", 150, 170, 2.4); at(g, "tapis_lumeàspirales", 90, 330, 2.2); at(g, "fauteuil_fleuri", 40, 330, 2.2); at(g, "sapin", 260, 200, 2.4); at(g, "cadeau_rouge", 250, 330, 2); at(g, "cadeau_bleu", 290, 340, 2); at(g, "guirlandeNoel", 30, 150, 2); at(g, "chaussette", 150, 150, 2); at(g, "piano", 40, 450, 2.2); at(g, "lampadaire_dorée", 300, 450, 2.2);
+    at(g, "canape_vertsauge", 105, 262, 2.2); person(g, 145, 300, ME, "", 2.2); person(g, 185, 300, HER, "", 2.2); tag(g, 165, 236, "Assis au coin du feu ♥");
+    g.fillStyle = "rgba(255,255,255,.95)"; g.beginPath(); g.roundRect(20, 600, 330, 110, 18); g.fill(); g.fillStyle = "#c86a8a"; g.font = "900 14px Segoe UI"; g.fillText("Sapin de Noël", 36, 626); g.fillStyle = "#5a3a3a"; g.font = "600 12px Segoe UI"; g.fillText("Ramasser pour l'illuminer. Les boules se posent dessus.", 36, 646);
+    ["🌟 Illuminer", "🎁 Ouvrir les cadeaux", "🪑 Se lever"].forEach((t, i) => { g.fillStyle = "#ffe8f0"; g.beginPath(); g.roundRect(36 + i * 104, 664, 98, 30, 15); g.fill(); g.fillStyle = "#c86a8a"; g.font = "800 11px Segoe UI Emoji"; g.fillText(t, 44 + i * 104, 684); });
+    row.appendChild(ph); }
+  row.appendChild($(`<div class="note" style="width:300px"><h3>La décoration</h3>• <b>Gratuite</b> et illimitée : c'est pour le plaisir et l'immersion.<br>• 3 couches : <b>au sol</b> (meubles, tapis), <b>au mur</b> (tableaux, rideaux, guirlandes), <b>dessus</b> (bougies, livres, boules de sapin posées sur un meuble ou sur le sapin).<br>• Grille fine, on tourne par quart de tour, on peut ranger ou déplacer.<br>• <b>153 objets utilisables</b> : s'asseoir, dormir, allumer, jouer, lire, ouvrir, se baigner, câliner…<br>• Dormir dans un lit fait passer la nuit (si les deux joueurs sont couchés en duo).<br>• Les statuettes des Gardiens se débloquent en les libérant.<br>• <b>Noël : 31 objets</b> (sapins, boules, cadeaux, bonhomme de neige, calendrier de l'Avent…).</div>`));
+  return el;
+}
+// ================================================================ planches 6 et 7 : tout le catalogue de déco
+function plancheDeco(id, title, cats) {
+  const el = $(`<div class="planche" id="${id}"><h1>${title}</h1><div class="sub">Tous les objets de décoration, dessinés dans le style du jeu · ⚡ = objet utilisable</div><div class="deco"></div></div>`);
+  const box = el.querySelector(".deco");
+  for (const cat of cats) {
+    const items = DECOR.LIST.filter((x) => x.cat === cat); box.appendChild($(`<div class="ctitle">${cat} · ${items.length}</div>`));
+    items.forEach((it) => { const d = $(`<div class="it"></div>`); const [c, g] = cv(84, 66); const k = Math.min(1.7, 60 / (Math.max(it.size[0], it.size[1]) * 16 + 14)); const W = it.size[0] * 16 * k, H = it.size[1] * 16 * k; g.save(); g.translate(42 - W / 2, it.layer === "mur" ? 54 : 58 - H); DECOR.draw(it.id, g, k, 1.2); g.restore(); d.appendChild(c); d.appendChild($(`<div class="n">${it.name}</div>`)); d.appendChild($(`<div class="u">${it.use ? "⚡ " + it.use : "&nbsp;"}</div>`)); box.appendChild(d); });
+  }
+  return el;
+}
+document.body.append(planche1(), planche2(), plancheVillage(), planche3(), planche4(), planche5(), plancheVetements(),
+  plancheDeco("p6", "6 · Catalogue de déco intérieure (1/2)", ["Chambre", "Salon", "Cuisine", "Salle de bain", "Bureau", "Lumières"]),
+  plancheDeco("p7", "7 · Catalogue de déco intérieure (2/2)", ["Plantes", "Murs et sols", "Musique et jeux", "Kalua et Lumes", "Noël", "Divers"]), plancheExterieur());
+window.ready = true;
+</script>
+</body>
+</html>

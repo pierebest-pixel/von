@@ -61,6 +61,7 @@ async function play(id) {
   const sp = P.pos && G.world.walkable(P.pos.x, P.pos.y) ? P.pos : s.savedPos && G.world.walkable(s.savedPos.x, s.savedPos.y) ? s.savedPos : { x: G.world.spawn.x + (s.island.owner === me.uid ? -26 : 26), y: G.world.spawn.y };
   G.p = { x: sp.x, y: sp.y, dir: sp.d || "down", moving: false, walk: 0, swing: 0, roll: 0, rollV: [0, 0], cool: 0, a: "", at: 0, dust: 0, kx: 0, ky: 0, shield: 0 };
   G.mode = "world"; G.zone = "w"; Game.camSnap(); G.place = G.world.placeName(G.p.x, G.p.y); G.lastSave = Date.now();
+  Village.init(s); Village.stopBuild(); if (Village.blocked(G.p.x, G.p.y)) { G.p.x = Village.CX; G.p.y = Village.CY + 330; }
   Act.clear(); Act.setEnv(worldEnv());
   G.others.clear(); G.parts = [];
   for (const uid of s.others) {
@@ -110,7 +111,7 @@ function addBot(b) {
 function updateBot(dt) {
   const B = G.bot; if (!B || !G.p) return;
   if (G.mode === "battle" || G.mode === "cut") return;
-  const o = B.o, p = G.p, z = G.mode === "cave" ? `c${Dungeon.n}:${Dungeon.room ? Dungeon.room.id : ""}` : "w";
+  const o = B.o, p = G.p, z = G.mode === "cave" ? `c${Dungeon.n}:${Dungeon.room ? Dungeon.room.id : ""}` : G.mode === "house" ? G.zone : "w";
   const last = B.trail[B.trail.length - 1];
   // changement de lieu (grotte, salle, téléportation) : le compagnon arrive juste derrière toi
   if (z !== B.zone || !last || Math.hypot(p.x - last.x, p.y - last.y) > 260) {
@@ -157,7 +158,7 @@ function pickupToast(id, txt) {
 
 function sendPos(force, s = G.session) {
   if (!s || !G.p) return;
-  const p = G.p, z = G.mode === "cave" ? `c${Dungeon.n}:${Dungeon.room ? Dungeon.room.id : ""}` : "w";
+  const p = G.p, z = G.mode === "cave" ? `c${Dungeon.n}:${Dungeon.room ? Dungeon.room.id : ""}` : G.mode === "house" ? G.zone : "w";
   const k = `${Math.round(p.x)},${Math.round(p.y)},${p.dir},${p.moving},${p.at},${z}`;
   if (!force && k === G.lastKey && performance.now() - (G.lastSentT || 0) < 3000) return;
   G.lastKey = k; G.lastSentT = performance.now(); G.lastSave = Date.now();
@@ -235,12 +236,14 @@ function doAction(a) {
     p.swing = .32; p.a = "hit"; p.at = Date.now(); Music.sfx("swing", .5);
     if (Act.playerHit(p, weaponDmg())) { sendPos(true); return; }
     if (G.mode === "cave") { Dungeon.hitWorld(p); sendPos(true); return; }
+    if (G.mode === "house") { sendPos(true); return; }
     if (Story.hit && Story.hit(p)) { sendPos(true); return; }
     hitTarget(p.x, p.y, p.dir, true);
     sendPos(true);
   } else if (a === "grab" && p.roll <= 0) {
     p.a = "grab"; p.at = Date.now(); p.swing = .2;
     if (G.mode === "cave") { Dungeon.interact(p); sendPos(true); return; }
+    if (G.mode === "house") { House.interact(p); sendPos(true); return; }
     worldInteract(p);
     sendPos(true);
   } else if (a === "dodge" && p.roll <= 0 && p.cool <= 0) {
@@ -262,6 +265,7 @@ function worldInteract(p) {
   const T = Net.now();
   const n = NPC.nearest(p.x, p.y, T, 80);
   if (n) { const s = n.s; p.dir = Math.abs(s.x - p.x) > Math.abs(s.y - p.y) ? (s.x < p.x ? "left" : "right") : (s.y < p.y ? "up" : "down"); Story.talk(n.n.id); return; }
+  if (Village.interact(p)) return;
   if (Story.interact && Story.interact(p)) return;
   const cave = G.world.nearest(p.x, p.y, p.dir, ["cave"], 150);
   if (cave) { Story.caveDoor(cave.cave.n); return; }
@@ -402,9 +406,10 @@ function frame(now) {
     updateBot(dt);
     if (G.mode === "world") { updateWorld(dt); renderWorld(); }
     else if (G.mode === "cave") { updateCave(dt); renderCave(); }
+    else if (G.mode === "house") { movePlayer(dt, House.move); House.update(dt); sendPos(false); updateOthers(dt); House.render(ctx, innerWidth, innerHeight); }
     else if (G.mode === "battle") { ctx.setTransform(DPR, 0, 0, DPR, 0, 0); Battle.render(ctx, innerWidth, innerHeight, dt); }
     else if (G.mode === "cut") { ctx.setTransform(DPR, 0, 0, DPR, 0, 0); ctx.fillStyle = "#000"; ctx.fillRect(0, 0, innerWidth, innerHeight); Cutscene.render(ctx, innerWidth, innerHeight, dt); }
-    if (G.mode === "world" || G.mode === "cave") drawHUD(dt);
+    if (G.mode === "world" || G.mode === "cave" || G.mode === "house") drawHUD(dt);
     if (G.fadeA > 0) { ctx.setTransform(DPR, 0, 0, DPR, 0, 0); ctx.fillStyle = `rgba(0,0,0,${G.fadeA})`; ctx.fillRect(0, 0, innerWidth, innerHeight); }
     drawMinimap(now);
   } catch (e) { console.error(e); }
@@ -417,7 +422,7 @@ function movePlayer(dt, moveFn) {
   p.swing = Math.max(0, p.swing - dt); p.cool = Math.max(0, p.cool - dt);
   let vx = 0, vy = 0;
   if (p.roll > 0) { p.roll = Math.max(0, p.roll - dt); vx = p.rollV[0] * 380; vy = p.rollV[1] * 380; }
-  else { const sp = G.input.run ? 260 : 150; vx = v.x * sp; vy = v.y * sp; if (v.x || v.y) p.dir = Math.abs(v.x) > Math.abs(v.y) + .01 ? (v.x < 0 ? "left" : "right") : (v.y < 0 ? "up" : "down"); }
+  else { const sp = (G.input.run ? 260 : 150) * (G.buffSpeed > Date.now() ? 1.3 : 1); vx = v.x * sp; vy = v.y * sp; if (v.x || v.y) p.dir = Math.abs(v.x) > Math.abs(v.y) + .01 ? (v.x < 0 ? "left" : "right") : (v.y < 0 ? "up" : "down"); }
   if (p.kx || p.ky) { vx += p.kx; vy += p.ky; p.kx *= Math.pow(.002, dt); p.ky *= Math.pow(.002, dt); if (Math.abs(p.kx) + Math.abs(p.ky) < 10) p.kx = p.ky = 0; }
   p.moving = Boolean(vx || vy) && p.roll <= 0;
   if (vx || vy) { const n = moveFn(p.x, p.y, p.x + vx * dt, p.y + vy * dt); p.x = n.x; p.y = n.y; p.walk = (p.walk + dt * (G.input.run ? 3.2 : 2.2)) % 1;
@@ -435,7 +440,8 @@ function updateOthers(dt) {
 
 function updateWorld(dt) {
   const p = G.p, W = G.world;
-  movePlayer(dt, (x, y, nx, ny) => W.move(x, y, nx, ny));
+  movePlayer(dt, (x, y, nx, ny) => { const a = W.move(x, y, nx, ny); return Village.move(x, y, a.x, a.y); });
+  Village.updateBuild(dt);
   Act.update(dt);
   sendPos(false);
   updateOthers(dt);
@@ -518,8 +524,10 @@ function renderWorld() {
   const view = { x0: G.cam.x - vw / 2 / z, x1: G.cam.x + vw / 2 / z, y0: G.cam.y - vh / 2 / z, y1: G.cam.y + vh / 2 / z }; G.view = view;
   ctx.save(); ctx.translate(vw / 2 + sh.x, vh / 2 + sh.y); ctx.scale(z, z); ctx.translate(-G.cam.x, -G.cam.y);
   W.drawGround(ctx, view, G.t);
+  Village.drawGround(ctx, view);
   if (Story.drawGround) Story.drawGround(ctx, view, G.t);
-  const items = W.visibleSolids(view, []).map((s) => ({ y: s.y, s }));
+  const items = W.visibleSolids(view, []).filter((s) => !Village.covers(s.x, s.y)).map((s) => ({ y: s.y, s }));
+  Village.collect(items, view);
   const animals = Creatures.visible(view, T, W, []).filter((it) => !animalHidden(it.animal));
   items.push(...animals);
   NPC.visible(view, T, items);
@@ -547,7 +555,7 @@ function renderWorld() {
     const n = NPC.nearest(G.p.x, G.p.y, T, 80);
     if (n) hintBubble(ctx, n.s.x, n.s.y - (n.n.tree ? 270 : 108), "💬 Ramasser pour parler");
     else {
-      const sp = Story.hintAt && Story.hintAt(G.p);
+      const sp = Village.hintAt(G.p) || (Story.hintAt && Story.hintAt(G.p));
       if (sp) hintBubble(ctx, sp.x, sp.y, sp.text);
       else { const o = W.nearest(G.p.x, G.p.y, G.p.dir, ["cave"], 150) || W.nearest(G.p.x, G.p.y, G.p.dir, GRAB_KINDS, 46) || W.nearest(G.p.x, G.p.y, G.p.dir, HIT_KINDS);
         if (o && !o.gone) { const hy = o.kind === "cave" ? o.y - 120 : o.kind === "palm" ? o.y - o.s * 22 : o.kind === "jtree" ? o.y - o.s * 26 : GRAB_KINDS.includes(o.kind) ? o.y - 18 : o.y - (o.r || 10) - 14; hintBubble(ctx, o.x, hy, hintFor(o)); } }

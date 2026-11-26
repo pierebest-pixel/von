@@ -49,9 +49,9 @@ function makeWorld() {
   for (const p of M.PLACES) { const [kind, x, y, extra] = p; fixed.push({ kind, x: x * K, y: y * K, s: S[kind], r: R[kind] || 0, extra, ground: kind === "field" || kind === "pier" }); }
   for (const cv of M.CAVES) fixed.push({ kind: "cave", x: cv.x * K, y: cv.y * K, s: 3.6, r: 60, cave: cv });
   for (const b of BR) fixed.push({ kind: "bridge", x: b.x, y: b.y, ang: b.ang, r: 0, ground: true });
-  fixed.push({ kind: "sign", x: M.VILLAGE.x * K + 40, y: M.VILLAGE.y * K + 160, r: 8, text: "Votre village" });
+  fixed.push({ kind: "sign", x: M.VILLAGE.x * K + 120, y: M.VILLAGE.y * K + 640, r: 8, text: "Village de Kalua" });
   const avoid = fixed.filter((o) => o.kind !== "bridge").map((o) => [o.x, o.y, Math.max(70, (o.r || 0) + 50)]);
-  avoid.push([M.VILLAGE.x * K, M.VILLAGE.y * K, 900]);
+  avoid.push([M.VILLAGE.x * K, M.VILLAGE.y * K, 1500]); // le village de base : pas d'arbres sur les bâtiments
 
   // ---------------------------------------------------------------- génération par morceaux
   const chunks = new Map();
