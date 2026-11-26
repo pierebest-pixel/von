@@ -135,12 +135,15 @@ function showIslands() {
 
   function draw() {
     const cards = islands.map((x) => {
-      const on = online[x.id];
-      return `<div class="card"><canvas data-seed="${Number(x.seed) || 1}"></canvas><div class="info"><div class="t">Île avec ${esc(x.with)}</div>
+      const on = online[x.id], lv = `<span class="lvl ${esc(x.difficulty || "normal")}">${esc(Prog.DIFF[x.difficulty || "normal"]?.name || "Normal")}</span>`;
+      if (x.solo) return `<div class="card"><canvas data-seed="${Number(x.seed) || 1}"></canvas><div class="info"><div class="t">Île en solo ${lv}</div>
+        <div class="s">🤖 ${esc(x.with)} t'accompagne</div></div>
+        <button class="more" data-more="${esc(x.id)}" aria-label="Options">⋯</button><button class="go" data-play="${esc(x.id)}">Jouer</button></div>`;
+      return `<div class="card"><canvas data-seed="${Number(x.seed) || 1}"></canvas><div class="info"><div class="t">Île avec ${esc(x.with)} ${lv}</div>
         <div class="s"><span class="dot ${on ? "on" : ""}"></span>${esc(x.with)} ${on ? "est sur l'île" : "n'est pas là"}</div></div>
         <button class="more" data-more="${esc(x.id)}" aria-label="Options">⋯</button><button class="go" data-play="${esc(x.id)}">Jouer</button></div>`;
     }).join("");
-    list.innerHTML = (islands.length ? cards : `<p class="empty-txt">Pas encore d'île.<br>Crée-en une et invite quelqu'un pour vous échouer à deux !</p>`)
+    list.innerHTML = (islands.length ? cards : `<p class="empty-txt">Pas encore d'île.<br>Crée-en une : à deux avec un ami, ou en solo avec un compagnon.</p>`)
       + `<button class="ghost" data-x="new">+ Nouvelle île</button>`;
     list.querySelectorAll("canvas[data-seed]").forEach((c) => {
       c.width = 62 * DPR; c.height = 62 * DPR; const g = c.getContext("2d"); g.scale(DPR, DPR);
@@ -155,27 +158,56 @@ function showIslands() {
   cleanups.push(unsub, () => watchers.forEach((u) => u()));
 
   ui.querySelector(".islands").addEventListener("click", async (e) => {
-    const t = e.target.closest("[data-x],[data-play],[data-more],[data-invite],[data-leave],.dim");
+    const t = e.target.closest("[data-x],[data-play],[data-more],[data-invite],[data-leave],[data-mode],[data-lvl],.dim");
     if (!t) return;
     if (t.dataset.x === "edit") return showCreator(false);
     if (t.dataset.x === "title") return showTitle();
     if (t.dataset.play) return play(t.dataset.play);
-    if (t.dataset.x === "new") return friendSheet();
+    if (t.dataset.x === "new") { pick = {}; return modeSheet(); }
+    if (t.dataset.mode) { pick.mode = t.dataset.mode; return levelSheet(); }
+    if (t.dataset.lvl) { pick.lvl = t.dataset.lvl; return pick.mode === "solo" ? botSheet() : friendSheet(); }
+    if (t.dataset.x === "rebot") { pick.bot.avatar = Avatar.random(); avatarCanvas($("#botcv"), pick.bot.avatar, { k: 2.6, cy: .55, t: 1 }); return; }
+    if (t.dataset.x === "startsolo") {
+      const nm = ($("#botname")?.value || "").trim().slice(0, 16) || pick.bot.name;
+      const id = Net.createSolo(pick.lvl, { name: nm, avatar: pick.bot.avatar }); closeSheet(); return play(id);
+    }
     if (t.dataset.more) {
       const x = islands.find((i) => i.id === t.dataset.more);
-      return sheet(`<h3>Île avec ${esc(x.with)}</h3><button class="opt-btn red" data-leave="${esc(x.id)}">Retirer cette île de ma liste</button><button class="opt-btn" data-x="close">Annuler</button>`);
+      return sheet(`<h3>${x.solo ? "Île en solo" : "Île avec " + esc(x.with)}</h3>${x.solo ? `<div class="sub" style="margin-bottom:4px">Retirer une île en solo efface aussi sa partie.</div>` : ""}<button class="opt-btn red" data-leave="${esc(x.id)}">Retirer cette île de ma liste</button><button class="opt-btn" data-x="close">Annuler</button>`);
     }
     if (t.dataset.leave) { closeSheet(); await Net.leaveIsland(t.dataset.leave).catch(() => {}); return; }
     if (t.dataset.invite) {
       const f = Net.friends().find((x) => x.uid === t.dataset.invite);
       t.disabled = true; t.textContent = "…";
-      try { const id = await Net.createIsland(f); closeSheet(); play(id); }
+      try { const id = await Net.createIsland(f, pick.lvl || "normal"); closeSheet(); play(id); }
       catch (err) { console.warn(err); t.disabled = false; t.textContent = "Inviter"; toastScreen("Connexion impossible, réessaie."); }
       return;
     }
     if (t.classList.contains("dim") || t.dataset.x === "close") closeSheet();
   });
 
+  // nouvelle île : d'abord à deux ou en solo, puis le niveau, puis l'ami ou le compagnon
+  let pick = {};
+  function modeSheet() {
+    sheet(`<h3>Nouvelle île</h3><div class="sub" style="margin-bottom:6px">Comment veux-tu jouer ?</div>
+      <button class="opt-btn choice" data-mode="duo"><b>👫 À deux</b><small>Invite un ami Von. Vous jouez ensemble en ligne.</small></button>
+      <button class="opt-btn choice" data-mode="solo"><b>🧍 En solo</b><small>Un compagnon (un bot) te suit partout, à la place du deuxième joueur.</small></button>`);
+  }
+  function levelSheet() {
+    sheet(`<h3>Quel niveau ?</h3><div class="sub" style="margin-bottom:6px">${pick.mode === "solo" ? "En solo" : "À deux"} · il ne pourra plus changer</div>
+      <button class="opt-btn choice" data-lvl="facile"><b>🌴 Facile</b><small>Tu perds moitié moins de cœurs. Les ennemis ont moins de vie.</small></button>
+      <button class="opt-btn choice" data-lvl="normal"><b>🌊 Normal</b><small>L'aventure comme elle a été pensée.</small></button>
+      <button class="opt-btn choice" data-lvl="challenge"><b>🌋 Challenge</b><small>Les coups font plus mal. Les ennemis et les boss sont plus solides.</small></button>`);
+  }
+  function botSheet() {
+    const names = ["Lou", "Kaï", "Mina", "Noé", "Tika", "Elio", "Nina", "Sacha"];
+    pick.bot = { name: names[Math.floor(Math.random() * names.length)], avatar: Avatar.random() };
+    sheet(`<h3>Ton compagnon</h3><div class="sub" style="margin-bottom:6px">Il te suit sur l'île et dans les grottes.</div>
+      <div class="botrow"><canvas id="botcv"></canvas><button class="round dice" data-x="rebot" aria-label="Un autre">🎲</button></div>
+      <input id="botname" class="botname" maxlength="16" value="${esc(pick.bot.name)}" aria-label="Nom du compagnon">
+      <button class="big" data-x="startsolo" style="margin:12px 16px 0">C'est parti !</button>`);
+    avatarCanvas($("#botcv"), pick.bot.avatar, { k: 2.6, cy: .55, t: 1 });
+  }
   function friendSheet() {
     const fr = Net.friends();
     const body = fr.length

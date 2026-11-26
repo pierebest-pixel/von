@@ -1,7 +1,7 @@
 # Les Échoués de Kalua — résumé du projet (à lire en début de conversation)
 
 Jeu d'aventure à deux, en ligne, dans l'appli **Von** (dépôt `pierebest-pixel/von`, dossier `games/kalua/`), pensé pour jouer avec sa copine.
-**Version publiée : 0.4.1** (26/11/2026). Les branches `main` et `kalua` sont identiques.
+**Version publiée : 0.5** (26/11/2026). Les branches `main` et `kalua` sont identiques.
 
 Documents à lire selon le besoin :
 - **`design/kalua/LOG.md`** : le rapport détaillé du développement autonome (fichiers, systèmes, salles, boss, quêtes, tests, bugs).
@@ -20,7 +20,7 @@ Documents à lire selon le besoin :
 - On valide chaque étape ensemble : **maquettes en images d'abord**, captures du vrai jeu avant de publier.
 - Publier sur `main` **seulement quand l'utilisateur dit « publie »**.
 - À chaque publication :
-  - augmenter `APP_CACHE` dans `sw.js` (actuellement `von-app-v9`) ;
+  - augmenter `APP_CACHE` dans `sw.js` (actuellement `von-app-v10`) ;
   - augmenter la version dans `games/kalua/menus.js` (écran titre) et dans `games/catalog.json`.
 - L'utilisateur veut concevoir **lui-même les boss finaux des 3 grottes des îles** (6 Tortues, 7 Phare, 8 Étoiles). Ne pas les créer sans lui.
 - Crédits de fin : **Sixte Maron** et **Claude**.
@@ -86,6 +86,20 @@ Documents à lire selon le besoin :
 - **Bug de l'intro corrigé** : après la cinématique, le joueur était posé dans l'eau et ne pouvait plus bouger, donc Nalia l'attendait sans fin. Maintenant, chaque téléportation pose le joueur sur la terre ferme (`world.snap`), et le joueur peut toujours sortir d'une case interdite.
 - Escorte de Nalia plus solide : elle reprend au bon endroit après un rechargement, revient chercher le joueur s'il s'est perdu, et l'arrivée se déclenche aussi en entrant dans le village. L'objectif « Suis Nalia jusqu'au village » reste affiché.
 - **Objets et lieux hors d'atteinte corrigés** : la tour de Lili était dans la mer (déplacée en 1300, 440) ; l'indice du journal, le gouvernail, l'harmonica de Tim, les perles d'Ondine, une étoile tombée, le ponton et les habitants placés dans l'eau sont maintenant ramenés au bord.
+
+### Kalua 0.5 (solo et niveaux, publié le 26/11/2026)
+- **« + Nouvelle île »** demande dans l'ordre : 👫 À deux ou 🧍 En solo, puis le niveau (🌴 Facile, 🌊 Normal, 🌋 Challenge), puis l'ami à inviter ou le compagnon (nom + apparence, 🎲 pour en changer). Le niveau ne change plus ensuite.
+- **Niveaux** (`state.js`, `Prog.DIFF`) :
+  - Facile : dégâts reçus ×0,5, vie des ennemis ×0,75 ;
+  - Normal : inchangé ;
+  - Challenge : dégâts reçus ×1,5, vie des ennemis ×1,3.
+  - Les dégâts passent tous par `Prog.hurt` (les fractions sont mises de côté). La vie des ennemis passe par `Prog.foeHp` (temps réel, boss, tour par tour).
+  - Le niveau est enregistré dans l'île (`islands/{id}/difficulty`), donc les deux joueurs ont le même. Les anciennes îles sont en Normal.
+- **Mode solo** :
+  - les îles en solo sont gardées dans le téléphone (`kalua:solo:{uid}`), sans Firebase. Leur partie n'est pas sauvegardée en ligne ;
+  - le compagnon (bot) remplace le deuxième joueur partout (`addBot` / `updateBot` dans `play.js`) : il suit ton chemin sur l'île et dans les grottes, imite tes gestes, apparaît dans les cinématiques, sur la carte et dans le Chant à Deux ;
+  - comme le deuxième joueur en duo, il ne combat pas à ta place, donc l'équilibrage est le même en solo et en duo.
+- Le menu en jeu affiche le niveau.
 
 ### Architecture du code (`games/kalua/`)
 | Fichier | Rôle |

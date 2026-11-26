@@ -62,7 +62,22 @@ const Prog = (() => {
 
   // ---------------------------------------------------------------- vie
   function heal(n) { P.hp = Math.min(P.maxHp, P.hp + n); changed(); }
-  function hurt(n) { P.hp = Math.max(0, P.hp - n); changed(); return P.hp <= 0; }
+  // ---------------------------------------------------------------- niveau de difficulté (choisi à la création de l'île, le même pour les deux joueurs)
+  //  facile : on encaisse moitié moins, les ennemis ont 25 % de vie en moins
+  //  normal : le jeu tel qu'il a été réglé
+  //  challenge : on encaisse 50 % de plus, les ennemis ont 30 % de vie en plus
+  const DIFF = { facile: { name: "Facile", dmg: .5, hp: .75 }, normal: { name: "Normal", dmg: 1, hp: 1 }, challenge: { name: "Challenge", dmg: 1.5, hp: 1.3 } };
+  let diff = "normal";
+  const setDiff = (d) => { diff = DIFF[d] ? d : "normal"; };
+  const diffInfo = () => DIFF[diff];
+  // vie d'un ennemi selon le niveau (jamais moins de 1)
+  const foeHp = (hp) => (diff === "normal" || hp <= 1 ? hp : Math.max(1, Math.round(hp * DIFF[diff].hp)));
+  function hurt(n) {
+    // les dégâts sont mis de côté au dixième près : en Facile, deux coups d'un cœur retirent un cœur ; en Challenge, un coup sur deux en retire deux
+    let d = n;
+    if (diff !== "normal" && n > 0) { P.dmgAcc = (P.dmgAcc || 0) + n * DIFF[diff].dmg; d = Math.floor(P.dmgAcc + 1e-6); P.dmgAcc -= d; if (diff === "challenge") d = Math.max(d, n); }
+    P.hp = Math.max(0, P.hp - d); changed(); return P.hp <= 0;
+  }
   function addMaxHp(n = 1) { P.maxHp += n; P.hp = P.maxHp; changed(); }
 
   // ---------------------------------------------------------------- histoire
@@ -80,7 +95,7 @@ const Prog = (() => {
 
   return {
     get P() { return P; }, load, merge, save, onChange, changed,
-    count, has, give, take, hasAll, pay, heal, hurt, addMaxHp,
+    count, has, give, take, hasAll, pay, heal, hurt, addMaxHp, DIFF, setDiff, diffInfo, foeHp, get diff() { return diff; },
     flag, set, learn, knows, quest, setQuest, finishQuest, kill, isDead, note, cave,
     reset() { P = DEF(); changed(); },
   };

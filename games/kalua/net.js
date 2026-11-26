@@ -46,32 +46,58 @@ const Net = (() => {
   const r = (path) => fb.ref(db, path);
   const on = (path, cb) => fb.onValue(r(path), (s) => cb(s.val()), () => cb(null));
 
+  // les îles à deux (en ligne) et les îles en solo (dans le téléphone), les plus récentes d'abord
   function watchMyIslands(cb) {
-    return on(`userIslands/${me.uid}`, (v) => {
-      const list = Object.entries(v || {}).map(([id, x]) => ({ id, ...x })).sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
-      cb(list);
-    });
+    let duo = [];
+    const emit = () => cb(duo.concat(soloList()).sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0)));
+    emit();
+    const off = on(`userIslands/${me.uid}`, (v) => { duo = Object.entries(v || {}).map(([id, x]) => ({ id, ...x })); emit(); });
+    const onSolo = () => emit(); addEventListener("kalua:solo", onSolo);
+    return () => { off(); removeEventListener("kalua:solo", onSolo); };
   }
 
   const watchOnline = (id, uid, cb) => on(`islands/${id}/players/${uid}/online`, (v) => cb(v === true));
 
-  async function createIsland(friend) {
+  // ---------------------------------------------------------------- îles en solo : gardées dans le téléphone, jouées avec un compagnon (bot)
+  const soloKey = () => `kalua:solo:${me ? me.uid : "?"}`;
+  const soloList = () => { const l = ls(soloKey(), []); return Array.isArray(l) ? l : []; };
+  const soloSave = (l) => { try { localStorage.setItem(soloKey(), JSON.stringify(l)); } catch { /* ignore */ } dispatchEvent(new Event("kalua:solo")); };
+  const isSolo = (id) => String(id).startsWith("solo-");
+  function createSolo(difficulty, bot) {
+    const id = "solo-" + Date.now().toString(36) + Math.floor(Math.random() * 1e6).toString(36);
+    const x = { id, solo: true, with: bot.name, bot, difficulty, createdAt: Date.now(), seed: Math.floor(Math.random() * 2 ** 31) };
+    soloSave([x].concat(soloList())); return id;
+  }
+  function soloSession(id) {
+    const x = soloList().find((i) => i.id === id);
+    if (!x) throw Object.assign(new Error("gone"), { code: "gone" });
+    const island = { owner: me.uid, name: `L'île de ${me.name}`, seed: x.seed, createdAt: x.createdAt, members: { [me.uid]: { name: me.name } }, difficulty: x.difficulty || "normal", solo: true, bot: x.bot };
+    const noop = () => {};
+    return { id, island, others: [], me, savedPos: null, progress: null, solo: true,
+      saveProgress: noop, watchPlayer: noop, watchPos: noop, sendPos: noop, setOnline: noop, async leave() {} };
+  }
+
+  async function createIsland(friend, difficulty = "normal") {
     const id = fb.push(r("islands")).key;
     const now = Date.now();
     const seed = Math.floor(Math.random() * 2 ** 31);
     const name = `L'île de ${me.name} & ${friend.name}`;
     await fb.update(r("/"), {
-      [`islands/${id}`]: { owner: me.uid, name, seed, createdAt: now, members: { [me.uid]: { name: me.name }, [friend.uid]: { name: friend.name } } },
-      [`userIslands/${me.uid}/${id}`]: { with: friend.name, withUid: friend.uid, createdAt: now, seed },
-      [`userIslands/${friend.uid}/${id}`]: { with: me.name, withUid: me.uid, createdAt: now, seed },
+      [`islands/${id}`]: { owner: me.uid, name, seed, createdAt: now, difficulty, members: { [me.uid]: { name: me.name }, [friend.uid]: { name: friend.name } } },
+      [`userIslands/${me.uid}/${id}`]: { with: friend.name, withUid: friend.uid, createdAt: now, seed, difficulty },
+      [`userIslands/${friend.uid}/${id}`]: { with: me.name, withUid: me.uid, createdAt: now, seed, difficulty },
     });
     return id;
   }
 
-  const leaveIsland = (id) => fb.remove(r(`userIslands/${me.uid}/${id}`));
+  const leaveIsland = async (id) => {
+    if (isSolo(id)) { soloSave(soloList().filter((x) => x.id !== id)); try { localStorage.removeItem(`kalua:prog:${id}:${me.uid}`); } catch { /* ignore */ } return; }
+    return fb.remove(r(`userIslands/${me.uid}/${id}`));
+  };
 
   // Entrer sur une île : renvoie une session (positions en direct, présence)
   async function enter(id, avatar) {
+    if (isSolo(id)) return soloSession(id);
     const snap = await fb.get(r(`islands/${id}`));
     const island = snap.val();
     if (!island) throw Object.assign(new Error("gone"), { code: "gone" });
@@ -114,5 +140,5 @@ const Net = (() => {
     };
   }
 
-  return { now: () => (Date.now() + offset) / 1000, init, friends, watchMyIslands, watchOnline, createIsland, leaveIsland, enter, get me() { return me; } };
+  return { now: () => (Date.now() + offset) / 1000, init, friends, watchMyIslands, watchOnline, createIsland, leaveIsland, enter, createSolo, isSolo, get me() { return me; } };
 })();

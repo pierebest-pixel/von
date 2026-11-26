@@ -43,7 +43,7 @@ const Act = (() => {
   // ---------------------------------------------------------------- création
   function spawn(type, x, y, o = {}) {
     const d = o.def || E[type]; if (!d) return null;
-    const e = Object.assign({ id: uid++, type, x, y, hx: x, hy: y, vx: 0, vy: 0, hp: d.hp, max: d.hp, d, st: "idle", t: rnd(0, 1), hurt: 0, stun: 0, dir: "left", up: 1, vis: 1, alive: true }, o);
+    const e = Object.assign({ id: uid++, type, x, y, hx: x, hy: y, vx: 0, vy: 0, hp: Prog.foeHp(d.hp), max: Prog.foeHp(d.hp), d, st: "idle", t: rnd(0, 1), hurt: 0, stun: 0, dir: "left", up: 1, vis: 1, alive: true }, o);
     enemies.push(e); return e;
   }
   function clear() { enemies = []; shots = []; zones = []; fx = []; }

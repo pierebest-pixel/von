@@ -148,7 +148,7 @@ const Battle = (() => {
   // ================================================================ combat
   function mkFoe(id, i, n) {
     const d = FOES[id];
-    return { id, d, name: d.name, hp: d.hp, max: d.hp, st: {}, i, x: 0, y: 0, alive: true, guard: false, shield: 0, hide: false, fly: false, stone: false, buff: 0, tele: null, notes: 0, sleep: 0, noHeal: 0, rebirthDone: false, hurt: 0, phase: 0, fake: 0 };
+    return { id, d, name: d.name, hp: Prog.foeHp(d.hp), max: Prog.foeHp(d.hp), st: {}, i, x: 0, y: 0, alive: true, guard: false, shield: 0, hide: false, fly: false, stone: false, buff: 0, tele: null, notes: 0, sleep: 0, noHeal: 0, rebirthDone: false, hurt: 0, phase: 0, fake: 0 };
   }
   const allyStats = { keo: { name: "Kéo", hp: 8, atk: 2, npc: "keo" }, nalia: { name: "Nalia", hp: 10, atk: 2, npc: "nalia" }, tikka: { name: "Mère Tikka", hp: 6, atk: 1, npc: "tikka", healer: true }, oro: { name: "Grand-père Oro", hp: 6, atk: 1, npc: "oro" }, partner: { name: "", hp: 8, atk: 2 } };
 

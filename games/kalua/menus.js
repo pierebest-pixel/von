@@ -103,7 +103,7 @@ function showTitle() {
       <button class="tbtn main" data-x="play">▶&nbsp; JOUER</button>
       <button class="tbtn" data-x="perso">👤&nbsp; Mon personnage</button>
       <button class="tbtn" data-x="settings">⚙️&nbsp; Réglages</button>
-      <div class="ver">version 0.4.1 · Von</div>
+      <div class="ver">version 0.5 · Von</div>
     </div></div>`;
   const cvs = $("#tcv"); let alive = true; const t0 = performance.now();
   startMusic();
@@ -139,7 +139,7 @@ function closeMenu() { closePanel(); G.menuOpen = false; }
 function openMenu() {
   buzz(); G.menuOpen = true; resetInput();
   const o = [...G.others.values()][0];
-  const d = panel(`<h3>Menu</h3><div class="psub"><span class="dot ${o?.online ? "on" : ""}"></span>${o ? `${esc(o.name)} ${o.online ? "est sur l'île" : "n'est pas là"} · ` : ""}le jeu continue</div>
+  const d = panel(`<h3>Menu</h3><div class="psub"><span class="dot ${o?.online ? "on" : ""}"></span>${o ? `${o.bot ? "🤖 " : ""}${esc(o.name)} ${o.bot ? "t'accompagne" : o.online ? "est sur l'île" : "n'est pas là"} · ` : ""}niveau ${esc(Prog.diffInfo().name)} · le jeu continue</div>
     <button class="item main" data-m="resume"><i>▶</i>Reprendre</button>
     <button class="item" data-m="nalia"><i style="background:#e8eeff">🐚</i>${Prog.isDead("nalia") ? "Appeler Coco (conque)" : "Appeler Nalia (conque)"}<span class="chev">›</span></button>
     <button class="item" data-m="quests"><i style="background:#ffe8ec">📜</i>Quêtes<span class="chev">›</span></button>

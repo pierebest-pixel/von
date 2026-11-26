@@ -56,7 +56,7 @@ async function play(id) {
   bigMap(); // prépare l'image de la mini-carte pendant l'écran de chargement
   clearScreen();
   G.session = s; G.world = world();
-  Prog.load(id, me.uid, s); Prog.merge(s.progress);
+  Prog.load(id, me.uid, s); Prog.merge(s.progress); Prog.setDiff(s.island.difficulty || "normal");
   const P = Prog.P;
   const sp = P.pos && G.world.walkable(P.pos.x, P.pos.y) ? P.pos : s.savedPos && G.world.walkable(s.savedPos.x, s.savedPos.y) ? s.savedPos : { x: G.world.spawn.x + (s.island.owner === me.uid ? -26 : 26), y: G.world.spawn.y };
   G.p = { x: sp.x, y: sp.y, dir: sp.d || "down", moving: false, walk: 0, swing: 0, roll: 0, rollV: [0, 0], cool: 0, a: "", at: 0, dust: 0, kx: 0, ky: 0, shield: 0 };
@@ -75,6 +75,8 @@ async function play(id) {
       if (v.at && v.at !== o.seenAt) { const fresh = o.seenAt !== 0; o.seenAt = v.at; if (fresh && z === G.zone) remoteAction(o, v.a); }
     });
   }
+  G.bot = null;
+  if (s.island.solo) addBot(s.island.bot || {});
   updateBadge();
   hud.hidden = false; applySettings(); refreshMagic();
   G.on = true; G.last = performance.now();
@@ -96,8 +98,47 @@ async function leaveGame(next = showIslands) {
 }
 $("#menu-btn").addEventListener("click", () => openMenu());
 
+// ================================================================ le compagnon (mode solo) : un bot qui remplace le deuxième joueur
+// Il suit le joueur pas à pas (en reprenant exactement son chemin, donc jamais dans un mur ou dans l'eau), entre avec lui dans les grottes
+// et imite ses gestes. Comme le deuxième joueur en duo, il ne frappe pas les ennemis à ta place : l'équilibrage est le même.
+function addBot(b) {
+  const o = { uid: "bot", bot: true, name: b.name || "Lou", avatar: b.avatar ? Avatar.normalize(b.avatar) : Avatar.random(), online: true, has: true,
+    x: G.p.x - 40, y: G.p.y + 10, tx: G.p.x - 40, ty: G.p.y + 10, dir: G.p.dir, moving: false, walk: 0, swing: 0, roll: 0, seenAt: 0, zone: "w" };
+  G.others.set("bot", o);
+  G.bot = { o, trail: [], zone: "w", lastAt: G.p.at, act: null, actT: 0, idleT: 0 };
+}
+function updateBot(dt) {
+  const B = G.bot; if (!B || !G.p) return;
+  if (G.mode === "battle" || G.mode === "cut") return;
+  const o = B.o, p = G.p, z = G.mode === "cave" ? `c${Dungeon.n}:${Dungeon.room ? Dungeon.room.id : ""}` : "w";
+  const last = B.trail[B.trail.length - 1];
+  // changement de lieu (grotte, salle, téléportation) : le compagnon arrive juste derrière toi
+  if (z !== B.zone || !last || Math.hypot(p.x - last.x, p.y - last.y) > 260) {
+    B.zone = z; o.zone = z; B.trail = [{ x: p.x, y: p.y }];
+    const back = FACING[p.dir] || [0, 1]; let bx = p.x - back[0] * 34, by = p.y - back[1] * 34 + 4;
+    if (z === "w" && G.world && !G.world.walkable(bx, by)) { bx = p.x; by = p.y; }
+    if (z !== "w") { bx = p.x; by = p.y; }
+    o.x = o.tx = bx; o.y = o.ty = by; o.moving = false; return;
+  }
+  if (Math.hypot(p.x - last.x, p.y - last.y) > 3) { B.trail.push({ x: p.x, y: p.y }); if (B.trail.length > 400) B.trail.shift(); }
+  // il se place à environ 46 pixels derrière toi, sur ton chemin
+  let need = 46, i = B.trail.length - 1, tx = B.trail[i].x, ty = B.trail[i].y;
+  while (i > 0 && need > 0) { const a = B.trail[i], q = B.trail[i - 1], d = Math.hypot(a.x - q.x, a.y - q.y); if (d >= need) { tx = a.x + (q.x - a.x) * (need / d); ty = a.y + (q.y - a.y) * (need / d); need = 0; } else { need -= d; tx = q.x; ty = q.y; i--; } }
+  if (i > 0) B.trail.splice(0, i - 1);
+  const dx = tx - o.tx, dy = ty - o.ty;
+  o.moving = Math.hypot(dx, dy) > .5 || p.moving;
+  if (Math.hypot(dx, dy) > .5) o.dir = Math.abs(dx) > Math.abs(dy) ? (dx < 0 ? "left" : "right") : (dy < 0 ? "up" : "down");
+  else if (!p.moving) { B.idleT += dt; if (B.idleT > 1.2) o.dir = p.x < o.x - 8 ? "left" : p.x > o.x + 8 ? "right" : o.dir; }
+  if (o.moving) B.idleT = 0;
+  o.tx = tx; o.ty = ty;
+  // il imite tes gestes un court instant après toi
+  if (p.at && p.at !== B.lastAt) { B.lastAt = p.at; B.act = p.a; B.actT = .14; }
+  if (B.act) { B.actT -= dt; if (B.actT <= 0) { if (B.act === "hit" || B.act === "cast") o.swing = .32; else if (B.act === "roll") o.roll = .34; else if (B.act === "grab") o.swing = .2; B.act = null; } }
+}
+
 function updateBadge() {
   const o = [...G.others.values()][0];
+  if (o && o.bot) { $("#badge").innerHTML = `<span class="dot on"></span>🤖 ${esc(o.name)} t'accompagne`; return; }
   $("#badge").innerHTML = o ? `<span class="dot ${o.online ? "on" : ""}"></span>${esc(o.name)} ${o.online ? "est sur l'île" : "n'est pas là"}` : "";
 }
 
@@ -358,6 +399,7 @@ function frame(now) {
   const dt = Math.min(.05, (now - G.last) / 1000); G.last = now; G.t += dt;
   if (G.shakeT > 0) G.shakeT -= dt;
   try {
+    updateBot(dt);
     if (G.mode === "world") { updateWorld(dt); renderWorld(); }
     else if (G.mode === "cave") { updateCave(dt); renderCave(); }
     else if (G.mode === "battle") { ctx.setTransform(DPR, 0, 0, DPR, 0, 0); Battle.render(ctx, innerWidth, innerHeight, dt); }

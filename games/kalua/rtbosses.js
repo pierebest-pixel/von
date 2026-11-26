@@ -81,7 +81,7 @@ const RTBoss = (() => {
     reineCendree: { name: "La Reine Cendrée", hp: 90, r: 50, draw: "reineCendree", scale: .7, music: "final", guard: true, phases: [1, .66, .33],
       guardHint: "Un voile de cendre la protège. Disperse-le avec la Bourrasque !",
       intro: "« Deux cœurs… Enfin. Donnez-les-moi, et je vivrai pour toujours. »",
-      onSpawn(e) { const nG = Object.keys(Prog.P.bosses).filter((k) => /^B\d+$/.test(k)).length; e.max = e.hp = Math.max(50, 90 - nG * 3); }, // chaque Gardien libéré affaiblit la Reine
+      onSpawn(e) { const nG = Object.keys(Prog.P.bosses).filter((k) => /^B\d+$/.test(k)).length; e.max = e.hp = Prog.foeHp(Math.max(50, 90 - nG * 3)); }, // chaque Gardien libéré affaiblit la Reine
       move(e, dt, p) {
         if (e.openT > 0) { e.openT -= dt; if (e.openT <= 0) { close(e); e.veil = true; } }
         if (e.phase === 2) { e.fly = (e.fly || 0) + dt; e.x = A.cx + Math.cos(e.fly * .5) * (A.x1 - A.x0) * .3; e.y = A.cy - 30 + Math.sin(e.fly) * 40; }
@@ -163,7 +163,7 @@ const RTBoss = (() => {
     chevaliers: { name: "Les Chevaliers de cendre", hp: 1, r: 1, draw: "chevalierCendre", invisible: true, music: "miniboss", phases: [1],
       onSpawn(e) { e.hp = e.max = 2; e.harmless = true; e.invuln = true; e.vis = 0; e.twins = [0, 1].map((k) => { const s = Act.spawn("cendreux", A.cx + (k ? 140 : -140), A.cy, { scale: 1.6, def: { hp: 12, spd: 85, dmg: 1, r: 24, ai: "duelist", draw: "chevalierCendre" }, variant: k }); s.twin = k; return s; }); },
       move(e, dt) { const [a, b] = e.twins; const dead = e.twins.filter((s) => !s.alive);
-        if (dead.length === 1) { e.rev = (e.rev || 0) + dt; if (e.rev > 8) { const d = dead[0]; d.alive = true; d.hp = 6; Act.enemies.push(d); Act.addFx("poof", d.x, d.y); say("Le chevalier se relève ! Il faut les abattre presque en même temps."); e.rev = 0; } else if (Math.floor(e.rev) !== Math.floor(e.rev - dt)) say(`Vite ! L'autre chevalier se relève dans ${Math.ceil(8 - e.rev)}…`); }
+        if (dead.length === 1) { e.rev = (e.rev || 0) + dt; if (e.rev > 8) { const d = dead[0]; d.alive = true; d.hp = Prog.foeHp(6); Act.enemies.push(d); Act.addFx("poof", d.x, d.y); say("Le chevalier se relève ! Il faut les abattre presque en même temps."); e.rev = 0; } else if (Math.floor(e.rev) !== Math.floor(e.rev - dt)) say(`Vite ! L'autre chevalier se relève dans ${Math.ceil(8 - e.rev)}…`); }
         if (dead.length === 2) { e.hp = 0; Act.kill(e); } },
       pattern() { return [{ w: 1 }]; } },
     salamandreMere: { name: "Salamandre-Mère", hp: 24, r: 40, draw: "salamandreMere", scale: .55, music: "miniboss", phases: [1, .5],
