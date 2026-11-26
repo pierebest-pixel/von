@@ -1,0 +1,36 @@
+{
+  "rules": {
+    "islands": {
+      "$id": {
+        ".read": "auth != null && data.child('members').child(auth.uid).exists()",
+        ".write": "auth != null && (data.exists() ? data.child('members').child(auth.uid).exists() : (newData.child('owner').val() === auth.uid && newData.child('members').child(auth.uid).exists()))",
+        "members": {
+          "$uid": {
+            ".validate": "data.exists() || !root.child('islands').child($id).exists()"
+          }
+        },
+        "owner": {
+          ".validate": "!data.exists() || newData.val() === data.val()"
+        },
+        "pos": {
+          "$uid": {
+            ".validate": "$uid === auth.uid && newData.child('x').isNumber() && newData.child('y').isNumber()"
+          }
+        },
+        "players": {
+          "$uid": {
+            ".validate": "$uid === auth.uid"
+          }
+        }
+      }
+    },
+    "userIslands": {
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid",
+        "$id": {
+          ".write": "auth != null && (auth.uid === $uid || (!data.exists() && newData.parent().parent().parent().child('islands').child($id).child('owner').val() === auth.uid && newData.parent().parent().parent().child('islands').child($id).child('members').child($uid).exists()))"
+        }
+      }
+    }
+  }
+}

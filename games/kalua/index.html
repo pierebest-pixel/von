@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+  <title>Les Échoués de Kalua</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <canvas id="world"></canvas>
+
+  <!-- Commandes en jeu -->
+  <div id="hud" hidden>
+    <button class="round back" id="back" aria-label="Retour à mes îles">‹</button>
+    <div class="badge" id="badge"></div>
+    <div class="dpad" id="dpad">
+      <b data-d="u">▲</b><b data-d="l">◀</b><b class="mid"></b><b data-d="r">▶</b><b data-d="d">▼</b>
+    </div>
+    <div class="acts">
+      <button class="act run" data-a="run"><svg viewBox="0 0 24 24" fill="#fff"><path d="M13 2L5 14h6l-1 8 8-12h-6z"/></svg>SPRINT</button>
+      <button class="act dodge" data-a="dodge"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 12a8 8 0 1 1-3-6.2"/><path d="M17.5 2.5v3.6h-3.6"/></svg>ESQUIVE</button>
+      <button class="act grab" data-a="grab"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 12V6.5a1.5 1.5 0 0 1 3 0V11M10 10V5a1.5 1.5 0 0 1 3 0v5M13 10V6a1.5 1.5 0 0 1 3 0v6M16 9a1.5 1.5 0 0 1 3 0v4a7 7 0 0 1-7 7h-1a6 6 0 0 1-5-3l-2-3.5a1.4 1.4 0 0 1 2.4-1.5L7 13"/></svg>RAMASSER</button>
+      <button class="act hit" data-a="hit"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4l6 6-3 3-6-6z" fill="#fff"/><path d="M12.5 8.5L4 17l3 3 8.5-8.5"/></svg>TAPER</button>
+    </div>
+    <div class="toast" id="toast" hidden></div>
+  </div>
+
+  <!-- Écrans (chargement, créateur, mes îles) -->
+  <div id="ui"></div>
+
+  <script src="../von-sdk.js"></script>
+  <script src="../../firebase-config.js"></script>
+  <script src="avatar.js"></script>
+  <script src="net.js"></script>
+  <script src="world.js"></script>
+  <script src="game.js"></script>
+</body>
+</html>

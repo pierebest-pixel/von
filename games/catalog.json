@@ -1,6 +1,35 @@
 {
   "games": [
     {
+      "id": "kalua",
+      "name": "Les Échoués de Kalua",
+      "category": "Aventure",
+      "players": "À deux, en ligne",
+      "version": "0.1",
+      "addedAt": "2026-11-26",
+      "size": 482312,
+      "controls": "Flèches, Taper, Ramasser, Esquiver, Sprint",
+      "description": "Vous vous êtes échoués à deux sur l'île de Kalua.\nCrée ton personnage (coiffures, maquillage, peintures squelette, oreilles de chat, ailes…), invite un ami de Von et explorez l'île ensemble, en direct.\nVersion 0.1 : l'île et le jeu à deux. La récolte, la fabrication, le village, les quêtes et les grottes arrivent bientôt.",
+      "icon": "icon.png",
+      "screenshots": [
+        "shot1.png",
+        "shot2.png",
+        "shot3.png"
+      ],
+      "files": [
+        "index.html",
+        "style.css",
+        "avatar.js",
+        "net.js",
+        "world.js",
+        "game.js",
+        "icon.png",
+        "shot1.png",
+        "shot2.png",
+        "shot3.png"
+      ]
+    },
+    {
       "id": "zoe",
       "name": "Pour Zoé",
       "category": "Surprise",
