@@ -41,7 +41,7 @@ const RTBoss = (() => {
   // ================================================================ les boss
   const DEF = {
     // ---------------------------------------------------------- Grotte 1 : Mère-Racine
-    mereRacine: { name: "Mère-Racine", hp: 36, r: 60, draw: "mereRacine", scale: .75, music: "bossc1", guard: true, still: true, phases: [1, .6, .3],
+    mereRacine: { name: "Mère-Racine", hp: 36, r: 60, draw: "mereRacine", scale: .6, music: "bossc1", guard: true, still: true, phases: [1, .6, .3],
       guardHint: "Son écorce est trop dure… Attends qu'elle ouvre la bouche, ou brise ses quatre racines-veines !",
       intro: "La Mère-Racine se réveille. Les tombes tremblent.",
       onSpawn(e) { e.nodes = 0; const pts = [[A.x0 + 80, A.y0 + 120], [A.x1 - 80, A.y0 + 120], [A.x0 + 80, A.y1 - 70], [A.x1 - 80, A.y1 - 70]]; for (const [x, y] of pts) { const n = Act.spawn("node", x, y, { def: { hp: 3, spd: 0, dmg: 0, r: 16, ai: "still", draw: "racineSerpent" }, harmless: true, owner: e }); n.onDie = () => { e.nodes++; }; } },

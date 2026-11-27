@@ -105,7 +105,7 @@ const Story = (() => {
     const tgt = ESC.pts[Math.min(ESC.i, ESC.pts.length - 1)], tx = tgt.x, ty = tgt.y;
     const dP = Math.hypot(p.x - n.x, p.y - n.y);
     let x = n.x, y = n.y, moving = false, dir = n.dir;
-    if (dP < 320) { const d = Math.hypot(tx - x, ty - y); if (d > 6) { const s = Math.min(d, 125 * dt); x += (tx - x) / d * s; y += (ty - y) / d * s; moving = true; dir = Math.abs(tx - x) > Math.abs(ty - y) ? (tx < x ? "left" : "right") : (ty < y ? "up" : "down"); } else if (ESC.i < ESC.pts.length) { ESC.i++; if (ESC.tip < ESC.tips.length && !Dialog.open) { const t = ESC.tips[ESC.tip++]; Dialog.say(sp("nalia"), t); } } }
+    if (dP < 320) { const d = Math.hypot(tx - x, ty - y); if (d > 6) { const s = Math.min(d, 205 * dt); x += (tx - x) / d * s; y += (ty - y) / d * s; moving = true; dir = Math.abs(tx - x) > Math.abs(ty - y) ? (tx < x ? "left" : "right") : (ty < y ? "up" : "down"); } else if (ESC.i < ESC.pts.length) { ESC.i++; if (ESC.tip < ESC.tips.length && !Dialog.open) { const t = ESC.tips[ESC.tip++]; Dialog.say(sp("nalia"), t); } } }
     else { dir = p.x < x ? "left" : "right"; ESC.wait += dt; if (ESC.wait > 6) { ESC.wait = 0; Game.toast("Nalia t'attend. Suis-la !", 1500); }
       // si le joueur s'est perdu très loin, Nalia revient vers lui
       if (dP > 900) { const q = Game.world.snap(p.x + 80, p.y - 40); x = q.x; y = q.y; } }
@@ -521,8 +521,8 @@ else glow("#fff6a0");
     await cut(async (S) => {
       S.bg("stars", { aurora: true }); S.music("credits", 1.5); S.camNow(500, 300, 900); S.fx("light", 3);
       await S.fade(0, 2);
-      const C = [["Les Échoués de Kalua", ""], ["Une idée de", "Sixte Maron"], ["Histoire, monde et code", "Claude"], ["Direction, tests et idées", "Sixte Maron"], ["Musique (composée en direct)", "Claude"],
-        ["Avec", "Nalia · Capitaine Bastien · Kéo · Amaru · Mère Tikka · Mila"], ["", "Grand-père Oro · Lili · Fennek · Pyrrha · Ysolde · Brann"], ["", "Pipa · Maëlle · Tim · Jojo · Dame Rosalie · Coco"], ["Et les Douze Gardiens", "qui retenaient la Cendre"],
+      const C = [["Les Échoués de Kalua", ""], ["Une idée de", "Sixte Maron"], ["Histoire, monde et code", "Claude"], ["Direction, tests et idées", "Sixte Maron"], ["Musique (composée en direct)", "Claude"], ["Les trois boss des îles imaginés par", "Sixte Maron"], ["Au Coin · Dame Plumeau · Capitaine Stella", "et les Étoiles Filantes"],
+        ["Avec", "Nalia · Capitaine Bastien · Kéo · Amaru · Mère Tikka · Mila"], ["", "Grand-père Oro · Lili · Fennek · Pyrrha · Ysolde · Brann"], ["", "Pipa · Maëlle · Tim · Jojo · Dame Rosalie · Coco"], ["Au village", "Barnabé · Léon · Mamie Brioche · Monsieur Plume · Gino · Fanny · Margot · Lucas · Ahmed"], ["Et les Douze Gardiens", "qui retenaient la Cendre"],
         ["À la mémoire de", "Kéo, Bastien, Oro… et Nalia"], ["Pour deux cœurs", "qui battent ensemble"], ["Merci d'avoir joué", "♥"]];
       for (const [a, b] of C) { await S.caption(a, b, 3.4); }
       await S.fade(1, 2);

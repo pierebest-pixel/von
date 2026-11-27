@@ -35,6 +35,7 @@ const Net = (() => {
     rtdb.onValue(rtdb.ref(db, ".info/serverTimeOffset"), (snap) => { offset = Number(snap.val()) || 0; });
     const vonMe = ls("von:me", null);
     me = { uid: user.uid, name: vonMe && vonMe.uid === user.uid ? vonMe.name : ls("von:name", "") || "Joueur" };
+    syncSoloList(); // les îles en solo sont aussi gardées en ligne (changement de téléphone)
     return me;
   }
 
@@ -61,23 +62,43 @@ const Net = (() => {
   // ---------------------------------------------------------------- îles en solo : gardées dans le téléphone, jouées avec un compagnon (bot)
   const soloKey = () => `kalua:solo:${me ? me.uid : "?"}`;
   const soloList = () => { const l = ls(soloKey(), []); return Array.isArray(l) ? l : []; };
-  const soloSave = (l) => { try { localStorage.setItem(soloKey(), JSON.stringify(l)); } catch { /* ignore */ } dispatchEvent(new Event("kalua:solo")); };
+  const soloSave = (l, fromRemote) => {
+    try { localStorage.setItem(soloKey(), JSON.stringify(l)); if (!fromRemote) localStorage.setItem(soloKey() + ":at", String(Date.now())); } catch { /* ignore */ }
+    if (!fromRemote && fb && me) fb.set(r(`soloSaves/${me.uid}/list`), { at: Date.now(), l: JSON.parse(JSON.stringify(l)) }).catch(() => {});
+    dispatchEvent(new Event("kalua:solo"));
+  };
+  // ---- sauvegarde en ligne du mode solo : soloSaves/{uid}/list, /prog/{île}, /village/{île} (la version la plus récente gagne)
+  async function syncSoloList() {
+    if (!fb || !me) return;
+    try {
+      const v = (await fb.get(r(`soloSaves/${me.uid}/list`))).val(), localAt = Number(ls(soloKey() + ":at", 0)) || 0;
+      if (v && Array.isArray(v.l) && (v.at || 0) > localAt) { soloSave(v.l, true); try { localStorage.setItem(soloKey() + ":at", String(v.at)); } catch { /* ignore */ } }
+      else if (soloList().length) fb.set(r(`soloSaves/${me.uid}/list`), { at: localAt || Date.now(), l: soloList() }).catch(() => {});
+    } catch { /* hors ligne ou règles pas encore collées : tant pis, le téléphone garde tout */ }
+  }
+  const soloRemote = async (kind, id) => { if (!fb || !me) return null; try { return (await fb.get(r(`soloSaves/${me.uid}/${kind}/${id}`))).val(); } catch { return null; } };
   const isSolo = (id) => String(id).startsWith("solo-");
   function createSolo(difficulty, bot) {
     const id = "solo-" + Date.now().toString(36) + Math.floor(Math.random() * 1e6).toString(36);
     const x = { id, solo: true, with: bot.name, bot, difficulty, createdAt: Date.now(), seed: Math.floor(Math.random() * 2 ** 31) };
     soloSave([x].concat(soloList())); return id;
   }
-  function soloSession(id) {
+  async function soloSession(id) {
     const x = soloList().find((i) => i.id === id);
     if (!x) throw Object.assign(new Error("gone"), { code: "gone" });
+    const [remoteProg, remoteVil] = await Promise.all([soloRemote("prog", id), soloRemote("village", id)]);
     const island = { owner: me.uid, name: `L'île de ${me.name}`, seed: x.seed, createdAt: x.createdAt, members: { [me.uid]: { name: me.name } }, difficulty: x.difficulty || "normal", solo: true, bot: x.bot };
     const noop = () => {};
     const vk = `kalua:village:${id}`; let V = ls(vk, {}) || {}; let vcb = null;
-    return { id, island, others: [], me, savedPos: null, progress: null, solo: true,
-      saveProgress: noop, watchPlayer: noop, watchPos: noop, sendPos: noop, setOnline: noop, setAvatar: noop, async leave() {},
+    if (remoteVil && remoteVil.v && (remoteVil.at || 0) > (Number(ls(vk + ":at", 0)) || 0)) { V = remoteVil.v; try { localStorage.setItem(vk, JSON.stringify(V)); } catch { /* ignore */ } }
+    let pt = null, pp = null, vt = null;
+    const up = (kind, val) => { if (fb && me) fb.set(r(`soloSaves/${me.uid}/${kind}/${id}`), val).catch(() => {}); };
+    return { id, island, others: [], me, savedPos: null, progress: remoteProg || null, solo: true,
+      saveProgress(p) { pp = p; if (!pt) pt = setTimeout(() => { pt = null; up("prog", pp); }, 6000); },
+      watchPlayer: noop, watchPos: noop, sendPos: noop, setOnline: noop, setAvatar: noop, async leave() {},
       watchVillage(cb) { vcb = cb; cb(JSON.parse(JSON.stringify(V))); return () => { vcb = null; }; },
-      saveVillage(path, value) { const parts = path.split("/"); let o = V; for (let i = 0; i < parts.length - 1; i++) { if (!o[parts[i]] || typeof o[parts[i]] !== "object") o[parts[i]] = {}; o = o[parts[i]]; } if (value === null) delete o[parts[parts.length - 1]]; else o[parts[parts.length - 1]] = value; try { localStorage.setItem(vk, JSON.stringify(V)); } catch { /* ignore */ } } };
+      saveVillage(path, value) { const parts = path.split("/"); let o = V; for (let i = 0; i < parts.length - 1; i++) { if (!o[parts[i]] || typeof o[parts[i]] !== "object") o[parts[i]] = {}; o = o[parts[i]]; } if (value === null) delete o[parts[parts.length - 1]]; else o[parts[parts.length - 1]] = value; try { localStorage.setItem(vk, JSON.stringify(V)); localStorage.setItem(vk + ":at", String(Date.now())); } catch { /* ignore */ }
+        if (!vt) vt = setTimeout(() => { vt = null; up("village", { at: Date.now(), v: JSON.parse(JSON.stringify(V)) }); }, 6000); } };
   }
 
   async function createIsland(friend, difficulty = "normal") {

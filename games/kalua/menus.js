@@ -143,6 +143,8 @@ function openMenu() {
     <button class="item main" data-m="resume"><i>▶</i>Reprendre</button>
     <button class="item" data-m="nalia"><i style="background:#e8eeff">🐚</i>${Prog.isDead("nalia") ? "Appeler Coco (conque)" : "Appeler Nalia (conque)"}<span class="chev">›</span></button>
     ${G.mode === "world" ? `<button class="item" data-m="build"><i style="background:#fff1c4">🔨</i>Construire<span class="chev">›</span></button>` : ""}
+    ${G.mode === "world" && typeof Pets !== "undefined" && Pets.myHorse() ? `<button class="item" data-m="horse"><i style="background:#f4e8d8">🐎</i>Siffler mon cheval<span class="chev">›</span></button>` : ""}
+    ${typeof Pets !== "undefined" && Pets.all().length ? `<button class="item" data-m="pets"><i style="background:#ffe8ec">🐾</i>Nos animaux<span class="chev">›</span></button>` : ""}
     ${G.mode === "house" ? `<button class="item" data-m="decor"><i style="background:#fff1c4">🛋️</i>Décorer la maison<span class="chev">›</span></button><button class="item" data-m="wardrobe"><i style="background:#fdf0dc">🧺</i>Mon armoire<span class="chev">›</span></button><button class="item" data-m="out"><i style="background:#e8f6e6">🌴</i>Sortir de la maison<span class="chev">›</span></button>` : ""}
     <button class="item" data-m="quests"><i style="background:#ffe8ec">📜</i>Quêtes<span class="chev">›</span></button>
     <button class="item" data-m="map"><i style="background:#e0f2fb">🗺️</i>Carte de l'île<span class="chev">›</span></button>
@@ -161,6 +163,8 @@ function openMenu() {
     if (m === "resume") return closeMenu();
     if (m === "map") return openMap();
     if (m === "build") return openBuild();
+    if (m === "horse") { closeMenu(); return Pets.whistle(); }
+    if (m === "pets") return Pets.panel();
     if (m === "decor") return House.openDecoMenu();
     if (m === "wardrobe") return Shop.wardrobe();
     if (m === "out") { closeMenu(); return House.leave(); }

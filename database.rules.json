@@ -36,6 +36,12 @@
           ".write": "auth != null && (auth.uid === $uid || (!data.exists() && newData.parent().parent().parent().child('islands').child($id).child('owner').val() === auth.uid && newData.parent().parent().parent().child('islands').child($id).child('members').child($uid).exists()))"
         }
       }
+    },
+    "soloSaves": {
+      "$uid": {
+        ".read": "auth != null && auth.uid === $uid",
+        ".write": "auth != null && auth.uid === $uid"
+      }
     }
   }
 }

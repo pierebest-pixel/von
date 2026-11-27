@@ -74,7 +74,7 @@ async function play(id) {
       if (!v) return;
       const z = v.z || "w";
       if (z !== o.zone || !o.has || Math.hypot(o.x - v.x, o.y - v.y) > 400) { o.x = v.x; o.y = v.y; o.has = true; }
-      o.zone = z; o.tx = v.x; o.ty = v.y; o.dir = v.d || o.dir; o.moving = Boolean(v.m);
+      o.zone = z; o.tx = v.x; o.ty = v.y; o.dir = v.d || o.dir; o.moving = Boolean(v.m); o.mount = Boolean(v.h);
       if (v.at && v.at !== o.seenAt) { const fresh = o.seenAt !== 0; o.seenAt = v.at; if (fresh && z === G.zone) remoteAction(o, v.a); }
     });
   }
@@ -161,10 +161,10 @@ function pickupToast(id, txt) {
 function sendPos(force, s = G.session) {
   if (!s || !G.p) return;
   const p = G.p, z = G.mode === "cave" ? `c${Dungeon.n}:${Dungeon.room ? Dungeon.room.id : ""}` : G.mode === "arena" ? "a:" + Arena.kind : G.mode === "house" ? G.zone : "w";
-  const k = `${Math.round(p.x)},${Math.round(p.y)},${p.dir},${p.moving},${p.at},${z}`;
+  const k = `${Math.round(p.x)},${Math.round(p.y)},${p.dir},${p.moving},${p.at},${z},${p.mount ? 1 : 0}`;
   if (!force && k === G.lastKey && performance.now() - (G.lastSentT || 0) < 3000) return;
   G.lastKey = k; G.lastSentT = performance.now(); G.lastSave = Date.now();
-  s.sendPos({ x: Math.round(p.x * 10) / 10, y: Math.round(p.y * 10) / 10, d: p.dir, m: p.moving, a: p.a, at: p.at, z });
+  s.sendPos({ x: Math.round(p.x * 10) / 10, y: Math.round(p.y * 10) / 10, d: p.dir, m: p.moving, a: p.a, at: p.at, z, h: p.mount ? 1 : 0 });
 }
 
 // ================================================================ actions
@@ -278,13 +278,14 @@ function worldInteract(p) {
   if (Story.interact && Story.interact(p)) return;
   const cave = G.world.nearest(p.x, p.y, p.dir, ["cave"], 150);
   if (cave) { Story.caveDoor(cave.cave.n); return; }
-  const o = G.world.nearest(p.x, p.y, p.dir, GRAB_KINDS, 46);
-  if (o) { o.bob = 1; burst(o.x, o.y - 4, "spark", 8); const [id, ch] = GRAB_GIVE[o.kind]; if (Math.random() < ch) { Prog.give(id, 1); o.gone = true; o.back = Date.now() + 120000; G.harvestGone = (G.harvestGone || []).concat(o); } else toast("Rien d'utile ici.", null, 900); return; }
   const an = Creatures.nearest(p.x + FACING[p.dir][0] * 20, p.y + FACING[p.dir][1] * 16, T, G.world, 52);
   if (an && !animalHidden(an.a)) { an.a.hop = 1; burst(an.p.x, an.p.y - 30, "love", 8); Music.sfx("pickup", .4);
     if (goldenAnimal(an.a) && !Prog.P.flags["gold" + an.a.id + Math.floor(T / NPC.DAY)]) { Prog.P.flags["gold" + an.a.id + Math.floor(T / NPC.DAY)] = true; Prog.give("larmeDoree", 1); Music.jingle("secret"); toast(`✨ Le ${Creatures.NAMES[an.a.kind].toLowerCase()} doré se laisse caresser… et pleure une Larme dorée !`); }
     else toast(`Tu caresses le ${Creatures.NAMES[an.a.kind].toLowerCase()}. ${Creatures.DOMESTIC.includes(an.a.kind) ? "Il a l'air content." : "Il se laisse faire, surpris."}`, null, 1400);
+    if (typeof Pets !== "undefined") Pets.onPet(an.a);
     Story.event && Story.event("pet", an.a.kind); return; }
+  const o = G.world.nearest(p.x, p.y, p.dir, GRAB_KINDS, 46);
+  if (o) { o.bob = 1; burst(o.x, o.y - 4, "spark", 8); const [id, ch] = GRAB_GIVE[o.kind]; if (Math.random() < ch) { Prog.give(id, 1); o.gone = true; o.back = Date.now() + 120000; G.harvestGone = (G.harvestGone || []).concat(o); } else toast("Rien d'utile ici.", null, 900); return; }
   toast("Rien à ramasser ici.", null, 900);
 }
 
@@ -413,6 +414,7 @@ function frame(now) {
   if (G.shakeT > 0) G.shakeT -= dt;
   try {
     updateBot(dt);
+    if (typeof Pets !== "undefined") Pets.update(dt);
     if (G.mode === "world") { updateWorld(dt); renderWorld(); }
     else if (G.mode === "cave") { updateCave(dt); renderCave(); }
     else if (G.mode === "house") { movePlayer(dt, House.move); House.update(dt); sendPos(false); updateOthers(dt); House.render(ctx, innerWidth, innerHeight); }
@@ -433,7 +435,7 @@ function movePlayer(dt, moveFn) {
   p.swing = Math.max(0, p.swing - dt); p.cool = Math.max(0, p.cool - dt);
   let vx = 0, vy = 0;
   if (p.roll > 0) { p.roll = Math.max(0, p.roll - dt); vx = p.rollV[0] * 380; vy = p.rollV[1] * 380; }
-  else { const sp = (G.input.run ? 260 : 150) * (G.buffSpeed > Date.now() ? 1.3 : 1); vx = v.x * sp; vy = v.y * sp; if (v.x || v.y) p.dir = Math.abs(v.x) > Math.abs(v.y) + .01 ? (v.x < 0 ? "left" : "right") : (v.y < 0 ? "up" : "down"); }
+  else { const sp = (G.input.run ? 260 : 150) * (G.buffSpeed > Date.now() ? 1.3 : 1) * (p.mount && G.mode === "world" ? 1.75 : 1); vx = v.x * sp; vy = v.y * sp; if (v.x || v.y) p.dir = Math.abs(v.x) > Math.abs(v.y) + .01 ? (v.x < 0 ? "left" : "right") : (v.y < 0 ? "up" : "down"); }
   if (p.kx || p.ky) { vx += p.kx; vy += p.ky; p.kx *= Math.pow(.002, dt); p.ky *= Math.pow(.002, dt); if (Math.abs(p.kx) + Math.abs(p.ky) < 10) p.kx = p.ky = 0; }
   p.moving = Boolean(vx || vy) && p.roll <= 0;
   if (vx || vy) { const n = moveFn(p.x, p.y, p.x + vx * dt, p.y + vy * dt); p.x = n.x; p.y = n.y; p.walk = (p.walk + dt * (G.input.run ? 3.2 : 2.2)) % 1;
@@ -500,6 +502,7 @@ function drawCharacter(c, o, av, isMe) {
   c.save(); c.translate(o.x, o.y);
   if (!isMe && !o.online) c.globalAlpha = .55;
   if (isMe && Act.inv > 0 && Math.floor(G.t * 20) % 2) c.globalAlpha = .45;
+  if (o.mount && G.mode === "world" && typeof Pets !== "undefined") { Pets.drawMount(c, o, G.t); c.translate(0, -34); }
   c.save(); c.scale(SCALE, SCALE); c.translate(0, -14);
   if (rolling) { const pr = 1 - o.roll / .34; c.translate(0, 6); c.rotate(pr * Math.PI * 2 * ((o.rollV?.[0] ?? (o.dir === "left" ? -1 : 1)) < 0 ? -1 : 1)); c.scale(.85, .85); c.translate(0, -6); }
   Avatar.draw(c, av || Avatar.DEFAULT, { dir: o.dir, walk: (o.moving || (!isMe && Math.hypot(o.tx - o.x, o.ty - o.y) > 2)) && !rolling ? o.walk : null, swing: o.swing > 0 ? Math.sin((1 - o.swing / .32) * Math.PI) : 0, t: G.t });
@@ -539,7 +542,7 @@ function renderWorld() {
   if (Story.drawGround) Story.drawGround(ctx, view, G.t);
   const items = W.visibleSolids(view, []).filter((s) => !Village.covers(s.x, s.y)).map((s) => ({ y: s.y, s }));
   Village.collect(items, view);
-  const animals = Creatures.visible(view, T, W, []).filter((it) => !animalHidden(it.animal));
+  const animals = Creatures.visible(view, T, W, []).filter((it) => !animalHidden(it.animal) && !(typeof Pets !== "undefined" && Pets.isAdopted(it.animal.id)));
   items.push(...animals);
   NPC.visible(view, T, items);
   Act.collect(items);

@@ -136,5 +136,5 @@ const Guide = (() => {
     if (!q) return;
     await Dialog.say(sp, answer(q));
   }
-  return { answer, search, topics, custom, norm };
+  return { add, answer, search, topics, custom, norm };
 })();

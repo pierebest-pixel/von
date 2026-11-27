@@ -69,5 +69,9 @@ const Items = (() => {
     puits: "Puits", enclos: "Enclos", coffre: "Coffre partagé", lit: "Lit",
   };
   function draw(ctx, id, x, y, s) { c = ctx; c.save(); c.translate(x, y); c.scale(s, s); D[id](); c.restore(); }
-  return { draw, INFO, ids: Object.keys(D) };
+  const H = { circle, ell, line, f, shine, TAU, get c() { return c; } };
+  const ids = Object.keys(D);
+  // ajouter des icônes depuis un autre fichier (items2.js)
+  function add(id, fn) { D[id] = () => fn(c, H); if (!ids.includes(id)) ids.push(id); }
+  return { draw, add, INFO, ids };
 })();
