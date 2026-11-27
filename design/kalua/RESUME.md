@@ -1,7 +1,9 @@
 # Les Échoués de Kalua — résumé du projet (à lire en début de conversation)
 
 Jeu d'aventure à deux, en ligne, dans l'appli **Von** (dépôt `pierebest-pixel/von`, dossier `games/kalua/`), pensé pour jouer avec sa copine.
-**Version publiée : 0.6** (27/11/2026). Les branches `main` et `kalua` sont identiques.
+**Version publiée : 1.0** (27/11/2026), la version finale. Le jeu est identique sur `main` et `kalua` (seul `design/` peut différer).
+
+Log complet de la 0.7 et de la 1.0, avec les maquettes : **`design/kalua/LOG-1.0.html`** (images dans `design/kalua/maquettes-1.0/`).
 
 Documents à lire selon le besoin :
 - **`design/kalua/LOG.md`** : le rapport détaillé du développement autonome (fichiers, systèmes, salles, boss, quêtes, tests, bugs).
@@ -21,9 +23,9 @@ Documents à lire selon le besoin :
 - Publier sur `main` **seulement quand l'utilisateur dit « publie »**. Pour le grand chantier « construction » (0.6), l'utilisateur a demandé de tout coder et publier sans attendre sa validation, en lui envoyant des captures ; il arrête le travail en écrivant « STOP » en majuscules.
 - Toujours **couper le son** du jeu de test dans le navigateur (l'utilisateur l'entend sur son PC).
 - À chaque publication :
-  - augmenter `APP_CACHE` dans `sw.js` (actuellement `von-app-v11`) ;
+  - augmenter `APP_CACHE` dans `sw.js` (actuellement `von-app-v13`) ;
   - augmenter la version dans `games/kalua/menus.js` (écran titre) et dans `games/catalog.json`.
-- L'utilisateur veut concevoir **lui-même les boss finaux des 3 grottes des îles** (6 Tortues, 7 Phare, 8 Étoiles). Ne pas les créer sans lui.
+- Les boss des 3 îles ont été conçus par l'utilisateur (voir 1.0). Codes des portes : Tortues `10/09/26` (date de leur rencontre), Phare `BÉRANGÈRE`, Étoiles `NEAT COCKTAIL`.
 - Crédits de fin : **Sixte Maron** et **Claude**.
 - Consignes de jeu :
   - **jamais de barre d'endurance** : course, esquive et attaques illimitées ; seuls les chants ont un temps de recharge ;
@@ -150,30 +152,22 @@ Maquettes : `design/kalua/maquettes-construction/` (10 planches + `PLAN.md`, ref
   - la fin et les crédits.
 - Astuce : quand le navigateur de test est caché, le jeu ne s'anime plus. On fait avancer les images à la main avec `frame()`, et on évite les `setTimeout`.
 
-## Ce qu'il reste à faire (synthèse au 27/11/2026, après la 0.6)
+### Kalua 0.7 (publiée le 27/11/2026) — la 0.6 terminée
+- `village2.js` : commerçants aux comptoirs (8 h–19 h, `NPC.add`, accessoire `shop`), 9 nouveaux habitants (Barnabé, Léon, Mamie Brioche, Monsieur Plume, Gino, Fanny, Margot, Lucas, Ahmed), quêtes `projets` (8 projets du maire), `leon`, `brioche`, `plume`, `gino`, `fanny` ; fête sur la place (décor, guirlandes, musique `fete`, habitants qui dansent via `NPC.setHook`) ; marché de Noël en décembre (chalets, neige, musique `noel`, Père Kalua) ; cinéma (`Cutscene.films/replay` : les cinématiques sont « filmées » pendant qu'elles se jouent, gardées dans `kalua:films:{île}`) ; nouveaux vêtements dans le créateur.
+- `buildings.js` : château Renaissance (niveau 5) ; parties animées (`BUILD.AN`, `anim()` : fumée, drapeaux, ailes, jets d'eau) dessinées par-dessus les images en cache.
 
-### À faire par l'utilisateur
-1. **Règles Firebase** : vérifier que `database.rules.json` est bien collé dans la console (règle `progress/{uid}` de la 0.4). Rien de nouveau pour le village de la 0.6.
-2. **Jouer pour de vrai sur iPhone, à deux** : personne n'a encore fait une partie complète à la main. À vérifier en priorité : le village commun en ligne (constructions vues par les deux, chantier partagé, dormir à deux), le tactile, la lisibilité, la fluidité, le son.
-3. **Concevoir les 3 boss finaux des îles** (Tortues, Phare, Étoiles) : arènes prêtes et scellées (`sealed: true` dans `caves-iles.js`). Pour en brancher un : `boss:` (temps réel, `rtbosses.js`) ou `battle:` (tour par tour, `battle.js`), `reward:`, `final: true`, retirer `sealed` ; dessin dans `bestiary.js`, musique dans `music.js` (`BOSS_COLORS`).
-4. Donner la **vraie date de sortie** pour la bande-annonce (`bande-annonce/`, une fausse date floutée « 12 décembre 2026 » y est).
+### Kalua 1.0 (publiée le 27/11/2026) — version finale
+- `arenas.js` (mode `arena`) : Au Coin (un, deux, trois… soleil), Dame Plumeau (ménage), Capitaine Stella (foot, 3 buts). Branché par `arena:` dans une salle (`caves-iles.js`).
+- `dungeon.js` : portes à code (`locks: { n: "code" }`, `room.code`), carnet d'indices (`clue`, `fil`, `Prog.cave(n).clues`), énigmes `quiz` (série), `order` (remettre dans l'ordre), `riddle`/`ask` avec indice. Nouvelles salles t13, p13, e11.
+- `pets.js` : adoption (3 caresses), animaux communs (`village/pets`), cadeaux du jour, cheval monté (`G.p.mount`, ×1,75), « Siffler mon cheval ».
+- `finale.js` : créatures secrètes sur les îles (quête cachée `secrets`), savoir de Nalia sur les nouveautés.
+- `items2.js` : icônes dessinées des 66 objets restants (`Items.add`).
+- `net.js` : sauvegarde en ligne du solo (`soloSaves/{uid}/list|prog|village`) — **nouvelle règle dans `database.rules.json` à coller**.
+- Escorte de Nalia plus rapide, Mère-Racine plus petite, nouvelles captures `shot1-3.png`.
 
-### Gameplay encore à faire
-5. **Adoption des animaux** (leur donner un nom, qu'ils restent à l'enclos) et **le cheval qu'on monte** (l'enclos, l'étable et les récoltes existent).
-6. **Créatures secrètes des îles** (Tortue Ancienne, Hibou-Lanterne, Renard Céleste) : combats prêts dans `battle.js`, à placer sur les îles.
-7. **Coopération dans les grottes** : aujourd'hui chacun a ses ennemis, énigmes et coffres. Une vraie coop serait un gros chantier, à décider.
-8. **Sauvegarde en ligne du mode solo** (aujourd'hui dans le téléphone seulement, partie et village).
-
-### À compléter dans la 0.6 (construction / village)
-9. **Habitants dans les commerces** : Rosalie au Fil d'Or, un cuisinier à La Marmite, etc. (les commerces marchent, mais personne ne se tient derrière le comptoir).
-10. **Fête sur la place** (mairie) : le réglage est enregistré, mais aucun décor ni musique de fête n'apparaît encore ; **marché de Noël automatique** en décembre.
-11. **Projets du village** de la mairie : pour l'instant de simples conseils ; pourrait devenir de vraies quêtes avec récompenses.
-12. **Animations figées** : fumée des cheminées, ailes du moulin, drapeaux, fontaines sont immobiles dans le jeu (dessins en cache) — ajouter une petite couche animée.
-13. **Créateur de personnage** : il ne propose pas encore les nouveaux vêtements (seulement au Fil d'Or) ; on pourrait y ajouter l'armoire.
-14. **Cinéma en plein air** : revoir pour de vrai les cinématiques déjà vues (aujourd'hui un simple message).
-
-### Finitions
-15. **Équilibrage** : PV et dégâts des boss, difficulté des énigmes, coûts des constructions, bonus des restaurants (tout réglé à l'estime).
-16. L'escorte de Nalia au début est un peu longue ; le Gardien Mère-Racine dépasse en haut des petits écrans.
-17. Icônes dessinées pour les objets (aujourd'hui des emojis).
-18. **Nouvelles captures pour la fiche du jeu dans Von** : `shot1.png`, `shot2.png`, `shot3.png` datent de la 0.2 (remplacer par le village, le château, une grotte).
+## Ce qu'il reste à faire (après la 1.0)
+1. **Coller `database.rules.json`** dans la console Firebase (partie `soloSaves`).
+2. **Jouer pour de vrai sur iPhone, à deux** : village commun, animaux, cheval, les 3 boss au tactile (difficulté d'Au Coin, maniabilité du match).
+3. **Date de sortie** pour la bande-annonce (`bande-annonce/`, fausse date floutée).
+4. **Coopération dans les grottes** : non faite (gros chantier, à décider).
+5. Retours de l'utilisateur sur le log 1.0.
